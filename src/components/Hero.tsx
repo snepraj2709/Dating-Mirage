@@ -8,9 +8,9 @@ export function Hero({ onStart }: HeroProps) {
   return (
     <section className="hero-section" id="top">
       <div className="hero-copy">
-        <h1>
+        < h2>
           See the <span className="hero-emphasis">pattern</span> you date
-        </h1>
+        </ h2>
         <p className="hero-lede">
           Reflect on who you attract - and the gap between your history and your ideal partner.
         </p>

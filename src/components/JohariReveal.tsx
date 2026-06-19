@@ -47,7 +47,7 @@ export function JohariReveal({ report, session, onBack, onBurnData }: JohariReve
     () => [
       {
         eyebrow: 'Screen 1 - The Magnet',
-        title: 'Here is what your friends keep noticing.',
+        title: ' Your Mirror Analysis',
         body: `${report.friendCount} people fed the mirror. The loudest signal is ${dimensionName(
           topDimension.key,
         )}, which landed in ${quadrantDetails[topDimension.quadrant].title}.`,
@@ -89,7 +89,7 @@ export function JohariReveal({ report, session, onBack, onBurnData }: JohariReve
     return (
       <main className="reveal-loader">
         <div className="compact-loader" aria-hidden="true" />
-        <h1>Polishing your mirror...</h1>
+        <h2>Polishing your mirror...</h2>
       </main>
     );
   }
@@ -116,7 +116,7 @@ export function JohariReveal({ report, session, onBack, onBurnData }: JohariReve
 
         <article className="story-panel">
           <p className="eyebrow">{current.eyebrow}</p>
-          <h1>{current.title}</h1>
+          <h3>{current.title}</h3>
           <p>{current.body}</p>
 
           {screenIndex === 0 && (

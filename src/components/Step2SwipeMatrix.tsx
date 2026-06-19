@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowLeft, Check, RotateCcw, X } from 'lucide-react';
 import { swipeStatements } from '../data/datingMirrorContent';
 import { loadActualSwipes, saveActualSwipes } from '../lib/localState';
@@ -6,6 +6,8 @@ import { buildActualProfile } from '../lib/scoring';
 import type { VectorProfile } from '../types/dating-mirror';
 
 type SwipeDirection = 'left' | 'right';
+
+const SWIPE_STAMP_DURATION_MS = 700;
 
 interface Step2SwipeMatrixProps {
   isSaving: boolean;
@@ -21,6 +23,7 @@ export function Step2SwipeMatrix({ isSaving, saveError, onBack, onComplete }: St
     const firstUnanswered = swipeStatements.findIndex((statement) => initialSwipes[statement.id] === undefined);
     return firstUnanswered === -1 ? 0 : firstUnanswered;
   });
+  const feedbackTimeoutRef = useRef<number | null>(null);
   const [dragStart, setDragStart] = useState<number | null>(null);
   const [dragX, setDragX] = useState(0);
   const [stamp, setStamp] = useState<SwipeDirection | null>(null);
@@ -29,6 +32,15 @@ export function Step2SwipeMatrix({ isSaving, saveError, onBack, onComplete }: St
   const completedCount = Object.keys(swipes).length;
   const progress = Math.min(activeIndex + 1, swipeStatements.length);
   const isComplete = completedCount >= swipeStatements.length;
+  const isShowingFeedback = stamp !== null;
+
+  useEffect(() => {
+    return () => {
+      if (feedbackTimeoutRef.current !== null) {
+        window.clearTimeout(feedbackTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const triggerHaptic = (direction: SwipeDirection) => {
     if ('vibrate' in navigator) {
@@ -37,7 +49,7 @@ export function Step2SwipeMatrix({ isSaving, saveError, onBack, onComplete }: St
   };
 
   const submitSwipe = (direction: SwipeDirection) => {
-    if (!current || isSaving) {
+    if (!current || isSaving || isShowingFeedback) {
       return;
     }
 
@@ -47,19 +59,24 @@ export function Step2SwipeMatrix({ isSaving, saveError, onBack, onComplete }: St
     setStamp(direction);
     triggerHaptic(direction);
 
-    window.setTimeout(() => {
+    feedbackTimeoutRef.current = window.setTimeout(() => {
       setStamp(null);
       setDragX(0);
+      feedbackTimeoutRef.current = null;
 
       if (activeIndex === swipeStatements.length - 1) {
         onComplete(buildActualProfile(nextSwipes, swipeStatements));
       } else {
         setActiveIndex((index) => index + 1);
       }
-    }, 180);
+    }, SWIPE_STAMP_DURATION_MS);
   };
 
   const resetDeck = () => {
+    if (feedbackTimeoutRef.current !== null) {
+      window.clearTimeout(feedbackTimeoutRef.current);
+      feedbackTimeoutRef.current = null;
+    }
     setSwipes({});
     saveActualSwipes({});
     setActiveIndex(0);
@@ -141,17 +158,25 @@ export function Step2SwipeMatrix({ isSaving, saveError, onBack, onComplete }: St
                     {stamp === 'right' ? 'HELL YES!' : 'THANK U, NEXT'}
                   </span>
                 )}
-                <h1 id="swipe-title">{current.statement}</h1>
+                < h2 id="swipe-title">{current.statement}</ h2>
               </article>
             )}
           </div>
 
           <div className="swipe-actions" aria-label="Swipe decisions">
-            <button className="choice-button reject" onClick={() => submitSwipe('left')} disabled={isSaving}>
+            <button
+              className="choice-button reject"
+              onClick={() => submitSwipe('left')}
+              disabled={isSaving || isShowingFeedback}
+            >
               <X size={24} />
               Rarely
             </button>
-            <button className="choice-button accept" onClick={() => submitSwipe('right')} disabled={isSaving}>
+            <button
+              className="choice-button accept"
+              onClick={() => submitSwipe('right')}
+              disabled={isSaving || isShowingFeedback}
+            >
               <Check size={24} />
               Frequently
             </button>

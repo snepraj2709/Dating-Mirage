@@ -284,7 +284,7 @@ export default function App() {
       return (
         <main className="reveal-loader">
           <div className="compact-loader" aria-hidden="true" />
-          <h1>Polishing your mirror...</h1>
+          < h2>Polishing your mirror...</ h2>
         </main>
       );
     }
@@ -307,7 +307,7 @@ export default function App() {
         </button>
         <section className="placeholder-card">
           <p className="eyebrow">Step 4</p>
-          <h1>The Mirror Analysis</h1>
+          < h2>The Mirror Analysis</ h2>
           {reportError && <p className="inline-error">{reportError}</p>}
           <p>Refresh your friend responses, then come back to reveal the report.</p>
         </section>

@@ -61,11 +61,11 @@ export function FriendRapidFireDeck({ sessionId, displayName }: FriendRapidFireD
 
   if (isComplete) {
     return (
-      <main className="friend-screen">
+      <main className="friend-screen friend-complete-screen">
         <section className="friend-complete">
           <HeartHandshake size={38} />
           <p className="eyebrow">Feedback sent</p>
-          <h1>You did the brave friend thing.</h1>
+          <h2>You did the brave friend thing.</h2>
           <p>
             Your individual answers stay private and only blend into {userLabel}'s aggregate
             Dating Mirror.
@@ -86,7 +86,7 @@ export function FriendRapidFireDeck({ sessionId, displayName }: FriendRapidFireD
       {!relationshipType ? (
         <section className="friend-onboarding">
           <p className="eyebrow">Social Mirror</p>
-          <h1>Be as honest as a true friend should be.</h1>
+          <h2>Be as honest as a true friend should be.</h2>
           <p>
             Your individual responses are completely private and aggregated into a high-level report.
           </p>
@@ -110,7 +110,7 @@ export function FriendRapidFireDeck({ sessionId, displayName }: FriendRapidFireD
           </p>
           <article className="friend-question-card">
             <span className="dimension-token">{context}</span>
-            <h1>{current.prompt.replace(/\[User\]/g, userLabel)}</h1>
+            <h2>{current.prompt.replace(/\[User\]/g, userLabel)}</h2>
             <div className="friend-choice-grid">
               <button onClick={() => chooseAnswer(current.optionA.score)} disabled={isSubmitting}>
                 {current.optionA.label}

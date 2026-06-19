@@ -84,7 +84,7 @@ export function Step1IdealFlow({ isSaving, saveError, onBack, onComplete }: Step
             <span className="dimension-token">{question.title}</span>
             <span className="completed-token">{completedCount}/8 answered</span>
           </div>
-          <h1 id="ideal-title">{question.scenario}</h1>
+          < h2 id="ideal-title">{question.scenario}</ h2>
 
           <div className={`anchor-grid anchor-${highlightClass}`}>
             <button
