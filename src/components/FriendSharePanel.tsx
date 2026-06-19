@@ -61,7 +61,7 @@ export function FriendSharePanel({
       <section className="share-layout">
         <div className="share-copy">
           <p className="eyebrow">Step 3 - What Friends Notice</p>
-          < h2>Send the vibe check to people who have seen the pattern.</ h2>
+          <h2>Send the vibe check to people who have seen the pattern.</h2>
           <p>
             Friends get a private 8-question rapid-fire deck. You only see the count and
             aggregate signal, never individual answers.
@@ -112,4 +112,3 @@ export function FriendSharePanel({
     </main>
   );
 }
-

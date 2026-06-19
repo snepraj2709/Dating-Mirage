@@ -4,7 +4,9 @@ import { FriendRapidFireDeck } from './components/FriendRapidFireDeck';
 import { FriendSharePanel } from './components/FriendSharePanel';
 import { Hero } from './components/Hero';
 import { JohariReveal } from './components/JohariReveal';
+import { LandingJohariMatrix } from './components/LandingJohariMatrix';
 import { MirrorStepper } from './components/MirrorStepper';
+import { MirrorSimulator } from './components/MirrorSimulator';
 import { Navigation } from './components/Navigation';
 import { PrivacyStrip } from './components/PrivacyStrip';
 import { Step1IdealFlow } from './components/Step1IdealFlow';
@@ -235,6 +237,8 @@ export default function App() {
     setStage('reveal');
   };
 
+  const startMirror = () => setStage('ideal');
+
   if (friendMatch) {
     const searchParams = new URLSearchParams(window.location.search);
     return (
@@ -284,7 +288,7 @@ export default function App() {
       return (
         <main className="reveal-loader">
           <div className="compact-loader" aria-hidden="true" />
-          < h2>Polishing your mirror...</ h2>
+          <h2>Polishing your mirror...</h2>
         </main>
       );
     }
@@ -307,7 +311,7 @@ export default function App() {
         </button>
         <section className="placeholder-card">
           <p className="eyebrow">Step 4</p>
-          < h2>The Mirror Analysis</ h2>
+          <h2>The Mirror Analysis</h2>
           {reportError && <p className="inline-error">{reportError}</p>}
           <p>Refresh your friend responses, then come back to reveal the report.</p>
         </section>
@@ -317,10 +321,20 @@ export default function App() {
 
   return (
     <main className="app-shell">
-      <Navigation />
-      <Hero onStart={() => setStage('ideal')} />
+      <Navigation onStart={startMirror} />
+      <Hero onStart={startMirror} />
       <MirrorStepper />
+      <LandingJohariMatrix />
+      <MirrorSimulator onStart={startMirror} />
       <PrivacyStrip />
+      <footer className="site-footer">
+        <span>Dating Mirror</span>
+        <nav aria-label="Footer">
+          <a href="#how-it-works">Method</a>
+          <a href="#matrix-breakdown">Matrix</a>
+          <a href="#privacy">Privacy</a>
+        </nav>
+      </footer>
     </main>
   );
 }

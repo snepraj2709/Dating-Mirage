@@ -158,7 +158,7 @@ export function Step2SwipeMatrix({ isSaving, saveError, onBack, onComplete }: St
                     {stamp === 'right' ? 'HELL YES!' : 'THANK U, NEXT'}
                   </span>
                 )}
-                < h2 id="swipe-title">{current.statement}</ h2>
+                <h2 id="swipe-title">{current.statement}</h2>
               </article>
             )}
           </div>
