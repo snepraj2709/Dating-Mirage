@@ -1,15 +1,27 @@
+import { useState } from 'react';
+import { ComingNext } from './components/ComingNext';
+import { Hero } from './components/Hero';
+import { MirrorStepper } from './components/MirrorStepper';
+import { Navigation } from './components/Navigation';
+import { PrivacyStrip } from './components/PrivacyStrip';
+
+type AppStage = 'landing' | 'ideal';
+
 export default function App() {
+  const [stage, setStage] = useState<AppStage>('landing');
+
+  if (stage === 'ideal') {
+    return <ComingNext onBack={() => setStage('landing')} />;
+  }
+
   return (
-    <main className="app-shell">
-      <section className="placeholder-panel">
-        <p className="eyebrow">Dating Mirror</p>
-        <h1>Your dating diagnostic is being assembled.</h1>
-        <p>
-          The implementation is split into scoped commits: foundation, landing, self-report
-          flow, swipe matrix, friend feedback, and reveal.
-        </p>
-      </section>
-    </main>
+    <>
+      <Navigation onStart={() => setStage('ideal')} />
+      <main className="app-shell">
+        <Hero onStart={() => setStage('ideal')} />
+        <MirrorStepper />
+        <PrivacyStrip />
+      </main>
+    </>
   );
 }
-
