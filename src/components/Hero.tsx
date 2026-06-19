@@ -22,14 +22,12 @@ export function Hero({ onStart }: HeroProps) {
             <ArrowRight size={18} />
           </button>
           <a className="secondary-link hero-secondary" href="#how-it-works">
-            See the method
-            <ChevronDown size={18} />
+            How it works
           </a>
         </div>
-        <div className="hero-report-preview" aria-label="Example mirror report summary">
-          <span>Mirror report preview</span>
-          <strong>You want peace, but you keep responding to intensity.</strong>
-        </div>
+      </div>
+      <div className="hero-visual" aria-hidden="true">
+        <img src="/images/hero-mirror-mirage.png" alt="" />
       </div>
     </section>
   );
