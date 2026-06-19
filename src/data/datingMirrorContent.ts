@@ -2,9 +2,9 @@ import type {
   Dimension,
   DimensionKey,
   FriendRapidFireQuestion,
+  IdealQuestion,
   QuadrantDetail,
   RelationshipType,
-  SliderQuestion,
   SwipeStatement,
 } from '../types/dating-mirror';
 
@@ -35,83 +35,95 @@ export const dimensions: Dimension[] = [
   { key: 'RWO', name: 'Relational Worth', leftLabel: 'Accommodates/Settles', rightLabel: 'Firm Boundaries' },
 ];
 
-export const sliderQuestions: SliderQuestion[] = [
+export const idealQuestions: IdealQuestion[] = [
   {
     key: 'CON',
     title: 'Consistency',
     scenario: "It's a hectic Tuesday. Your ideal partner's baseline communication looks like...",
-    leftAnchor:
-      'Spontaneous and erratic. They might drop off the grid for 8 hours, but they surprise me with a wild late-night plan.',
-    centerAnchor:
-      'Steady but independent. Balanced check-ins throughout the day, but their primary focus is their work.',
-    rightAnchor:
-      'Highly predictable. Regular, comforting updates; I always know exactly where I stand with them.',
+    options: [
+      { score: 1, label: 'Their spontaneity - replies come in bursts, and plans can change fast.' },
+      { score: 4, label: 'Their independence - they check in, but their day stays their own.' },
+      { score: 7, label: 'Their steadiness - you hear from them in ways that feel easy to trust.' },
+      { score: 10, label: 'Their predictability - you always know where you stand without guessing.' },
+    ],
   },
   {
     key: 'INT',
     title: 'Intensity',
     scenario: 'The feeling you want to experience by the end of date number two is...',
-    leftAnchor:
-      'A calm, comfortable, easy burn. It feels safe, grounded, and low-pressure - like catching up with an old friend.',
-    centerAnchor: 'Engaging and clear. Solid physical attraction mixed with easy, laughing conversation flow.',
-    rightAnchor: 'An all-consuming whirlwind. Electric, magnetic chemistry that keeps us up talking until 4 AM.',
+    options: [
+      { score: 1, label: 'The calm - it feels safe, grounded, and low-pressure.' },
+      { score: 4, label: 'The spark - there is clear attraction without pressure to rush.' },
+      { score: 7, label: 'The pull - you both want more time together and it is hard to ignore.' },
+      { score: 10, label: 'The obsession - electric chemistry keeps you talking until 4 AM.' },
+    ],
   },
   {
     key: 'AUT',
     title: 'Autonomy',
     scenario: 'It is a completely free Saturday. How are you two spending it?',
-    leftAnchor: 'Glued at the hip. Errands, gym, cooking - we do absolutely everything as a joint unit.',
-    centerAnchor:
-      'Connected flexibility. Separate hobbies or friend hangouts during the day, meeting back up for date night.',
-    rightAnchor:
-      'Total personal sovereignty. They go on a weekend trip with their friends while I relish having the entire house to myself.',
+    options: [
+      { score: 1, label: 'The closeness - you do most things as a unit.' },
+      { score: 4, label: 'The balance - separate plans still lead back to each other.' },
+      { score: 7, label: 'The independence - each of you protects your own routines and people.' },
+      { score: 10, label: 'The sovereignty - solo weekends and separate worlds feel natural, not threatening.' },
+    ],
   },
   {
     key: 'VAL',
     title: 'Validation-Seeking',
     scenario: 'You bring them out to a party with your friends. What makes you feel proudest?',
-    leftAnchor: 'How warm, unassuming, and deeply attentive they are to the people around them.',
-    centerAnchor: 'Their easy social confidence; they blend in seamlessly and make great small talk.',
-    rightAnchor:
-      'Their undeniable magnetism. They are high-status, striking, or hard-to-attain; everyone wants to know who they are.',
+    options: [
+      { score: 1, label: "Their warmth - people are drawn to them and it's effortless." },
+      { score: 4, label: 'Their social ease - they blend in, make good conversation, no awkwardness.' },
+      { score: 7, label: 'Their confidence - people notice them, and you notice people noticing.' },
+      { score: 10, label: "That they're rare - the room does not quite know what to make of them yet." },
+    ],
   },
   {
     key: 'GOC',
     title: 'Growth & Communication',
     scenario: 'An uncomfortable social tension or misunderstanding happens between you. Your ideal way to resolve it is...',
-    leftAnchor: 'Let it drop. We sleep it off, and it naturally evaporates by morning without digging it back up.',
-    centerAnchor: "A quick temperature check. A brief 'We good?' 'Yeah, we're good,' and we move past it.",
-    rightAnchor: 'A deep dive. We sit down immediately, unpack the emotional root causes, and process it completely.',
+    options: [
+      { score: 1, label: 'The reset - you let it cool off and move on without digging.' },
+      { score: 4, label: 'The check-in - a quick honest read is enough to feel okay.' },
+      { score: 7, label: 'The conversation - you talk through what happened and adjust.' },
+      { score: 10, label: 'The deep dive - you unpack the roots until it feels fully understood.' },
+    ],
   },
   {
     key: 'VUL',
     title: 'Vulnerability',
     scenario: 'When it comes to seeing their raw fears, flaws, and messy emotional side, your preference is...',
-    leftAnchor:
-      'A slow, highly protected burn. I want them to maintain a cool, composed, slightly mysterious edge for a long time.',
-    centerAnchor: 'Natural pacing. Peeling back the defensive layers gradually over several months as trust builds.',
-    rightAnchor: 'Raw transparency on day one. Show me your baggage, your anxieties, and your real self immediately.',
+    options: [
+      { score: 1, label: 'The mystery - they stay composed and reveal themselves slowly.' },
+      { score: 4, label: 'The pacing - trust builds before the messier parts come out.' },
+      { score: 7, label: 'The openness - they can name fears and flaws without making it a performance.' },
+      { score: 10, label: 'The rawness - they show the unfiltered version early and directly.' },
+    ],
   },
   {
     key: 'REA',
     title: 'Emotional Reactivity',
     scenario: 'You walk through the door completely overwhelmed, anxious, and venting about a horrible day. You need them to...',
-    leftAnchor: 'Be an unshakeable anchor. Stay perfectly calm, objective, and detached from my emotional storm.',
-    centerAnchor: 'Be a supportive listener. Offer comfort and a sounding board while keeping their own mood steady.',
-    rightAnchor:
-      'Be an emotional mirror. Absorb my mood, match my high energy, and get passionately invested in the situation alongside me.',
+    options: [
+      { score: 1, label: 'The anchor - they stay calm and do not absorb your storm.' },
+      { score: 4, label: 'The listener - they comfort you while keeping their own mood steady.' },
+      { score: 7, label: 'The investment - they feel with you and want to help fix the moment.' },
+      { score: 10, label: 'The mirror - they match your emotional volume and get fully pulled in.' },
+    ],
   },
   {
     key: 'RWO',
     title: 'Relational Worth',
     scenario:
       'If your partner gets deeply swept up in a massive career sprint or a personal passion project, what baseline do you claim you require?',
-    leftAnchor:
-      'Complete understanding. I am fine being a lower priority or taking a back seat while they chase their dreams.',
-    centerAnchor:
-      'A compromise. As long as we have structured, scheduled quality time once or twice a week, I feel secure.',
-    rightAnchor:
-      "Uncompromised priority. If they can't actively maintain our connection as a front-row focus, I am walking away.",
+    options: [
+      { score: 1, label: 'The patience - you can accept being a lower priority during a big season.' },
+      { score: 4, label: 'The agreement - scheduled quality time is enough to feel secure.' },
+      { score: 7, label: 'The standard - they need to show active effort even when life gets full.' },
+      { score: 10, label: 'The boundary - if connection stops being a real priority, you walk.' },
+    ],
   },
 ];
 
@@ -362,4 +374,3 @@ export const relationshipContext: Record<RelationshipType, string> = {
   work_friend: 'around work and after-hours plans',
   others: 'from up close',
 };
-

@@ -30,13 +30,18 @@ export interface QuadrantDetail {
   vibe: string;
 }
 
-export interface SliderQuestion {
+export type IdealQuestionScore = 1 | 4 | 7 | 10;
+
+export interface IdealQuestionOption {
+  label: string;
+  score: IdealQuestionScore;
+}
+
+export interface IdealQuestion {
   key: DimensionKey;
   title: string;
   scenario: string;
-  leftAnchor: string;
-  centerAnchor: string;
-  rightAnchor: string;
+  options: IdealQuestionOption[];
 }
 
 export interface SwipeStatement {

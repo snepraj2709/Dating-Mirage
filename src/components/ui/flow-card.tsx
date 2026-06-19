@@ -9,12 +9,14 @@ interface FlowCardProps {
   headerMeta: React.ReactNode;
   progressValue: number;
   progressLabel?: string;
+  progressVariant?: React.ComponentProps<typeof ProgressRail>['variant'];
   children: React.ReactNode;
   footerLeft: React.ReactNode;
   footerRight?: React.ReactNode;
   className?: string;
   contentClassName?: string;
   flowClassName?: string;
+  headerClassName?: string;
   'aria-labelledby'?: string;
 }
 
@@ -23,12 +25,14 @@ function FlowCard({
   headerMeta,
   progressValue,
   progressLabel,
+  progressVariant,
   children,
   footerLeft,
   footerRight,
   className,
   contentClassName,
   flowClassName,
+  headerClassName,
   'aria-labelledby': ariaLabelledby,
 }: FlowCardProps) {
   return (
@@ -47,11 +51,16 @@ function FlowCard({
       >
         <section aria-labelledby={ariaLabelledby}>
           <header className="grid gap-3 max-[620px]:gap-2.5">
-            <div className="flex items-center justify-between gap-4 text-[0.9rem] font-medium uppercase tracking-normal text-subtle-foreground max-[620px]:flex-col max-[620px]:items-start max-[620px]:gap-2.5">
+            <div
+              className={cn(
+                'flex items-center justify-between gap-4 text-[0.9rem] font-medium uppercase tracking-normal text-subtle-foreground max-[620px]:flex-col max-[620px]:items-start max-[620px]:gap-2.5',
+                headerClassName,
+              )}
+            >
               <span>{headerLabel}</span>
               <span>{headerMeta}</span>
             </div>
-            <ProgressRail value={progressValue} aria-label={progressLabel} />
+            <ProgressRail value={progressValue} variant={progressVariant} aria-label={progressLabel} />
           </header>
 
           <div className={cn('grid gap-[clamp(18px,2.5vh,28px)]', contentClassName)}>

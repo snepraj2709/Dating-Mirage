@@ -125,45 +125,6 @@
   }
 }
 
-.score-range {
-  --score-percent: 50%;
-  width: 100%;
-  accent-color: var(--primary);
-}
-
-.score-range::-webkit-slider-runnable-track {
-  height: 8px;
-  border-radius: 999px;
-  background: linear-gradient(
-    to right,
-    var(--primary) 0 var(--score-percent),
-    var(--border-strong) var(--score-percent) 100%
-  );
-}
-
-.score-range::-webkit-slider-thumb {
-  width: 22px;
-  height: 22px;
-  margin-top: -7px;
-}
-
-.score-range::-moz-range-track {
-  height: 8px;
-  border-radius: 999px;
-  background: var(--border-strong);
-}
-
-.score-range::-moz-range-progress {
-  height: 8px;
-  border-radius: 999px;
-  background: var(--primary);
-}
-
-.score-range::-moz-range-thumb {
-  width: 22px;
-  height: 22px;
-}
-
 .simulator-range {
   width: 100%;
   height: 34px;
