@@ -1,8 +1,8 @@
-# Dating Mirror 360 Product PRD
+# Dating Mirror   Product PRD
 
 | Field | Details |
 | --- | --- |
-| Product Name | Dating Mirror 360 |
+| Product Name | Dating Mirror   |
 | Feature Set | The Core Johari Engine (V1.0) |
 | Target Audience | Singles in their 20s and 30s experiencing dating fatigue. |
 | Objective | Deliver a viral, highly shareable "Spotify Wrapped for your love life" by quantifying the gap between a user's stated desires, their historical choices, and their friends' observations. |

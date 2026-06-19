@@ -1,4 +1,4 @@
-# AI Handoff Specification: Dating Mirror 360
+# AI Handoff Specification: Dating Mirror  
 
 ## 1. Source Documents & Precedence
 
