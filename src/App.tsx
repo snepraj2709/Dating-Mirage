@@ -1,19 +1,21 @@
 import { useState } from 'react';
-import { createOrUpdateSession } from './api/client';
+import { createOrUpdateSession, submitActualProfile } from './api/client';
 import { Hero } from './components/Hero';
 import { MirrorStepper } from './components/MirrorStepper';
 import { Navigation } from './components/Navigation';
 import { PrivacyStrip } from './components/PrivacyStrip';
 import { Step1IdealFlow } from './components/Step1IdealFlow';
-import { clearIdealDraft, loadStoredSession, saveStoredSession } from './lib/localState';
+import { Step2SwipeMatrix } from './components/Step2SwipeMatrix';
+import { clearActualSwipes, clearIdealDraft, loadStoredSession, saveStoredSession } from './lib/localState';
 import type { UserSession, VectorProfile } from './types/dating-mirror';
 
-type AppStage = 'landing' | 'ideal' | 'actual';
+type AppStage = 'landing' | 'ideal' | 'actual' | 'share';
 
 export default function App() {
   const [stage, setStage] = useState<AppStage>('landing');
   const [session, setSession] = useState<UserSession | null>(() => loadStoredSession());
   const [isSavingIdeal, setIsSavingIdeal] = useState(false);
+  const [isSavingActual, setIsSavingActual] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
   const handleIdealComplete = async (idealProfile: VectorProfile) => {
@@ -45,6 +47,46 @@ export default function App() {
     }
   };
 
+  const handleActualComplete = async (actualProfile: VectorProfile) => {
+    const currentSession =
+      session ??
+      ({
+        id: `local-${crypto.randomUUID()}`,
+        idealProfile: null,
+        actualProfile: null,
+        socialProfile: null,
+        friendCount: 0,
+        reportUnlocked: false,
+      } satisfies UserSession);
+
+    setIsSavingActual(true);
+    setSaveError(null);
+
+    try {
+      if (currentSession.id.startsWith('local-')) {
+        throw new Error('Local session has no backend id yet');
+      }
+
+      const nextSession = await submitActualProfile(currentSession.id, actualProfile);
+      setSession(nextSession);
+      saveStoredSession(nextSession);
+      clearActualSwipes();
+      setStage('share');
+    } catch {
+      const localSession: UserSession = {
+        ...currentSession,
+        actualProfile,
+      };
+      setSession(localSession);
+      saveStoredSession(localSession);
+      clearActualSwipes();
+      setSaveError('Actual pattern saved locally. Backend sync can retry later.');
+      setStage('share');
+    } finally {
+      setIsSavingActual(false);
+    }
+  };
+
   if (stage === 'ideal') {
     return (
       <Step1IdealFlow
@@ -58,15 +100,26 @@ export default function App() {
 
   if (stage === 'actual') {
     return (
+      <Step2SwipeMatrix
+        isSaving={isSavingActual}
+        saveError={saveError}
+        onBack={() => setStage('ideal')}
+        onComplete={handleActualComplete}
+      />
+    );
+  }
+
+  if (stage === 'share') {
+    return (
       <main className="stage-placeholder">
-        <button className="ghost-button" onClick={() => setStage('ideal')}>
-          Back to ideal
+        <button className="ghost-button" onClick={() => setStage('actual')}>
+          Back to swipes
         </button>
         <section className="placeholder-card">
-          <p className="eyebrow">Step 2</p>
-          <h1>Who I Actually Choose</h1>
+          <p className="eyebrow">Step 3</p>
+          <h1>What Friends Notice</h1>
           {saveError && <p className="inline-error">{saveError}</p>}
-          <p>The swipe matrix plugs into this shell in the next commit.</p>
+          <p>The private friend link flow plugs into this shell in the next commit.</p>
         </section>
       </main>
     );

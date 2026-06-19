@@ -1,6 +1,7 @@
 import type { UserSession, VectorProfile } from '../types/dating-mirror';
 
 const IDEAL_DRAFT_KEY = 'dating-mirror:ideal-draft';
+const ACTUAL_SWIPES_KEY = 'dating-mirror:actual-swipes';
 const SESSION_KEY = 'dating-mirror:session';
 
 export function loadIdealDraft(): Partial<VectorProfile> {
@@ -20,6 +21,23 @@ export function clearIdealDraft() {
   window.localStorage.removeItem(IDEAL_DRAFT_KEY);
 }
 
+export function loadActualSwipes(): Record<string, 'left' | 'right'> {
+  try {
+    const raw = window.localStorage.getItem(ACTUAL_SWIPES_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+export function saveActualSwipes(swipes: Record<string, 'left' | 'right'>) {
+  window.localStorage.setItem(ACTUAL_SWIPES_KEY, JSON.stringify(swipes));
+}
+
+export function clearActualSwipes() {
+  window.localStorage.removeItem(ACTUAL_SWIPES_KEY);
+}
+
 export function loadStoredSession(): UserSession | null {
   try {
     const raw = window.localStorage.getItem(SESSION_KEY);
@@ -36,4 +54,3 @@ export function saveStoredSession(session: UserSession) {
 export function clearStoredSession() {
   window.localStorage.removeItem(SESSION_KEY);
 }
-
