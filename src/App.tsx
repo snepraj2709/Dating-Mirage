@@ -1,17 +1,26 @@
 import { useState } from 'react';
-import { createOrUpdateSession, submitActualProfile } from './api/client';
+import { createOrUpdateSession, getSession, submitActualProfile } from './api/client';
+import { FriendRapidFireDeck } from './components/FriendRapidFireDeck';
+import { FriendSharePanel } from './components/FriendSharePanel';
 import { Hero } from './components/Hero';
 import { MirrorStepper } from './components/MirrorStepper';
 import { Navigation } from './components/Navigation';
 import { PrivacyStrip } from './components/PrivacyStrip';
 import { Step1IdealFlow } from './components/Step1IdealFlow';
 import { Step2SwipeMatrix } from './components/Step2SwipeMatrix';
-import { clearActualSwipes, clearIdealDraft, loadStoredSession, saveStoredSession } from './lib/localState';
+import {
+  clearActualSwipes,
+  clearIdealDraft,
+  loadLocalFriendProfiles,
+  loadStoredSession,
+  saveStoredSession,
+} from './lib/localState';
 import type { UserSession, VectorProfile } from './types/dating-mirror';
 
-type AppStage = 'landing' | 'ideal' | 'actual' | 'share';
+type AppStage = 'landing' | 'ideal' | 'actual' | 'share' | 'reveal';
 
 export default function App() {
+  const friendMatch = window.location.pathname.match(/^\/friend\/([^/]+)/);
   const [stage, setStage] = useState<AppStage>('landing');
   const [session, setSession] = useState<UserSession | null>(() => loadStoredSession());
   const [isSavingIdeal, setIsSavingIdeal] = useState(false);
@@ -87,6 +96,43 @@ export default function App() {
     }
   };
 
+  const refreshFriendCount = async () => {
+    if (!session) {
+      return;
+    }
+
+    setSaveError(null);
+    try {
+      if (session.id.startsWith('local-')) {
+        throw new Error('Local session');
+      }
+
+      const nextSession = await getSession(session.id);
+      setSession(nextSession);
+      saveStoredSession(nextSession);
+    } catch {
+      const friendCount = loadLocalFriendProfiles(session.id).length;
+      const nextSession = {
+        ...session,
+        friendCount,
+        reportUnlocked: friendCount >= 2,
+      };
+      setSession(nextSession);
+      saveStoredSession(nextSession);
+      setSaveError('Using locally saved friend responses.');
+    }
+  };
+
+  if (friendMatch) {
+    const searchParams = new URLSearchParams(window.location.search);
+    return (
+      <FriendRapidFireDeck
+        sessionId={decodeURIComponent(friendMatch[1])}
+        displayName={searchParams.get('name') ?? 'your friend'}
+      />
+    );
+  }
+
   if (stage === 'ideal') {
     return (
       <Step1IdealFlow
@@ -111,15 +157,26 @@ export default function App() {
 
   if (stage === 'share') {
     return (
+      <FriendSharePanel
+        session={session}
+        statusMessage={saveError}
+        onBack={() => setStage('actual')}
+        onRefresh={refreshFriendCount}
+        onContinue={() => setStage('reveal')}
+      />
+    );
+  }
+
+  if (stage === 'reveal') {
+    return (
       <main className="stage-placeholder">
-        <button className="ghost-button" onClick={() => setStage('actual')}>
-          Back to swipes
+        <button className="ghost-button" onClick={() => setStage('share')}>
+          Back to sharing
         </button>
         <section className="placeholder-card">
-          <p className="eyebrow">Step 3</p>
-          <h1>What Friends Notice</h1>
-          {saveError && <p className="inline-error">{saveError}</p>}
-          <p>The private friend link flow plugs into this shell in the next commit.</p>
+          <p className="eyebrow">Step 4</p>
+          <h1>The Mirror Analysis</h1>
+          <p>The Johari reveal and share card plug into this shell in the next commit.</p>
         </section>
       </main>
     );

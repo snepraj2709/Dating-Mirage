@@ -534,6 +534,203 @@ p {
   min-height: 56px;
 }
 
+.share-screen,
+.friend-screen {
+  min-height: 100vh;
+  width: min(1040px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 24px 0 56px;
+}
+
+.share-layout {
+  display: grid;
+  min-height: calc(100vh - 144px);
+  align-items: center;
+  gap: 28px;
+  grid-template-columns: minmax(0, 0.95fr) minmax(360px, 1.05fr);
+}
+
+.share-copy h1 {
+  max-width: 720px;
+  font-size: clamp(2.7rem, 8vw, 5.7rem);
+}
+
+.share-card-panel,
+.friend-onboarding,
+.friend-question-card,
+.friend-complete {
+  border: 1px solid var(--glass-border);
+  border-radius: 34px;
+  background: var(--glass);
+  padding: clamp(24px, 5vw, 42px);
+  box-shadow: var(--shadow-pink);
+  backdrop-filter: blur(18px);
+}
+
+.text-field {
+  display: grid;
+  gap: 8px;
+  color: var(--crush-dark);
+  font-weight: 900;
+}
+
+.text-field input {
+  min-height: 50px;
+  border: 1px solid rgba(235, 72, 221, 0.18);
+  border-radius: 16px;
+  background: rgba(255, 249, 250, 0.78);
+  padding: 0 16px;
+  color: var(--crush-dark);
+  font-weight: 750;
+}
+
+.share-url-box {
+  display: grid;
+  min-height: 58px;
+  grid-template-columns: auto 1fr;
+  gap: 10px;
+  align-items: center;
+  overflow: hidden;
+  border-radius: 18px;
+  background: var(--crush-card);
+  margin: 18px 0;
+  padding: 14px;
+  color: var(--crush-primary);
+}
+
+.share-url-box span {
+  overflow: hidden;
+  color: var(--crush-dark);
+  font-size: 0.92rem;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.share-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.unlock-meter {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  align-items: center;
+  border: 1px solid rgba(235, 72, 221, 0.12);
+  border-radius: 22px;
+  margin-bottom: 18px;
+  padding: 16px;
+}
+
+.meter-count {
+  display: inline-flex;
+  width: 62px;
+  height: 62px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--crush-primary);
+  color: #fff;
+  font-weight: 950;
+}
+
+.unlock-meter h3,
+.unlock-meter p {
+  margin-bottom: 0;
+}
+
+.privacy-header {
+  position: sticky;
+  z-index: 3;
+  top: 14px;
+  display: flex;
+  width: fit-content;
+  min-height: 46px;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--glass-border);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.82);
+  margin: 0 auto 22px;
+  padding: 0 18px;
+  color: var(--crush-dark);
+  font-weight: 900;
+  box-shadow: var(--shadow-pink);
+  backdrop-filter: blur(18px);
+}
+
+.friend-onboarding,
+.rapid-fire-stage,
+.friend-complete {
+  width: min(760px, 100%);
+  margin: 0 auto;
+}
+
+.friend-onboarding {
+  margin-top: clamp(32px, 10vh, 96px);
+}
+
+.friend-onboarding h1,
+.friend-question-card h1,
+.friend-complete h1 {
+  font-size: clamp(2.3rem, 8vw, 4.8rem);
+}
+
+.relationship-grid,
+.friend-choice-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.relationship-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 22px;
+}
+
+.relationship-option,
+.friend-choice-grid button {
+  display: flex;
+  min-height: 74px;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid rgba(235, 72, 221, 0.14);
+  border-radius: 22px;
+  background: rgba(255, 249, 250, 0.78);
+  padding: 16px;
+  color: var(--crush-dark);
+  font-weight: 900;
+  text-align: left;
+}
+
+.friend-choice-grid {
+  grid-template-columns: 1fr 1fr;
+  margin-top: 22px;
+}
+
+.friend-choice-grid button {
+  min-height: 190px;
+  align-items: flex-start;
+  font-size: 1.05rem;
+  line-height: 1.35;
+}
+
+.friend-choice-grid button:hover,
+.relationship-option:hover {
+  border-color: rgba(235, 72, 221, 0.42);
+  box-shadow: 0 18px 38px -30px rgba(235, 72, 221, 0.85);
+}
+
+.submitting-note {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+  font-weight: 850;
+}
+
 .swipe-screen {
   max-width: 780px;
 }
@@ -749,5 +946,31 @@ p {
   .swipe-actions {
     position: sticky;
     bottom: 14px;
+  }
+
+  .share-screen,
+  .friend-screen {
+    width: min(100% - 24px, 520px);
+  }
+
+  .share-layout {
+    min-height: auto;
+    grid-template-columns: 1fr;
+    padding-top: 24px;
+  }
+
+  .relationship-grid,
+  .friend-choice-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .friend-choice-grid button {
+    min-height: 132px;
+  }
+
+  .privacy-header {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
   }
 }

@@ -3,6 +3,7 @@ import type { UserSession, VectorProfile } from '../types/dating-mirror';
 const IDEAL_DRAFT_KEY = 'dating-mirror:ideal-draft';
 const ACTUAL_SWIPES_KEY = 'dating-mirror:actual-swipes';
 const SESSION_KEY = 'dating-mirror:session';
+const LOCAL_FRIEND_PREFIX = 'dating-mirror:friend-feedback:';
 
 export function loadIdealDraft(): Partial<VectorProfile> {
   try {
@@ -53,4 +54,23 @@ export function saveStoredSession(session: UserSession) {
 
 export function clearStoredSession() {
   window.localStorage.removeItem(SESSION_KEY);
+}
+
+export function loadLocalFriendProfiles(sessionId: string): VectorProfile[] {
+  try {
+    const raw = window.localStorage.getItem(`${LOCAL_FRIEND_PREFIX}${sessionId}`);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function appendLocalFriendProfile(sessionId: string, profile: VectorProfile): number {
+  const profiles = [...loadLocalFriendProfiles(sessionId), profile];
+  window.localStorage.setItem(`${LOCAL_FRIEND_PREFIX}${sessionId}`, JSON.stringify(profiles));
+  return profiles.length;
+}
+
+export function clearLocalFriendProfiles(sessionId: string) {
+  window.localStorage.removeItem(`${LOCAL_FRIEND_PREFIX}${sessionId}`);
 }
