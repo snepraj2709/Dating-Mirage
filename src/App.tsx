@@ -10,6 +10,7 @@ import { MirrorSimulator } from './components/MirrorSimulator';
 import { Navigation } from './components/Navigation';
 import { PrivacyStrip } from './components/PrivacyStrip';
 import { Step1IdealFlow } from './components/Step1IdealFlow';
+import { Step2RealityIntro } from './components/Step2RealityIntro';
 import { Step2SwipeMatrix } from './components/Step2SwipeMatrix';
 import { Button } from './components/ui/button';
 import { CompactLoader, InlineError } from './components/ui/flow';
@@ -27,7 +28,7 @@ import {
 import { aggregateSocialProfile, calculateJohariReport } from './lib/scoring';
 import type { JohariReport, UserSession, VectorProfile } from './types/dating-mirror';
 
-type AppStage = 'landing' | 'ideal' | 'actual' | 'share' | 'reveal';
+type AppStage = 'landing' | 'ideal' | 'actualIntro' | 'actual' | 'share' | 'reveal';
 
 export default function App() {
   const friendMatch = window.location.pathname.match(/^\/friend\/([^/]+)/);
@@ -49,7 +50,7 @@ export default function App() {
       setSession(nextSession);
       saveStoredSession(nextSession);
       clearIdealDraft();
-      setStage('actual');
+      setStage('actualIntro');
     } catch {
       const localSession: UserSession = {
         id: session?.id ?? `local-${crypto.randomUUID()}`,
@@ -63,7 +64,7 @@ export default function App() {
       saveStoredSession(localSession);
       clearIdealDraft();
       setSaveError('Saved locally. Start the backend before final report sync.');
-      setStage('actual');
+      setStage('actualIntro');
     } finally {
       setIsSavingIdeal(false);
     }
@@ -257,9 +258,23 @@ export default function App() {
     return (
       <Step1IdealFlow
         isSaving={isSavingIdeal}
+        initialProfile={session?.idealProfile}
         saveError={saveError}
         onBack={() => setStage('landing')}
         onComplete={handleIdealComplete}
+      />
+    );
+  }
+
+  if (stage === 'actualIntro') {
+    return (
+      <Step2RealityIntro
+        statusMessage={saveError}
+        onBack={() => setStage('ideal')}
+        onContinue={() => {
+          setSaveError(null);
+          setStage('actual');
+        }}
       />
     );
   }
@@ -269,7 +284,7 @@ export default function App() {
       <Step2SwipeMatrix
         isSaving={isSavingActual}
         saveError={saveError}
-        onBack={() => setStage('ideal')}
+        onBack={() => setStage('actualIntro')}
         onComplete={handleActualComplete}
       />
     );

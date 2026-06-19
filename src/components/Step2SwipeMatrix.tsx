@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowLeft, Check, RotateCcw, X } from 'lucide-react';
+import { ArrowLeft, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { FlowShell, InlineError, TopBar } from '@/components/ui/flow';
-import { Eyebrow } from '@/components/ui/pill';
-import { ProgressRail } from '@/components/ui/progress-rail';
+import { FlowCard } from '@/components/ui/flow-card';
+import { InlineError } from '@/components/ui/flow';
+import { Pill } from '@/components/ui/pill';
 import { cn } from '@/lib/utils';
 import { swipeStatements } from '../data/datingMirrorContent';
 import { loadActualSwipes, saveActualSwipes } from '../lib/localState';
@@ -110,99 +110,96 @@ export function Step2SwipeMatrix({ isSaving, saveError, onBack, onComplete }: St
   }
 
   return (
-    <FlowShell className="max-w-[780px]">
-      <TopBar>
-        <Button variant="ghostPill" onClick={onBack}>
+    <FlowCard
+      aria-labelledby="swipe-title"
+      headerLabel="LAUNCH MY MIRROR: STEP 2 (REALITY SWIPES)"
+      headerMeta={`REALITY SWIPE ${progress} OF ${swipeStatements.length}`}
+      progressValue={(progress / swipeStatements.length) * 100}
+      progressLabel={`Reality swipe ${progress} of ${swipeStatements.length}`}
+      contentClassName="place-items-center"
+      footerLeft={
+        <Button variant="ghostPill" onClick={onBack} className="max-[620px]:w-full">
           <ArrowLeft size={18} />
-          Back to ideal
+          Back
         </Button>
-        <Button variant="ghostPill" onClick={resetDeck}>
+      }
+      footerRight={
+        <Button variant="ghostPill" size="compact" onClick={resetDeck} className="max-[620px]:w-full">
           <RotateCcw size={17} />
           Reset
         </Button>
-      </TopBar>
+      }
+    >
+      <div className="grid w-full max-w-[940px] justify-items-center gap-[clamp(22px,3.2vh,34px)] text-center">
+        <Pill className="min-h-[34px] border-border-strong bg-muted px-5 text-[0.86rem] uppercase tracking-normal text-foreground">
+          ACTUAL HISTORY SWIPES
+        </Pill>
 
-      <section className="grid gap-[18px]" aria-labelledby="swipe-title">
-        <ProgressRail
-          value={(progress / swipeStatements.length) * 100}
-          aria-label={`Card ${progress} of ${swipeStatements.length}`}
-        />
-        <Eyebrow>
-          {progress}/{swipeStatements.length} - Who I Actually Choose
-        </Eyebrow>
+        <h2
+          className="mb-0 text-[clamp(1.75rem,3.6vw,2.85rem)] leading-[1.08] text-foreground max-[620px]:text-[clamp(1.55rem,8vw,2.15rem)]"
+          id="swipe-title"
+        >
+          How frequently did this dynamic happen in your past?
+        </h2>
 
-        <p className="mb-0 max-w-[760px] font-medium leading-[1.5] text-foreground">
-          Aspirations are beautiful, but patterns live in our history. Think of your last
-          2-3 relationships or situationships. Swipe right if this happened frequently.
-        </p>
-
-        <div className="grid gap-[22px]">
-          <div className="relative h-[clamp(430px,66vh,580px)] touch-pan-y max-[620px]:h-[470px]" aria-live="polite">
-            <div className="absolute inset-0 grid select-none content-start overflow-hidden rounded-lg border border-border bg-card p-[clamp(22px,5vw,42px)] opacity-20 shadow-none [transform:translateY(32px)_scale(0.9)]" />
-            <div className="absolute inset-0 grid select-none content-start overflow-hidden rounded-lg border border-border bg-card p-[clamp(22px,5vw,42px)] opacity-40 shadow-none [transform:translateY(16px)_scale(0.95)]" />
-            {current && (
-              <article
-                className="absolute inset-0 grid cursor-grab select-none content-start overflow-hidden rounded-lg border border-border bg-card p-[clamp(22px,5vw,42px)] shadow-none transition-transform duration-100 ease-out active:cursor-grabbing"
-                style={{ transform: `translateX(${dragX}px) rotate(${dragX / 18}deg)` }}
-                onPointerDown={(event) => {
-                  setDragStart(event.clientX);
-                  event.currentTarget.setPointerCapture(event.pointerId);
-                }}
-                onPointerMove={(event) => {
-                  if (dragStart !== null) {
-                    setDragX(event.clientX - dragStart);
-                  }
-                }}
-                onPointerUp={(event) => handlePointerUp(event.clientX)}
-                onPointerCancel={() => {
-                  setDragStart(null);
-                  setDragX(0);
-                }}
-              >
-                {stamp && (
-                  <span
-                    className={cn(
-                      'absolute bottom-[30px] left-[26px] z-10 rounded-lg border-2 border-current px-3.5 py-2.5 font-medium tracking-normal text-foreground [transform:rotate(-8deg)]',
-                      stamp === 'right' && 'left-auto right-[26px] [transform:rotate(8deg)]',
-                      stamp === 'left' && 'text-muted-foreground',
-                    )}
-                  >
-                    {stamp === 'right' ? 'HELL YES!' : 'THANK U, NEXT'}
-                  </span>
-                )}
-                <h2
-                  className="mb-0 text-[clamp(1.65rem,3.6vw,2.75rem)] leading-[1.08] text-foreground"
-                  id="swipe-title"
+        <div className="relative w-full touch-pan-y" aria-live="polite">
+          {current && (
+            <article
+              className="relative grid min-h-[clamp(180px,28vh,250px)] cursor-grab select-none place-items-center overflow-hidden rounded-lg border border-border bg-muted p-[clamp(22px,4vw,46px)] shadow-none transition-transform duration-100 ease-out active:cursor-grabbing"
+              style={{ transform: `translateX(${dragX}px) rotate(${dragX / 24}deg)` }}
+              onPointerDown={(event) => {
+                setDragStart(event.clientX);
+                event.currentTarget.setPointerCapture(event.pointerId);
+              }}
+              onPointerMove={(event) => {
+                if (dragStart !== null) {
+                  setDragX(event.clientX - dragStart);
+                }
+              }}
+              onPointerUp={(event) => handlePointerUp(event.clientX)}
+              onPointerCancel={() => {
+                setDragStart(null);
+                setDragX(0);
+              }}
+            >
+              {stamp && (
+                <span
+                  className={cn(
+                    'absolute left-5 top-5 z-10 rounded-full border border-current bg-card px-3.5 py-2 text-[0.78rem] font-medium uppercase tracking-normal text-muted-foreground [transform:rotate(-6deg)]',
+                    stamp === 'right' && 'left-auto right-5 text-primary [transform:rotate(6deg)]',
+                  )}
                 >
-                  {current.statement}
-                </h2>
-              </article>
-            )}
-          </div>
-
-          <div className="grid grid-cols-2 gap-3 max-[620px]:sticky max-[620px]:bottom-3.5" aria-label="Swipe decisions">
-            <Button
-              variant="choiceReject"
-              size="choice"
-              onClick={() => submitSwipe('left')}
-              disabled={isSaving || isShowingFeedback}
-            >
-              <X size={24} />
-              Rarely
-            </Button>
-            <Button
-              variant="choiceAccept"
-              size="choice"
-              onClick={() => submitSwipe('right')}
-              disabled={isSaving || isShowingFeedback}
-            >
-              <Check size={24} />
-              Frequently
-            </Button>
-          </div>
-          {saveError && <InlineError>{saveError}</InlineError>}
+                  {stamp === 'right' ? 'Frequently' : 'Rarely'}
+                </span>
+              )}
+              <p className="mb-0 max-w-[820px] text-[clamp(1.18rem,2.6vw,2rem)] font-medium italic leading-[1.45] text-foreground max-[620px]:text-[1.08rem]">
+                "{current.statement}"
+              </p>
+            </article>
+          )}
         </div>
-      </section>
-    </FlowShell>
+
+        <div className="grid w-full max-w-[440px] grid-cols-2 gap-3 max-[620px]:max-w-none" aria-label="Swipe decisions">
+          <Button
+            variant="choiceReject"
+            size="choice"
+            onClick={() => submitSwipe('left')}
+            disabled={isSaving || isShowingFeedback}
+          >
+            Rarely 💔
+          </Button>
+          <Button
+            size="choice"
+            className="border-primary bg-primary text-primary-foreground hover:border-primary-hover hover:bg-primary-hover"
+            onClick={() => submitSwipe('right')}
+            disabled={isSaving || isShowingFeedback}
+          >
+            Frequently 💘
+          </Button>
+        </div>
+
+        {saveError && <InlineError className="mb-0 text-center">{saveError}</InlineError>}
+      </div>
+    </FlowCard>
   );
 }
