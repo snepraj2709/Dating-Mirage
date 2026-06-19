@@ -1,7 +1,7 @@
 import math
 from typing import Dict, Iterable, List, Optional
 
-from schemas import DimensionJohariResultSchema, JohariReportResponse, QuadrantKey, VectorProfileSchema
+from .schemas import DimensionJohariResultSchema, JohariReportResponse, QuadrantKey, VectorProfileSchema
 
 
 DIMENSION_KEYS = ["CON", "INT", "AUT", "VAL", "GOC", "VUL", "REA", "RWO"]
@@ -75,4 +75,3 @@ def calculate_johari_report(
         dimensions=dimensions,
         featured_dimensions=featured_dimensions,
     )
-

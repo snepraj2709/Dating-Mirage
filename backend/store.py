@@ -4,8 +4,8 @@ from pathlib import Path
 from typing import List, Optional
 from uuid import uuid4
 
-from schemas import UserSessionResponse, VectorProfileSchema
-from scoring import aggregate_social_profile
+from .schemas import UserSessionResponse, VectorProfileSchema
+from .scoring import aggregate_social_profile
 
 
 DATABASE_PATH = Path(__file__).with_name("dating_mirror.db")
@@ -151,4 +151,3 @@ def delete_session(session_id: str) -> bool:
         connection.execute("DELETE FROM friend_feedback WHERE session_id = ?", (session_id,))
         cursor = connection.execute("DELETE FROM sessions WHERE id = ?", (session_id,))
     return cursor.rowcount > 0
-

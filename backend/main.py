@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
-from schemas import (
+from .schemas import (
     CreateOrUpdateSessionRequest,
     DeleteSessionResponse,
     FriendFeedbackResponse,
@@ -10,8 +10,8 @@ from schemas import (
     SubmitFriendRapidFireRequest,
     UserSessionResponse,
 )
-from scoring import calculate_johari_report
-from store import (
+from .scoring import calculate_johari_report
+from .store import (
     create_or_update_session,
     delete_session,
     get_session,
@@ -94,4 +94,3 @@ def read_report(session_id: str) -> JohariReportResponse:
 @app.delete("/sessions/{session_id}", response_model=DeleteSessionResponse)
 def burn_session(session_id: str) -> DeleteSessionResponse:
     return DeleteSessionResponse(deleted=delete_session(session_id))
-
