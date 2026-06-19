@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { ArrowLeft, Check, HeartHandshake, RotateCcw, X } from 'lucide-react';
+import { ArrowLeft, Check, RotateCcw, X } from 'lucide-react';
 import { swipeStatements } from '../data/datingMirrorContent';
 import { loadActualSwipes, saveActualSwipes } from '../lib/localState';
 import { buildActualProfile } from '../lib/scoring';
@@ -108,13 +108,10 @@ export function Step2SwipeMatrix({ isSaving, saveError, onBack, onComplete }: St
           {progress}/{swipeStatements.length} - Who I Actually Choose
         </p>
 
-        <div className="transition-panel">
-          <HeartHandshake size={24} />
-          <p>
-            Aspirations are beautiful, but patterns live in our history. Think of your last
-            2-3 relationships or situationships. Swipe right if this happened frequently.
-          </p>
-        </div>
+        <p className="swipe-disclaimer">
+          Aspirations are beautiful, but patterns live in our history. Think of your last
+          2-3 relationships or situationships. Swipe right if this happened frequently.
+        </p>
 
         <div className="swipe-layout">
           <div className="swipe-deck" aria-live="polite">
@@ -144,7 +141,6 @@ export function Step2SwipeMatrix({ isSaving, saveError, onBack, onComplete }: St
                     {stamp === 'right' ? 'HELL YES!' : 'THANK U, NEXT'}
                   </span>
                 )}
-                <span className="dimension-token">{current.key}</span>
                 <h1 id="swipe-title">{current.statement}</h1>
               </article>
             )}
@@ -166,4 +162,3 @@ export function Step2SwipeMatrix({ isSaving, saveError, onBack, onComplete }: St
     </main>
   );
 }
-

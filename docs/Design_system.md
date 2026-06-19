@@ -1,248 +1,302 @@
 # Dating Mirror Design System
 
-## Theme: Electric Crush 💖
+## Direction
 
-**Mode:** Light mode only
+Dating Mirror uses a restrained light-mode interface: white surfaces, black text, thin gray structure, and one pink accent used sparingly for the most important actions or moments.
 
-This document defines the visual identity, UI components, interaction design, and emotional design guidelines for Dating Mirror.
+The product should feel clear, direct, and modern. Avoid decorative romance styling, heavy gradients, glass effects, card shadows, and pink-heavy layouts.
 
-The system is optimized for a Gen-Z and Millennial US audience in their 20s and 30s who appreciate modern aesthetic trends, self-awareness diagnostics, and lighthearted relational self-deprecation.
+## Core Principles
 
-## 1. Brand Personality & Voice 🧠✨
+- Light mode only.
+- Default UI is black, white, and gray.
+- Pink is reserved for primary CTAs, critical active states, and the single most important emphasis on a screen.
+- Cards and panels use borders, not shadows.
+- Layouts should feel calm and spacious, not decorative.
+- Interface copy should be plain, useful, and confident.
+- Visual hierarchy should come from spacing, typography, contrast, and layout before color.
 
-### The Vibe
+## Color System
 
-Best-friend-holding-up-a-mirror: highly empathetic, witty, supportive, and unapologetically honest.
-
-The experience should feel like a fun psychological assessment mixed with a late-night group chat roast.
-
-### Emoji Guidelines
-
-Use emojis heavily to break cognitive friction and add personality.
-
-### Core Symbols
-
-| Symbol | Meaning |
-| --- | --- |
-| 💖 | Electric Heart |
-| 💕 | Spiraling Gaps |
-| 🧠 | The Psychological Engine |
-| 🪞 | The Mirror |
-| 💗 | Vibe Alignment |
-| 🦄 | The Theoretical Ideal |
-
-### Tone Rule
-
-Avoid dry, clinical language.
-
-Instead of:
-
-> Attachment Anxiety Triggered
-
-Write:
-
-> Your inner love-alarm starts ringing at 100% volume 🚨
-
-## 2. Color Palette 🎨
-
-This is a light-mode-only application. The visual direction uses soft, pillowy blush backgrounds contrasted with high-voltage electric pink interactive elements.
-
-```text
-                  [#EB48DD] - PRIMARY ACCENT (Electric Crush)
-                                     |
-    [#FFF9FA] -----------------------+----------------------- [#2A1B24]
-  BG BASE (Sweet Cream)                                   TEXT MAIN (Deep Plum)
-```
-
-### A. Brand Colors
+### Neutral Palette
 
 | Token | Hex | Usage |
 | --- | --- | --- |
-| Primary Accent, "Electric Crush" | `#EB48DD` | Interactive sliders, primary buttons, dynamic highlights, active radar vectors, and key alert text. |
-| Secondary Sweetener, "Pink Cotton Candy" | `#FF85B3` | Hover states, secondary metrics, and decorative gradients. |
-| Warm Blush Glow, "Bubblegum Cloud" | `#FFF2F6` | Neutral container backgrounds, form fields, and subtle card borders. |
+| `--color-bg` | `#FFFFFF` | App background and main page canvas. |
+| `--color-surface` | `#FFFFFF` | Panels, cards, form surfaces, and tool areas. |
+| `--color-surface-muted` | `#F7F7F7` | Subtle section bands and inactive surfaces. |
+| `--color-border` | `#E6E6E6` | Default borders, dividers, and chart grid lines. |
+| `--color-border-strong` | `#B8B8B8` | Focused or selected neutral borders. |
+| `--color-text` | `#111111` | Primary headings and important UI text. |
+| `--color-text-secondary` | `#555555` | Body text, descriptions, and captions. |
+| `--color-text-muted` | `#8A8A8A` | Disabled or supporting labels. |
+| `--color-black` | `#000000` | Highest contrast text or icon-only emphasis. |
 
-### B. Functional Backgrounds
-
-| Token | Value | Usage |
-| --- | --- | --- |
-| App Canvas Base | `#FFF9FA` | A clean, ultra-soft cream with a faint pink undertone that avoids sterile clinical whites. |
-| Glass Panel Base | `rgba(255, 255, 255, 0.75)` | Use with `backdrop-blur: 16px` and `border-color: rgba(235, 72, 221, 0.15)`. |
-
-### C. Text Hierarchy Colors
+### Accent Palette
 
 | Token | Hex | Usage |
 | --- | --- | --- |
-| Primary Text, "Deep Plum" | `#2A1B24` | Highly legible, ultra-dark warm plum that replaces harsh absolute black. |
-| Secondary Body Text | `#6E5564` | Soft plum-slate for descriptions and helper text. |
-| Muted/Disabled Text | `#A38C9B` | Inactive indicators and labels. |
+| `--color-accent` | `#E83E8C` | Primary CTA, current step, critical highlight. |
+| `--color-accent-hover` | `#C92774` | Primary CTA hover/pressed state. |
 
-## 3. Typography 🗣️
+### Pink Usage Rules
 
-Use modern, readable, rounded geometric typefaces to maintain an approachable and friendly visual hierarchy.
+Use pink only when it answers one of these questions:
 
-### Primary Sans
+- What is the primary action on this screen?
+- What is the current step or most important active state?
+- What critical result should the user notice first?
 
-**Use for:** Headings and large callouts
+Do not use pink for:
 
-**Fonts:** Plus Jakarta Sans or Fredoka
+- Page backgrounds.
+- Panel or card backgrounds.
+- Decorative gradients.
+- Card shadows.
+- Standard borders.
+- Secondary buttons.
+- Body copy.
+- Generic icons.
+- Chart grid lines.
+- Multiple competing highlights on the same screen.
 
-**Aesthetic:** Soft, friendly curves that feel relatable on mobile.
+If more than one element on a screen is pink, decide which one matters most and return the rest to black, white, or gray.
 
-### Secondary Sans
+## Typography
 
-**Use for:** Body text and UI form elements
+### Font Family
 
-**Fonts:** Inter or Plus Jakarta Sans
+Use a clean sans-serif stack:
 
-**Weights:** Medium to Semibold
-
-### Letter Spacing
-
-Keep tracking tight for large headings, such as `tracking-tight`, to make the copy feel punched-up and modern.
-
-## 4. Light-Mode Frosted Heart Glass Components
-
-### A. Action Button
-
-Buttons should look tactile, edible, and rewarding to tap.
-
-```html
-<button
-  class="bg-[#EB48DD] hover:bg-[#FF85B3] text-white font-bold px-8 py-4 rounded-2xl shadow-[0_10px_25px_-5px_rgba(235,72,221,0.4)] transition-all duration-300 transform active:scale-95"
->
-  Mirror My Heart 💖
-</button>
+```css
+font-family: Inter, "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 ```
 
-### B. Frosted Heart Glass Card
+### Weight
 
-Cards should hover over the soft cream background with dynamic pink shadows.
+- Default text: `500`.
+- Headings: `500` or `600` only when extra hierarchy is needed.
+- Avoid heavy weights like `800` or `900` unless used for a single product title or a one-off display moment.
 
-```html
-<div
-  class="bg-white/80 backdrop-blur-md border border-[#EB48DD]/15 shadow-[0_15px_35px_rgba(235,72,221,0.06)] rounded-[2rem] p-6"
->
-  <!-- Card Content -->
-</div>
-```
+### Scale
 
-## 5. Visual Asset Guidelines
-
-To keep the application cohesive with `dating_mirror.png` while adopting the pink light-mode design system, transform the visual assets as follows.
-
-### A. Radar Chart Style Translation
-
-When rendering the custom radar chart that overlays the three vectors, translate the design tokens to match the light-mode vibe.
-
-#### Radar Grid
-
-| Element | Style |
+| Role | Size Guidance |
 | --- | --- |
-| Grid lines | Crisp, soft rose-gold lines |
-| Stroke examples | `rgba(235, 72, 221, 0.1)` and `#FFCAD4` |
+| Page title | `clamp(2.5rem, 7vw, 5rem)` |
+| Section title | `clamp(1.75rem, 4vw, 3rem)` |
+| Card or panel title | `1.05rem` to `1.35rem` |
+| Body | `1rem` |
+| Caption / metadata | `0.82rem` to `0.9rem` |
 
-#### Layer 1: Ideal, Aspiration
+Use `letter-spacing: 0`. Do not use negative tracking.
 
-| Property | Value |
-| --- | --- |
-| Color | Deep Peach-Pink, `#FF85B3` |
-| Fill | `rgba(255, 133, 179, 0.15)` |
-| Stroke | `#FF85B3` |
-| Nodes | Pink heart nodes, `💗`, or matching solid circular dots on vertices |
+## Layout
 
-#### Layer 2: Actual, History
+### Page Structure
 
-| Property | Value |
-| --- | --- |
-| Color | Vibrant Electric Pink, `#EB48DD` |
-| Fill | `rgba(235, 72, 221, 0.1)` |
-| Stroke | `#EB48DD` |
-| Stroke width | `3` |
-| Nodes | Solid Electric Pink circular dots |
+- Use a white page background.
+- Use full-width sections with constrained inner content.
+- Prefer simple grids and generous whitespace.
+- Avoid floating decorative sections.
+- Avoid nested cards.
 
-#### Layer 3: Social, Friend View
+### Spacing
 
-| Property | Value |
-| --- | --- |
-| Color | Deep Plum / Dark Charcoal, `#2A1B24` |
-| Stroke | `#2A1B24` |
-| Stroke dash array | `6 4` |
-| Nodes | Bold solid plum dots |
+Use an 8px spacing rhythm:
 
 ```text
-                  [CON]
-                    |      --- Ideal (Aspiration) [#FF85B3]
-         [RWO]      |      [INT]
-             \      |      /
-              \   💗|  💗 /   === Actual (History) [#EB48DD]
-               \    |    /
-       [REA]--------+--------[AUT]
-               /    |    \    - - - Social (Friend View) [#2A1B24]
-              /   💗|  💗 \
-             /      |      \
-         [VUL]      |      [VAL]
-                    |
-                  [GOC]
+4, 8, 12, 16, 24, 32, 48, 64
 ```
 
-### B. 2x2 Johari Grid Matrix
+### Borders and Radius
 
-The interactive Johari matrix grid should use sweet-pink status alerts instead of dark slate.
+- Default border: `1px solid #E6E6E6`.
+- Strong border: `1px solid #B8B8B8`.
+- Default radius: `8px`.
+- Pills may use `999px` radius when the control is naturally pill-shaped.
+- Do not use large rounded cards unless the interaction requires a soft touch target.
 
-| Quadrant | Name | Visual Treatment | State Label |
-| --- | --- | --- | --- |
-| 1 | The Guilty Pleasure 🍿 | Highlighted with soft peach outlines, `border-[#FF85B3]`, and a light pink glow. | Guilty Secret 💕 |
-| 2 | The True Blind Spot 🎭 | Soft electric pink flashing border, `border-[#EB48DD]`. | Unconscious Pattern 🔮 |
-| 3 | The Facade 🧱 | Solid bubblegum background, `bg-[#FFF2F6]`. | The Shield 🛡️ |
-| 4 | The Deep Void 🌌 | Plain soft gray/light plum texture with an explicit lock symbol, `🔒`, to show it is untouched. | Untouched Space 🔒 |
+### Shadows
 
-## 6. Micro-Interactions & Gamification 🕹️
+No shadows in product UI.
 
-To maintain high engagement levels for young users, keep these transitions active.
+Allowed exceptions:
 
-### Dopamine Slider Pop
+- Native focus rings.
+- Browser default form focus if not customized.
 
-As users slide values toward `10.0`, such as high intensity or high reactivity, let a small floating bubblegum pink heart, `💖`, float upward and fade out above the thumb.
+Use borders, overlays, and spacing instead of shadows to separate layers.
 
-### Interactive Swipes
+## Components
 
-The swipe action cards in Step 2 should display:
+### Primary CTA
 
-- A bold pink `HELL YES! 💘` stamp when swiped right.
-- A soft gray-plum `THANK U, NEXT 💔` stamp when swiped left.
+Use pink for the single primary action on a screen.
 
-### Result Reveal Page
-
-Before showing the final Dating Mirror card, display a dynamic 3-second animated loader:
-
-> Polishing your mirror...
-
-The loader should feature a rotating heart-shaped glass compact, `🪞💞`.
-
-## 7. Tailwind Configuration Extension
-
-Supply this to the frontend agent to integrate the light-pink theme.
-
-```js
-module.exports = {
-  theme: {
-    extend: {
-      colors: {
-        crush: {
-          primary: '#EB48DD', // Electric Crush Pink
-          secondary: '#FF85B3', // Cotton Candy Pink
-          bg: '#FFF9FA', // Sweet Cream Base
-          card: '#FFF2F6', // Bubblegum Container Base
-          darkText: '#2A1B24', // Deep Plum text
-          subText: '#6E5564', // Subdued slate-plum text
-        },
-      },
-      boxShadow: {
-        'pink-glow': '0 10px 30px -5px rgba(235, 72, 221, 0.25)',
-        'pink-soft': '0 20px 40px -15px rgba(235, 72, 221, 0.1)',
-      },
-    },
-  },
-};
+```html
+<button class="primary-button">Show me Mirror</button>
 ```
+
+```css
+.primary-button {
+  min-height: 44px;
+  border: 1px solid #E83E8C;
+  border-radius: 999px;
+  background: #E83E8C;
+  color: #FFFFFF;
+  font-weight: 500;
+}
+
+.primary-button:hover {
+  border-color: #C92774;
+  background: #C92774;
+}
+```
+
+### Secondary Button
+
+Secondary actions stay neutral.
+
+```css
+.secondary-button {
+  min-height: 44px;
+  border: 1px solid #D4D4D4;
+  border-radius: 999px;
+  background: #FFFFFF;
+  color: #111111;
+  font-weight: 500;
+}
+
+.secondary-button:hover {
+  border-color: #111111;
+  background: #F7F7F7;
+}
+```
+
+### Cards and Panels
+
+Cards are plain containers with a border. They do not float.
+
+```css
+.panel {
+  border: 1px solid #E6E6E6;
+  border-radius: 8px;
+  background: #FFFFFF;
+  padding: 24px;
+  box-shadow: none;
+}
+```
+
+### Forms
+
+Inputs should be quiet and readable.
+
+```css
+.text-field input {
+  min-height: 44px;
+  border: 1px solid #D4D4D4;
+  border-radius: 8px;
+  background: #FFFFFF;
+  color: #111111;
+}
+
+.text-field input:focus {
+  border-color: #111111;
+  outline: 2px solid #E6E6E6;
+  outline-offset: 2px;
+}
+```
+
+### Navigation
+
+Navigation should feel utilitarian:
+
+- White background.
+- Thin gray border.
+- Black text.
+- Pink only for the main start CTA.
+- No blur, glass, gradients, or shadow.
+
+## Data Visualization
+
+Charts should not use pink unless the chart is the primary CTA or the chart is explicitly highlighting one critical insight.
+
+Use semantic chart colors that are distinct from CTA pink:
+
+| Series | Color | Usage |
+| --- | --- | --- |
+| Ideal | `#2F9E44` | Green line/fill. |
+| Actual | `#D94841` | Red line/fill. |
+| Friend Feedback | `#F59E0B` | Yellow-orange line/fill. |
+| Grid | `#E6E6E6` | Radar web and axis lines. |
+| Labels | `#555555` | Chart labels and legend text. |
+
+Radar chart rules:
+
+- Show full dimension names, not acronyms.
+- Keep grid lines light gray.
+- Keep labels dark gray.
+- Use checkboxes to let users show or hide each vector.
+- Keep all vectors enabled by default.
+
+## Interaction States
+
+### Hover
+
+Hover states should change border color, background shade, or text color. Avoid glow effects.
+
+### Active
+
+Use small scale or background changes only when useful. Avoid animated stamps or effects that compete with the task.
+
+### Focus
+
+Keyboard focus must be visible. Use neutral outlines by default:
+
+```css
+:focus-visible {
+  outline: 2px solid #111111;
+  outline-offset: 3px;
+}
+```
+
+Pink focus rings are reserved for primary CTA controls only.
+
+## Motion
+
+Motion should be functional and brief:
+
+- Use `120ms` to `180ms` transitions.
+- Animate opacity, transform, or border color.
+- Avoid floating hearts, sparkle effects, or decorative loops.
+- Loading states should be plain text or a simple spinner.
+
+## Content Tone
+
+Keep the voice direct and self-aware without becoming noisy.
+
+Prefer:
+
+- "Compare your ideal, your choices, and friend feedback."
+- "Waiting for two friend responses."
+- "Reveal my mirror."
+
+Avoid:
+
+- Emoji-heavy copy.
+- Roast-style labels.
+- Overly cute metaphors.
+- Repeated references to hearts, crushes, glow, or magic.
+
+## Implementation Checklist
+
+Before shipping a UI change, confirm:
+
+- The page works in light mode.
+- The main UI is black, white, and gray.
+- Pink appears only on the primary CTA or one critical highlight.
+- Cards have borders and no shadows.
+- No decorative gradients are used.
+- Text remains readable on mobile and desktop.
+- Buttons and controls have visible focus states.
+- Charts do not use pink by default.

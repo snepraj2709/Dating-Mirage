@@ -88,9 +88,7 @@ export function JohariReveal({ report, session, onBack, onBurnData }: JohariReve
   if (isPolishing) {
     return (
       <main className="reveal-loader">
-        <div className="compact-loader" aria-hidden="true">
-          🪞💞
-        </div>
+        <div className="compact-loader" aria-hidden="true" />
         <h1>Polishing your mirror...</h1>
       </main>
     );
@@ -166,4 +164,3 @@ export function JohariReveal({ report, session, onBack, onBurnData }: JohariReve
     </main>
   );
 }
-

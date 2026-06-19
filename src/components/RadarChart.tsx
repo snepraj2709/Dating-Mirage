@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { dimensions } from '../data/datingMirrorContent';
 import type { VectorProfile } from '../types/dating-mirror';
 
@@ -8,70 +8,211 @@ interface RadarChartProps {
   social: VectorProfile;
 }
 
-const size = 360;
-const center = size / 2;
-const radius = 132;
+const chartWidth = 620;
+const chartHeight = 520;
+const centerX = chartWidth / 2;
+const centerY = 250;
+const radius = 150;
+const labelRadius = 210;
 
-function pointsFor(profile: VectorProfile) {
-  return dimensions
-    .map((dimension, index) => {
-      const angle = -Math.PI / 2 + (index / dimensions.length) * Math.PI * 2;
-      const valueRadius = ((profile[dimension.key] - 1) / 9) * radius;
-      return `${center + Math.cos(angle) * valueRadius},${center + Math.sin(angle) * valueRadius}`;
-    })
-    .join(' ');
+const radarColors = {
+  ideal: {
+    fill: 'rgba(47, 158, 68, 0.16)',
+    stroke: '#2f9e44',
+  },
+  actual: {
+    fill: 'rgba(217, 72, 65, 0.14)',
+    stroke: '#d94841',
+  },
+  social: {
+    fill: 'rgba(245, 158, 11, 0.12)',
+    stroke: '#f59e0b',
+  },
+  grid: '#ececea',
+};
+
+type RadarSeriesKey = 'ideal' | 'actual' | 'social';
+
+interface RadarPoint {
+  x: number;
+  y: number;
+}
+
+function angleFor(index: number) {
+  return -Math.PI / 2 + (index / dimensions.length) * Math.PI * 2;
+}
+
+function pointAt(index: number, pointRadius: number): RadarPoint {
+  const angle = angleFor(index);
+  return {
+    x: centerX + Math.cos(angle) * pointRadius,
+    y: centerY + Math.sin(angle) * pointRadius,
+  };
+}
+
+function pointsForProfile(profile: VectorProfile) {
+  return dimensions.map((dimension, index) => {
+    const valueRadius = ((profile[dimension.key] - 1) / 9) * radius;
+    return pointAt(index, valueRadius);
+  });
+}
+
+function polygonPoints(points: RadarPoint[]) {
+  return points.map((point) => `${point.x},${point.y}`).join(' ');
+}
+
+function labelAnchor(index: number) {
+  const horizontalPosition = Math.cos(angleFor(index));
+
+  if (horizontalPosition > 0.35) {
+    return 'start';
+  }
+
+  if (horizontalPosition < -0.35) {
+    return 'end';
+  }
+
+  return 'middle';
 }
 
 export function RadarChart({ ideal, actual, social }: RadarChartProps) {
+  const [visibleSeries, setVisibleSeries] = useState<Record<RadarSeriesKey, boolean>>({
+    ideal: true,
+    actual: true,
+    social: true,
+  });
   const gridRings = useMemo(() => [0.25, 0.5, 0.75, 1], []);
-  const idealPoints = useMemo(() => pointsFor(ideal), [ideal]);
-  const actualPoints = useMemo(() => pointsFor(actual), [actual]);
-  const socialPoints = useMemo(() => pointsFor(social), [social]);
+  const idealPoints = useMemo(() => pointsForProfile(ideal), [ideal]);
+  const actualPoints = useMemo(() => pointsForProfile(actual), [actual]);
+  const socialPoints = useMemo(() => pointsForProfile(social), [social]);
+  const toggleSeries = (series: RadarSeriesKey) => {
+    setVisibleSeries((current) => ({
+      ...current,
+      [series]: !current[series],
+    }));
+  };
 
   return (
     <figure className="radar-chart" aria-label="Radar chart comparing ideal, actual, and friend-view vectors">
-      <svg viewBox={`0 0 ${size} ${size}`} role="img">
+      <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} role="img">
+        <title>Radar chart comparing ideal aspiration, actual history, and social friend view</title>
         {gridRings.map((ring) => (
-          <circle
+          <polygon
             key={ring}
-            cx={center}
-            cy={center}
-            r={radius * ring}
+            points={polygonPoints(dimensions.map((_, index) => pointAt(index, radius * ring)))}
             fill="none"
-            stroke="rgba(235, 72, 221, 0.1)"
+            stroke={radarColors.grid}
           />
         ))}
         {dimensions.map((dimension, index) => {
-          const angle = -Math.PI / 2 + (index / dimensions.length) * Math.PI * 2;
-          const x = center + Math.cos(angle) * radius;
-          const y = center + Math.sin(angle) * radius;
-          const labelX = center + Math.cos(angle) * (radius + 24);
-          const labelY = center + Math.sin(angle) * (radius + 24);
+          const axisPoint = pointAt(index, radius);
+          const labelPoint = pointAt(index, labelRadius);
           return (
             <g key={dimension.key}>
-              <line x1={center} y1={center} x2={x} y2={y} stroke="#ffcad4" strokeWidth="1" />
-              <text x={labelX} y={labelY} textAnchor="middle" dominantBaseline="middle">
-                {dimension.key}
+              <line
+                x1={centerX}
+                y1={centerY}
+                x2={axisPoint.x}
+                y2={axisPoint.y}
+                stroke={radarColors.grid}
+                strokeWidth="1"
+              />
+              <text
+                x={labelPoint.x}
+                y={labelPoint.y}
+                textAnchor={labelAnchor(index)}
+                dominantBaseline="middle"
+              >
+                {dimension.name}
               </text>
             </g>
           );
         })}
-        <polygon points={idealPoints} fill="rgba(255, 133, 179, 0.15)" stroke="#ff85b3" strokeWidth="2" />
-        <polygon points={actualPoints} fill="rgba(235, 72, 221, 0.1)" stroke="#eb48dd" strokeWidth="3" />
-        <polygon
-          points={socialPoints}
-          fill="none"
-          stroke="#2a1b24"
-          strokeDasharray="6 4"
-          strokeWidth="2.5"
-        />
+        {visibleSeries.ideal && (
+          <>
+            <polygon
+              points={polygonPoints(idealPoints)}
+              fill={radarColors.ideal.fill}
+              stroke={radarColors.ideal.stroke}
+              strokeWidth="3"
+            />
+            {idealPoints.map((point, index) => (
+              <circle
+                key={`ideal-${dimensions[index].key}`}
+                cx={point.x}
+                cy={point.y}
+                r="6"
+                fill={radarColors.ideal.stroke}
+              />
+            ))}
+          </>
+        )}
+        {visibleSeries.actual && (
+          <>
+            <polygon
+              points={polygonPoints(actualPoints)}
+              fill={radarColors.actual.fill}
+              stroke={radarColors.actual.stroke}
+              strokeWidth="3"
+            />
+            {actualPoints.map((point, index) => (
+              <circle
+                key={`actual-${dimensions[index].key}`}
+                cx={point.x}
+                cy={point.y}
+                r="6"
+                fill={radarColors.actual.stroke}
+              />
+            ))}
+          </>
+        )}
+        {visibleSeries.social && (
+          <>
+            <polygon
+              points={polygonPoints(socialPoints)}
+              fill={radarColors.social.fill}
+              stroke={radarColors.social.stroke}
+              strokeDasharray="8 6"
+              strokeWidth="3"
+            />
+            {socialPoints.map((point, index) => (
+              <circle
+                key={`social-${dimensions[index].key}`}
+                cx={point.x}
+                cy={point.y}
+                r="6"
+                fill={radarColors.social.stroke}
+              />
+            ))}
+          </>
+        )}
       </svg>
       <figcaption>
-        <span><i className="legend ideal" /> Ideal</span>
-        <span><i className="legend actual" /> Actual</span>
-        <span><i className="legend social" /> Friends</span>
+        <label className="radar-toggle ideal">
+          <input
+            type="checkbox"
+            checked={visibleSeries.ideal}
+            onChange={() => toggleSeries('ideal')}
+          />
+          Ideal (Aspiration)
+        </label>
+        <label className="radar-toggle actual">
+          <input
+            type="checkbox"
+            checked={visibleSeries.actual}
+            onChange={() => toggleSeries('actual')}
+          />
+          Actual (History)
+        </label>
+        <label className="radar-toggle social">
+          <input
+            type="checkbox"
+            checked={visibleSeries.social}
+            onChange={() => toggleSeries('social')}
+          />
+          Friend Feedback
+        </label>
       </figcaption>
     </figure>
   );
 }
-

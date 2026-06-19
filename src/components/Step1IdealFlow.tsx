@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { ArrowLeft, ArrowRight, Heart, Save } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Save } from 'lucide-react';
 import { sliderQuestions } from '../data/datingMirrorContent';
 import { baselineVector, clampScore } from '../lib/scoring';
 import { loadIdealDraft, saveIdealDraft } from '../lib/localState';
@@ -19,7 +19,6 @@ export function Step1IdealFlow({ isSaving, saveError, onBack, onComplete }: Step
     const firstMissing = sliderQuestions.findIndex((question) => initialDraft[question.key] === undefined);
     return firstMissing === -1 ? 0 : firstMissing;
   });
-  const [heartPop, setHeartPop] = useState(0);
   const question = sliderQuestions[activeIndex];
   const value = answers[question.key] ?? 5.5;
   const progress = activeIndex + 1;
@@ -31,10 +30,6 @@ export function Step1IdealFlow({ isSaving, saveError, onBack, onComplete }: Step
     const nextAnswers = { ...answers, [key]: nextValue };
     setAnswers(nextAnswers);
     saveIdealDraft(nextAnswers);
-
-    if (nextValue >= 8) {
-      setHeartPop((count) => count + 1);
-    }
   };
 
   const buildProfile = (): VectorProfile => {
@@ -125,11 +120,6 @@ export function Step1IdealFlow({ isSaving, saveError, onBack, onComplete }: Step
               value={value}
               onChange={(event) => updateAnswer(question.key, Number(event.target.value))}
             />
-            {heartPop > 0 && (
-              <span className="heart-pop" key={heartPop} aria-hidden="true">
-                <Heart size={18} fill="currentColor" />
-              </span>
-            )}
           </div>
 
           {saveError && <p className="inline-error">{saveError}</p>}
@@ -143,4 +133,3 @@ export function Step1IdealFlow({ isSaving, saveError, onBack, onComplete }: Step
     </main>
   );
 }
-

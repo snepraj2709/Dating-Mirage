@@ -283,9 +283,7 @@ export default function App() {
     if (isLoadingReport) {
       return (
         <main className="reveal-loader">
-          <div className="compact-loader" aria-hidden="true">
-            🪞💞
-          </div>
+          <div className="compact-loader" aria-hidden="true" />
           <h1>Polishing your mirror...</h1>
         </main>
       );
@@ -318,13 +316,11 @@ export default function App() {
   }
 
   return (
-    <>
-      <Navigation onStart={() => setStage('ideal')} />
-      <main className="app-shell">
-        <Hero onStart={() => setStage('ideal')} />
-        <MirrorStepper />
-        <PrivacyStrip />
-      </main>
-    </>
+    <main className="app-shell">
+      <Navigation />
+      <Hero onStart={() => setStage('ideal')} />
+      <MirrorStepper />
+      <PrivacyStrip />
+    </main>
   );
 }
