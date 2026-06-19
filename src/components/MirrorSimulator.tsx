@@ -1,5 +1,9 @@
 import { ArrowRight } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Eyebrow } from '@/components/ui/pill';
+import { ContentBand, SectionHeading } from '@/components/ui/section';
+import { Surface } from '@/components/ui/surface';
 
 interface MirrorSimulatorProps {
   onStart: () => void;
@@ -49,25 +53,23 @@ export function MirrorSimulator({ onStart }: MirrorSimulatorProps) {
   const blindSpotGap = Math.abs(actual - friends);
 
   return (
-    <section className="content-band simulator-section" id="mirror-sandbox">
-      <div className="section-heading">
-        <p className="eyebrow">Mirror simulator</p>
-        <h2>Move the vectors and watch the classification change.</h2>
-        <p>
-          The live report compares stated preference, actual history, and friend-observed behavior before it
-          recommends a quadrant.
-        </p>
-      </div>
+    <ContentBand className="pt-[72px]" id="mirror-sandbox">
+      <SectionHeading
+        eyebrow="Mirror simulator"
+        title="Move the vectors and watch the classification change."
+        description="The live report compares stated preference, actual history, and friend-observed behavior before it recommends a quadrant."
+      />
 
-      <div className="simulator-layout">
-        <div className="simulator-controls" aria-label="Simulator controls">
-          <label className="range-field">
-            <span>
+      <div className="grid grid-cols-[minmax(0,1fr)_minmax(320px,0.92fr)] gap-6 max-[960px]:grid-cols-1">
+        <Surface className="p-6" aria-label="Simulator controls">
+          <label className="grid gap-2.5 py-[18px]">
+            <span className="flex justify-between gap-4 text-foreground">
               Ideal partner intensity
               <strong>{ideal.toFixed(1)}</strong>
             </span>
             <input
               aria-label="Ideal partner intensity"
+              className="simulator-range"
               max="10"
               min="1"
               onChange={(event) => setIdeal(Number(event.target.value))}
@@ -75,19 +77,20 @@ export function MirrorSimulator({ onStart }: MirrorSimulatorProps) {
               type="range"
               value={ideal}
             />
-            <small>
+            <small className="flex justify-between gap-4 text-[0.82rem] text-subtle-foreground">
               <span>Slow burn</span>
               <span>Whirlwind</span>
             </small>
           </label>
 
-          <label className="range-field">
-            <span>
+          <label className="grid gap-2.5 border-t border-border py-[18px]">
+            <span className="flex justify-between gap-4 text-foreground">
               Actual chosen intensity
               <strong>{actual.toFixed(1)}</strong>
             </span>
             <input
               aria-label="Actual chosen intensity"
+              className="simulator-range"
               max="10"
               min="1"
               onChange={(event) => setActual(Number(event.target.value))}
@@ -95,19 +98,20 @@ export function MirrorSimulator({ onStart }: MirrorSimulatorProps) {
               type="range"
               value={actual}
             />
-            <small>
+            <small className="flex justify-between gap-4 text-[0.82rem] text-subtle-foreground">
               <span>Steady</span>
               <span>Volatile</span>
             </small>
           </label>
 
-          <label className="range-field">
-            <span>
+          <label className="grid gap-2.5 border-t border-border py-[18px]">
+            <span className="flex justify-between gap-4 text-foreground">
               What friends observe
               <strong>{friends.toFixed(1)}</strong>
             </span>
             <input
               aria-label="What friends observe"
+              className="simulator-range"
               max="10"
               min="1"
               onChange={(event) => setFriends(Number(event.target.value))}
@@ -115,45 +119,47 @@ export function MirrorSimulator({ onStart }: MirrorSimulatorProps) {
               type="range"
               value={friends}
             />
-            <small>
+            <small className="flex justify-between gap-4 text-[0.82rem] text-subtle-foreground">
               <span>Grounded</span>
               <span>Chasing the rush</span>
             </small>
           </label>
-        </div>
+        </Surface>
 
-        <aside className="simulator-output">
-          <p className="eyebrow">Live calculator result</p>
-          <h3>{result.title}</h3>
+        <Surface asChild className="grid content-start gap-[18px] p-6">
+          <aside>
+          <Eyebrow>Live calculator result</Eyebrow>
+          <h3 className="mb-0 text-xl leading-[1.2] text-foreground">{result.title}</h3>
 
-          <div className="gap-stack" aria-label="Simulated gaps">
+          <div className="grid gap-4" aria-label="Simulated gaps">
             <div>
-              <span>
+              <span className="flex justify-between gap-4 text-foreground">
                 Conscious self-gap
                 <strong>{consciousGap.toFixed(1)}</strong>
               </span>
-              <div className="gap-bar">
-                <i className="gap-bar__fill gap-bar__fill--self" style={{ width: clampWidth(consciousGap) }} />
+              <div className="mt-2 h-2 overflow-hidden rounded-full bg-muted">
+                <i className="block h-full rounded-[inherit] bg-negative" style={{ width: clampWidth(consciousGap) }} />
               </div>
             </div>
             <div>
-              <span>
+              <span className="flex justify-between gap-4 text-foreground">
                 Social blind-spot gap
                 <strong>{blindSpotGap.toFixed(1)}</strong>
               </span>
-              <div className="gap-bar">
-                <i className="gap-bar__fill gap-bar__fill--social" style={{ width: clampWidth(blindSpotGap) }} />
+              <div className="mt-2 h-2 overflow-hidden rounded-full bg-muted">
+                <i className="block h-full rounded-[inherit] bg-warning" style={{ width: clampWidth(blindSpotGap) }} />
               </div>
             </div>
           </div>
 
-          <p>{result.copy}</p>
-          <button className="primary-button" onClick={onStart}>
+          <p className="mb-0">{result.copy}</p>
+          <Button className="mt-1 w-fit max-[620px]:w-full" onClick={onStart}>
             Build my real mirror
             <ArrowRight size={18} />
-          </button>
-        </aside>
+          </Button>
+          </aside>
+        </Surface>
       </div>
-    </section>
+    </ContentBand>
   );
 }

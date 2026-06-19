@@ -93,8 +93,11 @@ export function RadarChart({ ideal, actual, social }: RadarChartProps) {
   };
 
   return (
-    <figure className="radar-chart" aria-label="Radar chart comparing ideal, actual, and friend-view vectors">
-      <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} role="img">
+    <figure
+      className="mx-auto my-6 grid w-[min(100%,720px)] justify-items-center"
+      aria-label="Radar chart comparing ideal, actual, and friend-view vectors"
+    >
+      <svg className="h-auto w-[min(100%,620px)] overflow-visible" viewBox={`0 0 ${chartWidth} ${chartHeight}`} role="img">
         <title>Radar chart comparing ideal aspiration, actual history, and social friend view</title>
         {gridRings.map((ring) => (
           <polygon
@@ -118,6 +121,7 @@ export function RadarChart({ ideal, actual, social }: RadarChartProps) {
                 strokeWidth="1"
               />
               <text
+                className="fill-muted-foreground text-[0.9rem] font-medium"
                 x={labelPoint.x}
                 y={labelPoint.y}
                 textAnchor={labelAnchor(index)}
@@ -187,25 +191,28 @@ export function RadarChart({ ideal, actual, social }: RadarChartProps) {
           </>
         )}
       </svg>
-      <figcaption>
-        <label className="radar-toggle ideal">
+      <figcaption className="box-border flex w-full flex-wrap justify-center gap-x-[22px] gap-y-3.5 px-2 font-medium text-muted-foreground">
+        <label className="inline-flex cursor-pointer select-none items-center gap-2">
           <input
+            className="m-0 size-4 accent-positive"
             type="checkbox"
             checked={visibleSeries.ideal}
             onChange={() => toggleSeries('ideal')}
           />
           Ideal (Aspiration)
         </label>
-        <label className="radar-toggle actual">
+        <label className="inline-flex cursor-pointer select-none items-center gap-2">
           <input
+            className="m-0 size-4 accent-negative"
             type="checkbox"
             checked={visibleSeries.actual}
             onChange={() => toggleSeries('actual')}
           />
           Actual (History)
         </label>
-        <label className="radar-toggle social">
+        <label className="inline-flex cursor-pointer select-none items-center gap-2">
           <input
+            className="m-0 size-4 accent-warning"
             type="checkbox"
             checked={visibleSeries.social}
             onChange={() => toggleSeries('social')}

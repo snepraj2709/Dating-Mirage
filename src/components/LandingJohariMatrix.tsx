@@ -1,5 +1,11 @@
 import { CircleDashed, Eye, EyeOff, ShieldAlert } from 'lucide-react';
 import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { IconBadge } from '@/components/ui/icon-badge';
+import { Eyebrow, Pill } from '@/components/ui/pill';
+import { ContentBand, SectionHeading } from '@/components/ui/section';
+import { Surface } from '@/components/ui/surface';
+import { cn } from '@/lib/utils';
 
 type MatrixKey = 'guilty-pleasure' | 'true-blindspot' | 'facade' | 'deep-void';
 
@@ -60,67 +66,72 @@ export function LandingJohariMatrix() {
   const ActiveIcon = activeItem.icon;
 
   return (
-    <section className="content-band matrix-section" id="matrix-breakdown">
-      <div className="section-heading centered-heading">
-        <p className="eyebrow">Dating Johari Matrix</p>
-        <h2>The report separates what you know from what others can see.</h2>
-        <p>
-          The framework maps romantic choices through self-awareness, friend-observed behavior, and the gap
-          between the two.
-        </p>
-      </div>
+    <ContentBand className="pt-[72px]" id="matrix-breakdown">
+      <SectionHeading
+        centered
+        eyebrow="Dating Johari Matrix"
+        title="The report separates what you know from what others can see."
+        description="The framework maps romantic choices through self-awareness, friend-observed behavior, and the gap between the two."
+      />
 
-      <div className="awareness-legend" aria-label="Awareness legend">
-        <span>
-          <i className="legend-dot legend-dot--self" />
+      <div className="mb-6 flex flex-wrap justify-center gap-2.5" aria-label="Awareness legend">
+        <Pill className="bg-card">
+          <i className="size-2.5 rounded-full bg-positive" />
           Self-aware
-        </span>
-        <span>
-          <i className="legend-dot legend-dot--social" />
+        </Pill>
+        <Pill className="bg-card">
+          <i className="size-2.5 rounded-full bg-warning" />
           Friend-revealed
-        </span>
-        <span>
-          <i className="legend-dot legend-dot--neutral" />
+        </Pill>
+        <Pill className="bg-card">
+          <i className="size-2.5 rounded-full bg-subtle-foreground" />
           Unscored
-        </span>
+        </Pill>
       </div>
 
-      <div className="matrix-layout">
-        <div className="matrix-grid" role="list">
+      <div className="grid grid-cols-[minmax(0,1.2fr)_minmax(280px,0.8fr)] items-stretch gap-6 max-[960px]:grid-cols-1">
+        <div className="grid grid-cols-2 gap-3.5 max-[620px]:grid-cols-1" role="list">
           {matrixItems.map((item) => {
             const Icon = item.icon;
             const isActive = item.key === activeKey;
             return (
-              <button
-                className={`matrix-card ${isActive ? 'active' : ''}`}
+              <Button
+                className={cn(
+                  'grid min-h-[230px] content-start gap-3 rounded-lg p-5 text-left font-medium text-foreground max-[620px]:min-h-auto',
+                  isActive && 'border-foreground bg-muted',
+                )}
+                variant="option"
+                size="option"
                 type="button"
                 aria-pressed={isActive}
                 key={item.key}
                 onClick={() => setActiveKey(item.key)}
               >
-                <span className="matrix-card__topline">
-                  <span className="step-icon" aria-hidden="true">
+                <span className="flex items-center justify-between gap-2.5">
+                  <IconBadge aria-hidden="true">
                     <Icon size={20} />
-                  </span>
-                  <span className="matrix-label">{item.label}</span>
+                  </IconBadge>
+                  <span className="text-[0.86rem] text-subtle-foreground">{item.label}</span>
                 </span>
-                <span className="matrix-badge">{item.badge}</span>
-                <strong>{item.title}</strong>
-                <span>{item.copy}</span>
-              </button>
+                <span className="text-[0.86rem] text-subtle-foreground">{item.badge}</span>
+                <strong className="text-[1.18rem] leading-[1.25] text-foreground">{item.title}</strong>
+                <span className="text-muted-foreground leading-[1.5]">{item.copy}</span>
+              </Button>
             );
           })}
         </div>
 
-        <aside className="matrix-detail-panel" aria-live="polite">
-          <span className="step-icon" aria-hidden="true">
+        <Surface asChild className="grid content-start gap-3 p-6" aria-live="polite">
+          <aside>
+          <IconBadge aria-hidden="true">
             <ActiveIcon size={22} />
-          </span>
-          <p className="eyebrow">{activeItem.badge}</p>
-          <h3>{activeItem.title}</h3>
-          <p>{activeItem.detail}</p>
-        </aside>
+          </IconBadge>
+          <Eyebrow>{activeItem.badge}</Eyebrow>
+          <h3 className="mb-0 text-xl leading-[1.2] text-foreground">{activeItem.title}</h3>
+          <p className="mb-0">{activeItem.detail}</p>
+          </aside>
+        </Surface>
       </div>
-    </section>
+    </ContentBand>
   );
 }

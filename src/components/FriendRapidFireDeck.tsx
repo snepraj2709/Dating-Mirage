@@ -1,5 +1,10 @@
 import { useState } from 'react';
 import { Check, HeartHandshake, LockKeyhole, Send } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { FlowShell, InlineError } from '@/components/ui/flow';
+import { Eyebrow, Pill } from '@/components/ui/pill';
+import { ProgressRail } from '@/components/ui/progress-rail';
+import { Surface } from '@/components/ui/surface';
 import { submitFriendFeedback } from '../api/client';
 import {
   friendRapidFireQuestions,
@@ -62,7 +67,7 @@ export function FriendRapidFireDeck({ sessionId, displayName }: FriendRapidFireD
 
   if (isComplete) {
     return (
-      <main className="friend-screen friend-complete-screen">
+      <FlowShell className="grid w-[min(1040px,calc(100%_-_32px))] justify-items-center pb-14 max-[620px]:w-[min(100%_-_24px,520px)]">
         <VerticalStoryCard
           icon={<HeartHandshake size={38} />}
           eyebrow="Feedback sent"
@@ -72,64 +77,83 @@ export function FriendRapidFireDeck({ sessionId, displayName }: FriendRapidFireD
               Your individual answers stay private and only blend into {userLabel}'s aggregate Dating Mirror.
             </p>
           }
-          meta={submitMessage ? <p className="inline-error">{submitMessage}</p> : undefined}
+          meta={submitMessage ? <InlineError>{submitMessage}</InlineError> : undefined}
         />
-      </main>
+      </FlowShell>
     );
   }
 
   return (
-    <main className="friend-screen">
-      <header className="privacy-header">
+    <FlowShell className="w-[min(1040px,calc(100%_-_32px))] pb-14 max-[620px]:w-[min(100%_-_24px,520px)]">
+      <header className="sticky top-3.5 z-10 mx-auto mb-[22px] flex min-h-[46px] w-fit items-center gap-2 rounded-full border border-border bg-card px-[18px] font-medium text-foreground shadow-none max-[620px]:w-full max-[620px]:justify-center max-[620px]:text-center">
         <LockKeyhole size={17} />
         Your answers are anonymized and aggregated.
       </header>
 
       {!relationshipType ? (
-        <section className="friend-onboarding">
-          <p className="eyebrow">Social Mirror</p>
-          <h2>Be as honest as a true friend should be.</h2>
+        <Surface asChild className="mx-auto mt-[clamp(32px,10vh,96px)] w-[min(760px,100%)]">
+          <section>
+          <Eyebrow>Social Mirror</Eyebrow>
+          <h2 className="text-[clamp(1.9rem,5.5vw,3.6rem)] leading-[1.05] text-foreground">
+            Be as honest as a true friend should be.
+          </h2>
           <p>
             Your individual responses are completely private and aggregated into a high-level report.
           </p>
 
-          <div className="relationship-grid">
+          <div className="mt-[22px] grid grid-cols-2 gap-3 max-[620px]:grid-cols-1">
             {relationshipOptions.map(([value, label]) => (
-              <button key={value} className="relationship-option" onClick={() => setRelationshipType(value)}>
+              <Button key={value} variant="option" size="option" onClick={() => setRelationshipType(value)}>
                 <Check size={18} />
                 {label}
-              </button>
+              </Button>
             ))}
           </div>
-        </section>
+          </section>
+        </Surface>
       ) : (
-        <section className="rapid-fire-stage">
-          <div className="progress-rail" aria-label={`Friend question ${activeIndex + 1} of 8`}>
-            <span style={{ width: `${((activeIndex + 1) / friendRapidFireQuestions.length) * 100}%` }} />
-          </div>
-          <p className="eyebrow">
+        <section className="mx-auto w-[min(760px,100%)]">
+          <ProgressRail
+            value={((activeIndex + 1) / friendRapidFireQuestions.length) * 100}
+            aria-label={`Friend question ${activeIndex + 1} of 8`}
+          />
+          <Eyebrow className="mt-[18px]">
             Quick-Fire Round - {activeIndex + 1}/{friendRapidFireQuestions.length}
-          </p>
-          <article className="friend-question-card">
-            <span className="dimension-token">{context}</span>
-            <h2>{current.prompt.replace(/\[User\]/g, userLabel)}</h2>
-            <div className="friend-choice-grid">
-              <button onClick={() => chooseAnswer(current.optionA.score)} disabled={isSubmitting}>
+          </Eyebrow>
+          <Surface asChild>
+            <article>
+            <Pill>{context}</Pill>
+            <h2 className="text-[clamp(1.9rem,5.5vw,3.6rem)] leading-[1.05] text-foreground">
+              {current.prompt.replace(/\[User\]/g, userLabel)}
+            </h2>
+            <div className="mt-[22px] grid grid-cols-2 gap-3 max-[620px]:grid-cols-1">
+              <Button
+                variant="option"
+                size="friendChoice"
+                onClick={() => chooseAnswer(current.optionA.score)}
+                disabled={isSubmitting}
+              >
                 {current.optionA.label}
-              </button>
-              <button onClick={() => chooseAnswer(current.optionB.score)} disabled={isSubmitting}>
+              </Button>
+              <Button
+                variant="option"
+                size="friendChoice"
+                onClick={() => chooseAnswer(current.optionB.score)}
+                disabled={isSubmitting}
+              >
                 {current.optionB.label}
-              </button>
+              </Button>
             </div>
             {isSubmitting && (
-              <p className="submitting-note">
+              <p className="mt-4 inline-flex items-center gap-2 font-medium">
                 <Send size={16} />
                 Sending the vibe check...
               </p>
             )}
-          </article>
+            </article>
+          </Surface>
         </section>
       )}
-    </main>
+    </FlowShell>
   );
 }

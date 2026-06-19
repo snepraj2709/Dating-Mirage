@@ -1,5 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, ArrowRight, Flame, Sparkles, Trash2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { CompactLoader } from '@/components/ui/flow';
+import { Eyebrow } from '@/components/ui/pill';
+import { Surface } from '@/components/ui/surface';
+import { cn } from '@/lib/utils';
 import { dimensions, quadrantDetails } from '../data/datingMirrorContent';
 import type { JohariReport, UserSession } from '../types/dating-mirror';
 import { RadarChart } from './RadarChart';
@@ -89,31 +94,43 @@ export function JohariReveal({ report, session, onBack, onBurnData }: JohariReve
 
   if (isPolishing) {
     return (
-      <main className="reveal-loader">
-        <div className="compact-loader" aria-hidden="true" />
-        <h2>Polishing your mirror...</h2>
+      <main className="mx-auto grid min-h-screen w-[min(1040px,calc(100%_-_32px))] place-items-center content-center gap-5 py-6 pb-14 text-center max-[620px]:w-[min(100%_-_24px,520px)]">
+        <CompactLoader />
+        <h2 className="text-[clamp(1.75rem,4vw,3rem)] leading-[1.05] text-foreground">Polishing your mirror...</h2>
       </main>
     );
   }
 
   return (
-    <main className="reveal-screen">
-      <div className="flow-topbar">
-        <button className="ghost-button" onClick={onBack}>
+    <main className="mx-auto grid h-svh w-[min(1040px,calc(100%_-_32px))] grid-rows-[auto_minmax(0,1fr)] overflow-hidden py-3 max-[620px]:w-[min(100%_-_24px,520px)]">
+      <div className="mb-2 flex min-h-9 items-center justify-between gap-4 opacity-70">
+        <Button variant="ghostPill" size="compact" onClick={onBack}>
           <ArrowLeft size={18} />
           Back
-        </button>
-        <button className="ghost-button danger" onClick={onBurnData}>
+        </Button>
+        <Button variant="dangerGhost" size="compact" onClick={onBurnData}>
           <Trash2 size={17} />
           Burn My Data
-        </button>
+        </Button>
       </div>
 
-      <section className="story-shell">
-        <article className={`story-panel ${screenIndex === 1 ? 'story-panel--mirage' : ''}`}>
-          <div className="story-content">
-            <p className="eyebrow">{current.eyebrow}</p>
-            <h3>{current.title}</h3>
+      <section className="grid min-h-0 grid-rows-[minmax(0,1fr)_auto] gap-2">
+        <Surface
+          asChild
+          className={cn(
+            'relative min-h-0 overflow-hidden',
+            screenIndex === 1 && 'p-[clamp(14px,2.4vh,24px)]',
+          )}
+        >
+          <article>
+          <div
+            className={cn(
+              'h-full min-h-0 overflow-auto pb-[calc(48px_+_clamp(24px,5vw,42px)_+_clamp(12px,2vh,18px))]',
+              screenIndex === 1 && 'grid content-start gap-2 [&>h3]:mb-0 [&>h3]:text-[clamp(1rem,2.2vh,1.45rem)] [&>h3]:leading-[1.12] [&>p]:mb-0 [&>p]:text-[clamp(0.84rem,1.7vh,1rem)] [&>p]:leading-[1.35] [&_[data-slot=eyebrow]]:mb-0 [&_[data-slot=eyebrow]]:text-[clamp(0.72rem,1.5vh,0.88rem)]',
+            )}
+          >
+            <Eyebrow>{current.eyebrow}</Eyebrow>
+            <h3 className="text-xl leading-[1.2] text-foreground">{current.title}</h3>
             <p>{current.body}</p>
 
             {screenIndex === 0 && (
@@ -122,8 +139,8 @@ export function JohariReveal({ report, session, onBack, onBurnData }: JohariReve
 
             {screenIndex === 1 && (
               <VerticalStoryCard
-                className="mirage-story-card"
-                icon={<span className="vertical-story-card__emoji">{topDimensionDetail.icon}</span>}
+                className="my-2 w-[min(420px,100%,clamp(220px,calc((100svh_-_320px)*9/16),420px))] gap-[clamp(6px,1.2vh,12px)] p-[clamp(14px,2.2vh,24px)] [&_[data-slot=eyebrow]]:text-[clamp(0.72rem,1.5vh,0.88rem)] [&_[data-slot=story-card-body]]:gap-1.5 [&_[data-slot=story-card-body]_p]:text-[clamp(0.78rem,1.65vh,0.95rem)] [&_[data-slot=story-card-body]_p]:leading-[1.35] [&_[data-slot=story-card-icon]]:min-h-[clamp(20px,3vh,34px)] [&_[data-slot=story-card-meta]]:text-[clamp(0.85rem,1.8vh,1rem)] [&_h2]:text-[clamp(1.25rem,3.2vh,2rem)] [&_h2]:leading-[1.05]"
+                icon={<span className="text-[clamp(1.2rem,3vh,1.7rem)] leading-none">{topDimensionDetail.icon}</span>}
                 eyebrow="Screen 2 - The Mirage"
                 title={`${topDimensionName}: ${topDimensionDetail.title}`}
                 body={
@@ -140,47 +157,59 @@ export function JohariReveal({ report, session, onBack, onBurnData }: JohariReve
             )}
 
             {screenIndex === 2 && (
-              <div className="breakdown-list">
+              <div className="my-6 grid gap-3">
                 {report.featuredDimensions.map((dimension) => {
                   const detail = quadrantDetails[dimension.quadrant];
                   return (
-                    <article key={dimension.key}>
-                      <span>{detail.icon}</span>
+                    <Surface
+                      asChild
+                      className="grid grid-cols-[auto_1fr] items-start gap-3.5 p-[18px]"
+                      key={dimension.key}
+                      variant="muted"
+                    >
+                      <article>
+                      <span className="text-3xl">{detail.icon}</span>
                       <div>
-                        <h3>{dimensionName(dimension.key)}</h3>
+                        <h3 className="mb-2.5 text-xl leading-[1.2] text-foreground">{dimensionName(dimension.key)}</h3>
                         <p>{detail.vibe}</p>
-                        <strong>{dimension.severityPercentage}% tension</strong>
+                        <strong className="text-foreground">{dimension.severityPercentage}% tension</strong>
                       </div>
-                    </article>
+                      </article>
+                    </Surface>
                   );
                 })}
               </div>
             )}
 
             {screenIndex === 3 && (
-              <div className="habit-card">
+              <Surface className="my-6 grid grid-cols-[auto_1fr] items-start gap-3.5 p-[18px]" variant="muted">
                 <Flame size={28} />
-                <p>{nextMoveCopy(topDimension.key)}</p>
-              </div>
+                <p className="mb-0 text-[1.15rem] font-medium text-foreground">{nextMoveCopy(topDimension.key)}</p>
+              </Surface>
             )}
 
             {screenIndex === 4 && <ShareCard report={report} />}
           </div>
 
-          <div className="story-actions">
-            <button
-              className="primary-button flow-continue"
+          <div className="absolute bottom-[clamp(24px,5vw,42px)] right-[clamp(24px,5vw,42px)] flex w-[min(168px,calc(100%_-_(clamp(24px,5vw,42px)_*_2)))] justify-end">
+            <Button
+              size="flow"
+              className="h-12 min-h-12 w-full px-[22px]"
               onClick={() => (canGoNext ? setScreenIndex((index) => index + 1) : setScreenIndex(0))}
             >
               {canGoNext ? 'Next' : 'Replay'}
               {canGoNext ? <ArrowRight size={18} /> : <Sparkles size={18} />}
-            </button>
+            </Button>
           </div>
-        </article>
+          </article>
+        </Surface>
 
-        <div className="story-progress" aria-label={`Reveal screen ${screenIndex + 1} of ${screens.length}`}>
+        <div className="grid grid-cols-5 gap-2 self-end" aria-label={`Reveal screen ${screenIndex + 1} of ${screens.length}`}>
           {screens.map((screen) => (
-            <span key={screen.eyebrow} className={screen.eyebrow === current.eyebrow ? 'active' : ''} />
+            <span
+              key={screen.eyebrow}
+              className={cn('h-2 rounded-full bg-muted', screen.eyebrow === current.eyebrow && 'bg-primary')}
+            />
           ))}
         </div>
       </section>

@@ -11,6 +11,10 @@ import { Navigation } from './components/Navigation';
 import { PrivacyStrip } from './components/PrivacyStrip';
 import { Step1IdealFlow } from './components/Step1IdealFlow';
 import { Step2SwipeMatrix } from './components/Step2SwipeMatrix';
+import { Button } from './components/ui/button';
+import { CompactLoader, InlineError } from './components/ui/flow';
+import { Eyebrow } from './components/ui/pill';
+import { Surface } from './components/ui/surface';
 import {
   clearActualSwipes,
   clearIdealDraft,
@@ -286,9 +290,9 @@ export default function App() {
   if (stage === 'reveal') {
     if (isLoadingReport) {
       return (
-        <main className="reveal-loader">
-          <div className="compact-loader" aria-hidden="true" />
-          <h2>Polishing your mirror...</h2>
+        <main className="mx-auto grid min-h-screen w-[min(1040px,calc(100%_-_32px))] place-items-center content-center gap-5 py-6 pb-14 text-center max-[620px]:w-[min(100%_-_24px,520px)]">
+          <CompactLoader />
+          <h2 className="text-[clamp(1.75rem,4vw,3rem)] leading-[1.05] text-foreground">Polishing your mirror...</h2>
         </main>
       );
     }
@@ -305,31 +309,33 @@ export default function App() {
     }
 
     return (
-      <main className="stage-placeholder">
-        <button className="ghost-button" onClick={() => setStage('share')}>
+      <main className="mx-auto grid min-h-screen w-[min(720px,calc(100%_-_32px))] content-center gap-[22px] py-12 max-[620px]:w-[min(100%_-_24px,520px)]">
+        <Button className="w-fit" variant="ghostPill" onClick={() => setStage('share')}>
           Back to sharing
-        </button>
-        <section className="placeholder-card">
-          <p className="eyebrow">Step 4</p>
-          <h2>The Mirror Analysis</h2>
-          {reportError && <p className="inline-error">{reportError}</p>}
+        </Button>
+        <Surface asChild>
+          <section>
+          <Eyebrow>Step 4</Eyebrow>
+          <h2 className="text-[clamp(1.75rem,4vw,3rem)] leading-[1.05] text-foreground">The Mirror Analysis</h2>
+          {reportError && <InlineError>{reportError}</InlineError>}
           <p>Refresh your friend responses, then come back to reveal the report.</p>
-        </section>
+          </section>
+        </Surface>
       </main>
     );
   }
 
   return (
-    <main className="app-shell">
+    <main className="min-h-screen bg-background">
       <Navigation onStart={startMirror} />
       <Hero onStart={startMirror} />
       <MirrorStepper />
       <LandingJohariMatrix />
       <MirrorSimulator onStart={startMirror} />
       <PrivacyStrip />
-      <footer className="site-footer">
+      <footer className="flex min-h-[84px] items-center justify-between gap-[18px] border-t border-border px-[clamp(16px,5vw,64px)] text-[0.9rem] text-muted-foreground max-[620px]:flex-col max-[620px]:items-start max-[620px]:justify-center max-[620px]:py-5">
         <span>Dating Mirror</span>
-        <nav aria-label="Footer">
+        <nav className="flex flex-wrap gap-[18px] [&_a]:no-underline [&_a:hover]:text-foreground" aria-label="Footer">
           <a href="#how-it-works">Method</a>
           <a href="#matrix-breakdown">Matrix</a>
           <a href="#privacy">Privacy</a>

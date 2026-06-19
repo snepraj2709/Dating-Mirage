@@ -1,5 +1,10 @@
 import { type CSSProperties, useMemo, useState } from 'react';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { FlowShell, InlineError } from '@/components/ui/flow';
+import { Pill } from '@/components/ui/pill';
+import { ProgressRail } from '@/components/ui/progress-rail';
+import { Surface } from '@/components/ui/surface';
 import { sliderQuestions } from '../data/datingMirrorContent';
 import { baselineVector, clampScore } from '../lib/scoring';
 import { loadIdealDraft, saveIdealDraft } from '../lib/localState';
@@ -65,34 +70,46 @@ export function Step1IdealFlow({ isSaving, saveError, onBack, onComplete }: Step
   const scorePercent = ((value - 1) / 9) * 100;
 
   return (
-    <main className="flow-screen ideal-flow-screen">
-      <section className="question-stage" aria-labelledby="ideal-title">
-        <article className="question-card">
-          <div className="question-card-header">
+    <FlowShell className="grid min-h-svh w-[min(1120px,calc(100%_-_32px))] content-center py-[clamp(12px,3vh,28px)] max-[620px]:w-[min(100%_-_24px,560px)] max-[620px]:content-start max-[620px]:py-2">
+      <section className="grid gap-0" aria-labelledby="ideal-title">
+        <Surface
+          asChild
+          className="relative grid min-h-[min(720px,calc(100svh_-_clamp(24px,6vh,56px)))] max-h-[calc(100svh_-_clamp(24px,6vh,56px))] content-between gap-[clamp(16px,2.2vh,28px)] overflow-visible p-[clamp(20px,3vw,36px)] max-[620px]:min-h-[calc(100svh_-_16px)] max-[620px]:max-h-none max-[620px]:gap-3.5 max-[620px]:p-[18px]"
+        >
+          <article>
+          <div className="flex items-center justify-between gap-4 text-[0.9rem] font-medium uppercase tracking-normal text-subtle-foreground max-[620px]:flex-col max-[620px]:items-start max-[620px]:gap-2.5">
             <span>Launch my mirror: Step 1</span>
             <span>
               Dimension {progress} of {sliderQuestions.length}
             </span>
           </div>
 
-          <div className="progress-rail" aria-label={`Question ${progress} of ${sliderQuestions.length}`}>
-            <span style={{ width: `${(progress / sliderQuestions.length) * 100}%` }} />
+          <ProgressRail
+            className="-mt-3 max-[620px]:-mt-0.5"
+            value={(progress / sliderQuestions.length) * 100}
+            aria-label={`Question ${progress} of ${sliderQuestions.length}`}
+          />
+
+          <div className="grid max-w-[860px] gap-[clamp(14px,2vh,20px)] max-[620px]:gap-3">
+            <Pill className="min-h-[30px] w-fit justify-self-start px-2.5 text-[0.82rem]">{question.title}</Pill>
+            <h2
+              className="max-w-[820px] text-[clamp(1.6rem,3.35vw,2.75rem)] leading-[1.08] text-foreground max-[620px]:text-[clamp(1.5rem,8.5vw,2.1rem)] max-[620px]:leading-[1.04]"
+              id="ideal-title"
+            >
+              {question.scenario}
+            </h2>
           </div>
 
-          <div className="question-card-body">
-            <span className="dimension-token">{question.title}</span>
-            <h2 id="ideal-title">{question.scenario}</h2>
-          </div>
-
-          <div className="score-detail-panel">
-            <div className="score-target-row">
+          <Surface className="grid gap-[clamp(14px,2vh,20px)] p-[clamp(18px,2.6vw,28px)] max-[620px]:gap-3 max-[620px]:p-4" variant="muted">
+            <div className="flex items-center justify-between gap-4 text-[0.86rem] font-medium uppercase tracking-normal text-subtle-foreground max-[620px]:flex-col max-[620px]:items-start max-[620px]:gap-2.5">
               <span>Low score target</span>
               <span>High score target</span>
             </div>
 
-            <div className="score-track">
+            <div className="grid min-h-[34px] items-center max-[620px]:min-h-7">
               <input
                 aria-label={`Preference slider for ${question.title}`}
+                className="score-range"
                 type="range"
                 min="1"
                 max="10"
@@ -103,26 +120,40 @@ export function Step1IdealFlow({ isSaving, saveError, onBack, onComplete }: Step
               />
             </div>
 
-            <div className="selected-detail">
-              <span>Selected direction detail</span>
-              <strong>{selectedDetail}</strong>
+            <div className="grid gap-2.5 border-t border-border pt-[clamp(14px,2vh,20px)] text-center max-[620px]:gap-2 max-[620px]:pt-3 max-[620px]:text-left">
+              <span className="text-[0.86rem] font-medium uppercase tracking-normal text-subtle-foreground">
+                Selected direction detail
+              </span>
+              <strong className="mx-auto max-w-[780px] text-[clamp(0.98rem,1.5vw,1.1rem)] leading-[1.45] text-foreground max-[620px]:mx-0 max-[620px]:text-[0.96rem] max-[620px]:leading-[1.35]">
+                {selectedDetail}
+              </strong>
             </div>
-          </div>
+          </Surface>
 
-          {saveError && <p className="inline-error">{saveError}</p>}
+          {saveError && <InlineError>{saveError}</InlineError>}
 
-          <div className="question-card-footer">
-            <button className="ghost-button" onClick={goPrevious}>
+          <div className="flex items-center justify-between gap-[18px] border-t border-border pt-[clamp(16px,2.4vh,22px)] max-[620px]:flex-col max-[620px]:items-start max-[620px]:gap-2.5 max-[620px]:pt-3">
+            <Button
+              variant="ghostPill"
+              onClick={goPrevious}
+              className="max-[620px]:w-full"
+            >
               <ArrowLeft size={18} />
               {activeIndex === 0 ? 'Back' : 'Previous'}
-            </button>
-            <button className="primary-button flow-continue" onClick={goNext} disabled={isSaving}>
+            </Button>
+            <Button
+              size="flow"
+              className="w-[min(320px,100%)] max-[620px]:w-full max-[620px]:min-h-12"
+              onClick={goNext}
+              disabled={isSaving}
+            >
               {isSaving ? 'Saving your mirror...' : isLast ? 'Lock my ideal' : 'Next'}
               <ArrowRight size={18} />
-            </button>
+            </Button>
           </div>
-        </article>
+          </article>
+        </Surface>
       </section>
-    </main>
+    </FlowShell>
   );
 }

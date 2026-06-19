@@ -1,5 +1,11 @@
 import { useMemo, useState } from 'react';
 import { ArrowLeft, Copy, ExternalLink, RefreshCw, Share2, Sparkles } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { FlowShell, InlineError, TopBar } from '@/components/ui/flow';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Eyebrow } from '@/components/ui/pill';
+import { Surface } from '@/components/ui/surface';
 import type { UserSession } from '../types/dating-mirror';
 
 interface FriendSharePanelProps {
@@ -46,56 +52,67 @@ export function FriendSharePanel({
   const reportUnlocked = friendCount >= 2;
 
   return (
-    <main className="share-screen">
-      <div className="flow-topbar">
-        <button className="ghost-button" onClick={onBack}>
+    <FlowShell className="w-[min(1040px,calc(100%_-_32px))] pb-14 max-[620px]:w-[min(100%_-_24px,520px)]">
+      <TopBar>
+        <Button variant="ghostPill" onClick={onBack}>
           <ArrowLeft size={18} />
           Back to Actual
-        </button>
-        <button className="ghost-button" onClick={onRefresh}>
+        </Button>
+        <Button variant="ghostPill" onClick={onRefresh}>
           <RefreshCw size={17} />
           Refresh
-        </button>
-      </div>
+        </Button>
+      </TopBar>
 
-      <section className="share-layout">
-        <div className="share-copy">
-          <p className="eyebrow">Step 3 - What Friends Notice</p>
-          <h2>Send the vibe check to people who have seen the pattern.</h2>
+      <section className="grid min-h-[calc(100vh_-_144px)] grid-cols-[minmax(0,0.95fr)_minmax(360px,1.05fr)] items-center gap-7 max-[620px]:min-h-auto max-[620px]:grid-cols-1 max-[620px]:pt-6">
+        <div>
+          <Eyebrow>Step 3 - What Friends Notice</Eyebrow>
+          <h2 className="max-w-[720px] text-[clamp(2.4rem,7vw,5rem)] leading-[1.05] text-foreground">
+            Send the vibe check to people who have seen the pattern.
+          </h2>
           <p>
             Friends get a private 8-question rapid-fire deck. You only see the count and
             aggregate signal, never individual answers.
           </p>
-          {statusMessage && <p className="inline-error">{statusMessage}</p>}
+          {statusMessage && <InlineError>{statusMessage}</InlineError>}
         </div>
 
-        <article className="share-card-panel">
-          <label className="text-field">
+        <Surface asChild>
+          <article>
+          <Label>
             What should friends call you?
-            <input value={displayName} onChange={(event) => setDisplayName(event.target.value)} />
-          </label>
+            <Input value={displayName} onChange={(event) => setDisplayName(event.target.value)} />
+          </Label>
 
-          <div className="share-url-box">
+          <div className="my-[18px] grid min-h-[58px] grid-cols-[auto_1fr] items-center gap-2.5 overflow-hidden rounded-lg border border-border bg-muted p-3.5 text-foreground">
             <Share2 size={18} />
-            <span>{shareUrl || 'Finish Step 1 and Step 2 to generate a link.'}</span>
+            <span className="overflow-hidden text-ellipsis whitespace-nowrap text-[0.92rem] font-medium text-foreground">
+              {shareUrl || 'Finish Step 1 and Step 2 to generate a link.'}
+            </span>
           </div>
 
-          <div className="share-actions">
-            <button className="primary-button" onClick={copyLink} disabled={!shareUrl}>
+          <div className="mb-[18px] flex flex-wrap gap-3">
+            <Button onClick={copyLink} disabled={!shareUrl}>
               <Copy size={18} />
               {copied ? 'Copied' : 'Copy link'}
-            </button>
-            <a className="secondary-link" href={shareUrl || '#'} target="_blank" rel="noreferrer">
-              Preview
-              <ExternalLink size={16} />
-            </a>
+            </Button>
+            <Button asChild variant="secondaryPill">
+              <a href={shareUrl || '#'} target="_blank" rel="noreferrer">
+                Preview
+                <ExternalLink size={16} />
+              </a>
+            </Button>
           </div>
 
-          <div className="unlock-meter">
-            <span className="meter-count">{friendCount}/2</span>
+          <div className="mb-[18px] grid grid-cols-[auto_1fr] items-center gap-3.5 rounded-lg border border-border p-4">
+            <span className="inline-flex size-[62px] items-center justify-center rounded-full bg-foreground font-medium text-background">
+              {friendCount}/2
+            </span>
             <div>
-              <h3>{reportUnlocked ? 'Mirror unlocked' : 'Waiting for two friends'}</h3>
-              <p>
+              <h3 className="mb-0 text-xl leading-[1.2] text-foreground">
+                {reportUnlocked ? 'Mirror unlocked' : 'Waiting for two friends'}
+              </h3>
+              <p className="mb-0">
                 {reportUnlocked
                   ? 'The Johari reveal is ready to cook.'
                   : 'Minimum two completed friend decks are required before the final report.'}
@@ -103,12 +120,13 @@ export function FriendSharePanel({
             </div>
           </div>
 
-          <button className="primary-button flow-continue" onClick={onContinue} disabled={!reportUnlocked}>
+          <Button size="flow" onClick={onContinue} disabled={!reportUnlocked}>
             Reveal my mirror
             <Sparkles size={18} />
-          </button>
-        </article>
+          </Button>
+          </article>
+        </Surface>
       </section>
-    </main>
+    </FlowShell>
   );
 }

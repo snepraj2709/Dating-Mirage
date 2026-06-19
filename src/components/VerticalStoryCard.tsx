@@ -1,4 +1,7 @@
 import type { ReactNode } from 'react';
+import { Eyebrow } from '@/components/ui/pill';
+import { Surface } from '@/components/ui/surface';
+import { cn } from '@/lib/utils';
 
 interface VerticalStoryCardProps {
   icon: ReactNode;
@@ -11,14 +14,23 @@ interface VerticalStoryCardProps {
 
 export function VerticalStoryCard({ icon, eyebrow, title, body, meta, className }: VerticalStoryCardProps) {
   return (
-    <section className={className ? `vertical-story-card ${className}` : 'vertical-story-card'}>
-      <div className="vertical-story-card__icon" aria-hidden="true">
+    <Surface
+      asChild
+      className={cn(
+        'mx-auto my-6 grid aspect-[9/16] w-[min(420px,100%)] content-center justify-items-start gap-3.5',
+        className,
+      )}
+      padding="story"
+    >
+      <section>
+      <div data-slot="story-card-icon" className="inline-flex min-h-[38px] items-center text-foreground" aria-hidden="true">
         {icon}
       </div>
-      <p className="eyebrow">{eyebrow}</p>
-      <h2>{title}</h2>
-      <div className="vertical-story-card__body">{body}</div>
-      {meta && <div className="vertical-story-card__meta">{meta}</div>}
-    </section>
+      <Eyebrow>{eyebrow}</Eyebrow>
+      <h2 className="mb-0 text-[clamp(2rem,5vw,3.2rem)] leading-[1.02] text-foreground">{title}</h2>
+      <div data-slot="story-card-body" className="grid gap-3 [&_p]:mb-0">{body}</div>
+      {meta && <div data-slot="story-card-meta" className="self-end font-medium text-primary [&_p]:mb-0">{meta}</div>}
+      </section>
+    </Surface>
   );
 }
