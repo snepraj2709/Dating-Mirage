@@ -1,8 +1,9 @@
-import { useState } from 'react';
-import { createOrUpdateSession, getSession, submitActualProfile } from './api/client';
+import { useEffect, useState } from 'react';
+import { burnSession, createOrUpdateSession, getReport, getSession, submitActualProfile } from './api/client';
 import { FriendRapidFireDeck } from './components/FriendRapidFireDeck';
 import { FriendSharePanel } from './components/FriendSharePanel';
 import { Hero } from './components/Hero';
+import { JohariReveal } from './components/JohariReveal';
 import { MirrorStepper } from './components/MirrorStepper';
 import { Navigation } from './components/Navigation';
 import { PrivacyStrip } from './components/PrivacyStrip';
@@ -11,11 +12,14 @@ import { Step2SwipeMatrix } from './components/Step2SwipeMatrix';
 import {
   clearActualSwipes,
   clearIdealDraft,
+  clearLocalFriendProfiles,
+  clearStoredSession,
   loadLocalFriendProfiles,
   loadStoredSession,
   saveStoredSession,
 } from './lib/localState';
-import type { UserSession, VectorProfile } from './types/dating-mirror';
+import { aggregateSocialProfile, calculateJohariReport } from './lib/scoring';
+import type { JohariReport, UserSession, VectorProfile } from './types/dating-mirror';
 
 type AppStage = 'landing' | 'ideal' | 'actual' | 'share' | 'reveal';
 
@@ -26,6 +30,9 @@ export default function App() {
   const [isSavingIdeal, setIsSavingIdeal] = useState(false);
   const [isSavingActual, setIsSavingActual] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [report, setReport] = useState<JohariReport | null>(null);
+  const [isLoadingReport, setIsLoadingReport] = useState(false);
+  const [reportError, setReportError] = useState<string | null>(null);
 
   const handleIdealComplete = async (idealProfile: VectorProfile) => {
     setIsSavingIdeal(true);
@@ -123,6 +130,111 @@ export default function App() {
     }
   };
 
+  useEffect(() => {
+    if (stage !== 'reveal' || !session) {
+      return;
+    }
+
+    const activeSession = session;
+    let cancelled = false;
+
+    async function loadReport() {
+      setIsLoadingReport(true);
+      setReportError(null);
+
+      try {
+        if (!activeSession.id.startsWith('local-')) {
+          const [nextReport, nextSession] = await Promise.all([
+            getReport(activeSession.id),
+            getSession(activeSession.id),
+          ]);
+          if (!cancelled) {
+            setReport(nextReport);
+            setSession(nextSession);
+            saveStoredSession(nextSession);
+          }
+          return;
+        }
+
+        throw new Error('Local report fallback');
+      } catch {
+        const friendProfiles = loadLocalFriendProfiles(activeSession.id);
+        const socialProfile = aggregateSocialProfile(friendProfiles);
+
+        if (
+          !activeSession.idealProfile ||
+          !activeSession.actualProfile ||
+          !socialProfile ||
+          friendProfiles.length < 2
+        ) {
+          if (!cancelled) {
+            setReportError('The mirror needs two friend responses plus your ideal and actual vectors.');
+          }
+          return;
+        }
+
+        const localReport = calculateJohariReport(
+          activeSession.id,
+          activeSession.idealProfile,
+          activeSession.actualProfile,
+          socialProfile,
+          friendProfiles.length,
+        );
+        const nextSession = {
+          ...activeSession,
+          socialProfile,
+          friendCount: friendProfiles.length,
+          reportUnlocked: true,
+        };
+
+        if (!cancelled) {
+          setReport(localReport);
+          setSession(nextSession);
+          saveStoredSession(nextSession);
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoadingReport(false);
+        }
+      }
+    }
+
+    void loadReport();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [stage, session?.id]);
+
+  const handleBurnData = async () => {
+    const sessionId = session?.id;
+    if (sessionId && !sessionId.startsWith('local-')) {
+      try {
+        await burnSession(sessionId);
+      } catch {
+        // Local cleanup still proceeds; the user asked for one-tap deletion behavior.
+      }
+    }
+
+    if (sessionId) {
+      clearLocalFriendProfiles(sessionId);
+    }
+    clearStoredSession();
+    clearIdealDraft();
+    clearActualSwipes();
+    setSession(null);
+    setReport(null);
+    setSaveError(null);
+    setReportError(null);
+    setStage('landing');
+  };
+
+  const startReveal = () => {
+    setReport(null);
+    setReportError(null);
+    setStage('reveal');
+  };
+
   if (friendMatch) {
     const searchParams = new URLSearchParams(window.location.search);
     return (
@@ -162,12 +274,34 @@ export default function App() {
         statusMessage={saveError}
         onBack={() => setStage('actual')}
         onRefresh={refreshFriendCount}
-        onContinue={() => setStage('reveal')}
+        onContinue={startReveal}
       />
     );
   }
 
   if (stage === 'reveal') {
+    if (isLoadingReport) {
+      return (
+        <main className="reveal-loader">
+          <div className="compact-loader" aria-hidden="true">
+            🪞💞
+          </div>
+          <h1>Polishing your mirror...</h1>
+        </main>
+      );
+    }
+
+    if (report && session) {
+      return (
+        <JohariReveal
+          report={report}
+          session={session}
+          onBack={() => setStage('share')}
+          onBurnData={handleBurnData}
+        />
+      );
+    }
+
     return (
       <main className="stage-placeholder">
         <button className="ghost-button" onClick={() => setStage('share')}>
@@ -176,7 +310,8 @@ export default function App() {
         <section className="placeholder-card">
           <p className="eyebrow">Step 4</p>
           <h1>The Mirror Analysis</h1>
-          <p>The Johari reveal and share card plug into this shell in the next commit.</p>
+          {reportError && <p className="inline-error">{reportError}</p>}
+          <p>Refresh your friend responses, then come back to reveal the report.</p>
         </section>
       </main>
     );
