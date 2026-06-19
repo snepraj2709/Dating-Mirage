@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowLeft, RotateCcw } from 'lucide-react';
+import { ArrowLeft, ArrowRight, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { FlowCard } from '@/components/ui/flow-card';
 import { InlineError } from '@/components/ui/flow';
@@ -26,7 +26,7 @@ export function Step2SwipeMatrix({ isSaving, saveError, onBack, onComplete }: St
   const [swipes, setSwipes] = useState<Record<string, SwipeDirection>>(initialSwipes);
   const [activeIndex, setActiveIndex] = useState(() => {
     const firstUnanswered = swipeStatements.findIndex((statement) => initialSwipes[statement.id] === undefined);
-    return firstUnanswered === -1 ? 0 : firstUnanswered;
+    return firstUnanswered === -1 ? swipeStatements.length - 1 : firstUnanswered;
   });
   const feedbackTimeoutRef = useRef<number | null>(null);
   const [dragStart, setDragStart] = useState<number | null>(null);
@@ -34,7 +34,7 @@ export function Step2SwipeMatrix({ isSaving, saveError, onBack, onComplete }: St
   const [stamp, setStamp] = useState<SwipeDirection | null>(null);
 
   const current = swipeStatements[activeIndex];
-  const completedCount = Object.keys(swipes).length;
+  const completedCount = swipeStatements.filter((statement) => swipes[statement.id] !== undefined).length;
   const progress = Math.min(activeIndex + 1, swipeStatements.length);
   const isComplete = completedCount >= swipeStatements.length;
   const isShowingFeedback = stamp !== null;
@@ -70,6 +70,7 @@ export function Step2SwipeMatrix({ isSaving, saveError, onBack, onComplete }: St
       feedbackTimeoutRef.current = null;
 
       if (activeIndex === swipeStatements.length - 1) {
+        setActiveIndex(swipeStatements.length - 1);
         onComplete(buildActualProfile(nextSwipes, swipeStatements));
       } else {
         setActiveIndex((index) => index + 1);
@@ -105,9 +106,13 @@ export function Step2SwipeMatrix({ isSaving, saveError, onBack, onComplete }: St
     setDragX(0);
   };
 
-  if (isComplete && !current) {
-    return null;
-  }
+  const lockActual = () => {
+    if (!isComplete || isSaving || isShowingFeedback) {
+      return;
+    }
+
+    onComplete(buildActualProfile(swipes, swipeStatements));
+  };
 
   return (
     <FlowCard
@@ -124,10 +129,22 @@ export function Step2SwipeMatrix({ isSaving, saveError, onBack, onComplete }: St
         </Button>
       }
       footerRight={
-        <Button variant="ghostPill" size="compact" onClick={resetDeck} className="max-[620px]:w-full">
-          <RotateCcw size={17} />
-          Reset
-        </Button>
+        isComplete ? (
+          <Button
+            variant="ghostPill"
+            className="min-w-[170px] max-[620px]:w-full"
+            onClick={lockActual}
+            disabled={isSaving || isShowingFeedback}
+          >
+            {isSaving ? 'Saving your pattern...' : 'Lock my Actual'}
+            <ArrowRight size={18} />
+          </Button>
+        ) : (
+          <Button variant="ghostPill" size="compact" onClick={resetDeck} className="max-[620px]:w-full">
+            <RotateCcw size={17} />
+            Reset
+          </Button>
+        )
       }
     >
       <div className="grid w-full max-w-[940px] justify-items-center gap-[clamp(22px,3.2vh,34px)] text-center">
@@ -197,6 +214,18 @@ export function Step2SwipeMatrix({ isSaving, saveError, onBack, onComplete }: St
             Frequently 💘
           </Button>
         </div>
+
+        {isComplete && (
+          <Button
+            variant="ghostPill"
+            size="compact"
+            onClick={resetDeck}
+            disabled={isSaving || isShowingFeedback}
+          >
+            <RotateCcw size={17} />
+            Reset answers
+          </Button>
+        )}
 
         {saveError && <InlineError className="mb-0 text-center">{saveError}</InlineError>}
       </div>

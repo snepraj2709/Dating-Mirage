@@ -106,7 +106,6 @@ export default function App() {
       const nextSession = await submitActualProfile(currentSession.id, actualProfile);
       setSession(nextSession);
       saveStoredSession(nextSession);
-      clearActualSwipes();
       setStage('share');
     } catch {
       const localSession: UserSession = {
@@ -115,7 +114,6 @@ export default function App() {
       };
       setSession(localSession);
       saveStoredSession(localSession);
-      clearActualSwipes();
       setSaveError('Your pattern is saved on this device for now.');
       setStage('share');
     } finally {
