@@ -53,6 +53,10 @@ export interface SwipeStatement {
   swipeRightLabel: string;
 }
 
+export type ActualFrequencyValue = 'never' | 'sometimes' | 'often' | 'always';
+
+export type ActualAnswerMap = Partial<Record<string, ActualFrequencyValue>>;
+
 export interface FriendRapidFireQuestion {
   id: string;
   key: DimensionKey;

@@ -1,5 +1,6 @@
 import { dimensionOrder } from '../data/datingMirrorContent';
 import type {
+  ActualFrequencyValue,
   DimensionJohariResult,
   DimensionKey,
   JohariReport,
@@ -10,6 +11,12 @@ import type {
 
 export const HIGH_GAP_THRESHOLD = 3.0;
 export const MAX_DISTANCE = Math.sqrt(9 ** 2 + 9 ** 2);
+export const actualFrequencyWeights: Record<ActualFrequencyValue, number> = {
+  never: 0,
+  sometimes: 1 / 3,
+  often: 2 / 3,
+  always: 1,
+};
 
 export const baselineVector = (value = 5.5): VectorProfile => ({
   CON: value,
@@ -25,17 +32,27 @@ export const baselineVector = (value = 5.5): VectorProfile => ({
 export const clampScore = (value: number) => Math.min(10, Math.max(1, Number(value.toFixed(2))));
 
 export function buildActualProfile(
-  swipes: Record<string, 'left' | 'right'>,
+  answers: Partial<Record<string, ActualFrequencyValue | 'left' | 'right'>>,
   statements: SwipeStatement[],
 ): VectorProfile {
   const profile = baselineVector();
 
   statements.forEach((statement) => {
-    if (swipes[statement.id] !== 'right') {
+    const answer = answers[statement.id];
+    const weight =
+      answer === 'right'
+        ? 1
+        : answer === 'left'
+          ? 0
+          : answer
+            ? actualFrequencyWeights[answer]
+            : 0;
+
+    if (weight === 0) {
       return;
     }
 
-    profile[statement.key] = clampScore(profile[statement.key] + statement.scoreEffect);
+    profile[statement.key] = clampScore(profile[statement.key] + statement.scoreEffect * weight);
   });
 
   dimensionOrder.forEach((key) => {
@@ -125,4 +142,3 @@ export function calculateJohariReport(
     featuredDimensions,
   };
 }
-

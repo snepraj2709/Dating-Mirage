@@ -1,4 +1,4 @@
-import type { UserSession, VectorProfile } from '../types/dating-mirror';
+import type { ActualAnswerMap, ActualFrequencyValue, UserSession, VectorProfile } from '../types/dating-mirror';
 
 const IDEAL_DRAFT_KEY = 'dating-mirror:ideal-draft';
 const ACTUAL_SWIPES_KEY = 'dating-mirror:actual-swipes';
@@ -22,17 +22,51 @@ export function clearIdealDraft() {
   window.localStorage.removeItem(IDEAL_DRAFT_KEY);
 }
 
-export function loadActualSwipes(): Record<string, 'left' | 'right'> {
+function normalizeActualAnswer(value: unknown): ActualFrequencyValue | undefined {
+  if (value === 'never' || value === 'sometimes' || value === 'often' || value === 'always') {
+    return value;
+  }
+
+  if (value === 'left') {
+    return 'never';
+  }
+
+  if (value === 'right') {
+    return 'always';
+  }
+
+  return undefined;
+}
+
+export function loadActualAnswers(): ActualAnswerMap {
   try {
     const raw = window.localStorage.getItem(ACTUAL_SWIPES_KEY);
-    return raw ? JSON.parse(raw) : {};
+    const parsed = raw ? JSON.parse(raw) : {};
+
+    return Object.entries(parsed).reduce<ActualAnswerMap>((answers, [id, value]) => {
+      const answer = normalizeActualAnswer(value);
+
+      if (answer) {
+        answers[id] = answer;
+      }
+
+      return answers;
+    }, {});
   } catch {
     return {};
   }
 }
 
-export function saveActualSwipes(swipes: Record<string, 'left' | 'right'>) {
-  window.localStorage.setItem(ACTUAL_SWIPES_KEY, JSON.stringify(swipes));
+export function saveActualAnswers(answers: ActualAnswerMap) {
+  window.localStorage.setItem(ACTUAL_SWIPES_KEY, JSON.stringify(answers));
+}
+
+export function loadActualSwipes() {
+  return loadActualAnswers();
+}
+
+export function saveActualSwipes(answers: ActualAnswerMap) {
+  saveActualAnswers(answers);
 }
 
 export function clearActualSwipes() {

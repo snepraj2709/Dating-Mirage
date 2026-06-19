@@ -1,18 +1,14 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { ArrowLeft, ArrowRight, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { FlowCard } from '@/components/ui/flow-card';
 import { InlineError } from '@/components/ui/flow';
 import { Pill } from '@/components/ui/pill';
 import { cn } from '@/lib/utils';
-import { swipeStatements } from '../data/datingMirrorContent';
-import { loadActualSwipes, saveActualSwipes } from '../lib/localState';
+import { dimensions, swipeStatements } from '../data/datingMirrorContent';
+import { loadActualAnswers, saveActualAnswers } from '../lib/localState';
 import { buildActualProfile } from '../lib/scoring';
-import type { VectorProfile } from '../types/dating-mirror';
-
-type SwipeDirection = 'left' | 'right';
-
-const SWIPE_STAMP_DURATION_MS = 700;
+import type { ActualAnswerMap, ActualFrequencyValue, DimensionKey, VectorProfile } from '../types/dating-mirror';
 
 interface Step2SwipeMatrixProps {
   isSaving: boolean;
@@ -21,107 +17,91 @@ interface Step2SwipeMatrixProps {
   onComplete: (actualProfile: VectorProfile) => void;
 }
 
+const frequencyOptions: Array<{ value: ActualFrequencyValue; label: string; description: string }> = [
+  { value: 'never', label: 'Never', description: 'This was not really my pattern.' },
+  { value: 'sometimes', label: 'Sometimes', description: 'It happened, but it was not the default.' },
+  { value: 'often', label: 'Often', description: 'This was a real pattern in my history.' },
+  { value: 'always', label: 'Always', description: 'This showed up almost every time.' },
+];
+
+const contextLabels: Partial<Record<DimensionKey, string>> = {
+  CON: 'Communication consistency',
+  INT: 'Pace and intensity',
+  AUT: 'Autonomy balance',
+  VAL: 'Validation pull',
+  GOC: 'Conflict comfort',
+  VUL: 'Vulnerability pace',
+  REA: 'Emotional reactivity',
+  RWO: 'Boundary standard',
+};
+
+const dimensionNames = dimensions.reduce<Record<DimensionKey, string>>((names, dimension) => {
+  names[dimension.key] = dimension.name;
+  return names;
+}, {} as Record<DimensionKey, string>);
+
 export function Step2SwipeMatrix({ isSaving, saveError, onBack, onComplete }: Step2SwipeMatrixProps) {
-  const initialSwipes = useMemo(() => loadActualSwipes(), []);
-  const [swipes, setSwipes] = useState<Record<string, SwipeDirection>>(initialSwipes);
+  const initialAnswers = useMemo(() => loadActualAnswers(), []);
+  const [answers, setAnswers] = useState<ActualAnswerMap>(initialAnswers);
   const [activeIndex, setActiveIndex] = useState(() => {
-    const firstUnanswered = swipeStatements.findIndex((statement) => initialSwipes[statement.id] === undefined);
+    const firstUnanswered = swipeStatements.findIndex((statement) => initialAnswers[statement.id] === undefined);
     return firstUnanswered === -1 ? swipeStatements.length - 1 : firstUnanswered;
   });
-  const feedbackTimeoutRef = useRef<number | null>(null);
-  const [dragStart, setDragStart] = useState<number | null>(null);
-  const [dragX, setDragX] = useState(0);
-  const [stamp, setStamp] = useState<SwipeDirection | null>(null);
 
   const current = swipeStatements[activeIndex];
-  const completedCount = swipeStatements.filter((statement) => swipes[statement.id] !== undefined).length;
+  const selectedAnswer = current ? answers[current.id] : undefined;
+  const completedCount = swipeStatements.filter((statement) => answers[statement.id] !== undefined).length;
   const progress = Math.min(activeIndex + 1, swipeStatements.length);
+  const progressPercent = (progress / swipeStatements.length) * 100;
   const isComplete = completedCount >= swipeStatements.length;
-  const isShowingFeedback = stamp !== null;
+  const isLast = activeIndex === swipeStatements.length - 1;
 
-  useEffect(() => {
-    return () => {
-      if (feedbackTimeoutRef.current !== null) {
-        window.clearTimeout(feedbackTimeoutRef.current);
-      }
-    };
-  }, []);
-
-  const triggerHaptic = (direction: SwipeDirection) => {
-    if ('vibrate' in navigator) {
-      navigator.vibrate(direction === 'right' ? [18, 22, 18] : 18);
-    }
-  };
-
-  const submitSwipe = (direction: SwipeDirection) => {
-    if (!current || isSaving || isShowingFeedback) {
+  const updateAnswer = (value: ActualFrequencyValue) => {
+    if (!current || isSaving) {
       return;
     }
 
-    const nextSwipes = { ...swipes, [current.id]: direction };
-    setSwipes(nextSwipes);
-    saveActualSwipes(nextSwipes);
-    setStamp(direction);
-    triggerHaptic(direction);
-
-    feedbackTimeoutRef.current = window.setTimeout(() => {
-      setStamp(null);
-      setDragX(0);
-      feedbackTimeoutRef.current = null;
-
-      if (activeIndex === swipeStatements.length - 1) {
-        setActiveIndex(swipeStatements.length - 1);
-        onComplete(buildActualProfile(nextSwipes, swipeStatements));
-      } else {
-        setActiveIndex((index) => index + 1);
-      }
-    }, SWIPE_STAMP_DURATION_MS);
+    const nextAnswers = { ...answers, [current.id]: value };
+    setAnswers(nextAnswers);
+    saveActualAnswers(nextAnswers);
   };
 
   const resetDeck = () => {
-    if (feedbackTimeoutRef.current !== null) {
-      window.clearTimeout(feedbackTimeoutRef.current);
-      feedbackTimeoutRef.current = null;
-    }
-    setSwipes({});
-    saveActualSwipes({});
+    setAnswers({});
+    saveActualAnswers({});
     setActiveIndex(0);
-    setStamp(null);
-    setDragX(0);
   };
 
-  const handlePointerUp = (clientX: number) => {
-    if (dragStart === null) {
+  const goNext = () => {
+    if (!selectedAnswer || isSaving) {
       return;
     }
 
-    const delta = clientX - dragStart;
-    setDragStart(null);
-
-    if (Math.abs(delta) > 82) {
-      submitSwipe(delta > 0 ? 'right' : 'left');
+    if (isLast) {
+      lockActual();
       return;
     }
 
-    setDragX(0);
+    setActiveIndex((index) => index + 1);
   };
 
   const lockActual = () => {
-    if (!isComplete || isSaving || isShowingFeedback) {
+    if (!isComplete || isSaving) {
       return;
     }
 
-    onComplete(buildActualProfile(swipes, swipeStatements));
+    onComplete(buildActualProfile(answers, swipeStatements));
   };
 
   return (
     <FlowCard
       aria-labelledby="swipe-title"
-      headerLabel="LAUNCH MY MIRROR: STEP 2 (REALITY SWIPES)"
-      headerMeta={`REALITY SWIPE ${progress} OF ${swipeStatements.length}`}
-      progressValue={(progress / swipeStatements.length) * 100}
+      headerLabel={`Step 2 - your history - swipe ${progress} of ${swipeStatements.length}`}
+      headerMeta={`${Math.round(progressPercent)}%`}
+      headerClassName="normal-case text-[clamp(0.95rem,1.6vw,1.08rem)] text-muted-foreground"
+      progressValue={progressPercent}
       progressLabel={`Reality swipe ${progress} of ${swipeStatements.length}`}
-      contentClassName="place-items-center"
+      contentClassName="gap-[clamp(18px,2.4vh,28px)]"
       footerLeft={
         <Button variant="ghostPill" onClick={onBack} className="max-[620px]:w-full">
           <ArrowLeft size={18} />
@@ -129,106 +109,83 @@ export function Step2SwipeMatrix({ isSaving, saveError, onBack, onComplete }: St
         </Button>
       }
       footerRight={
-        isComplete ? (
-          <Button
-            variant="ghostPill"
-            className="min-w-[170px] max-[620px]:w-full"
-            onClick={lockActual}
-            disabled={isSaving || isShowingFeedback}
-          >
-            {isSaving ? 'Saving your pattern...' : 'Lock my Actual'}
-            <ArrowRight size={18} />
-          </Button>
-        ) : (
-          <Button variant="ghostPill" size="compact" onClick={resetDeck} className="max-[620px]:w-full">
-            <RotateCcw size={17} />
-            Reset
-          </Button>
-        )
-      }
-    >
-      <div className="grid w-full max-w-[940px] justify-items-center gap-[clamp(22px,3.2vh,34px)] text-center">
-        <Pill className="min-h-[34px] border-border-strong bg-muted px-5 text-[0.86rem] uppercase tracking-normal text-foreground">
-          ACTUAL HISTORY SWIPES
-        </Pill>
-
-        <h2
-          className="mb-0 text-[clamp(1.75rem,3.6vw,2.85rem)] leading-[1.08] text-foreground max-[620px]:text-[clamp(1.55rem,8vw,2.15rem)]"
-          id="swipe-title"
-        >
-          How frequently did this dynamic happen in your past?
-        </h2>
-
-        <div className="relative w-full touch-pan-y" aria-live="polite">
-          {current && (
-            <article
-              className="relative grid min-h-[clamp(180px,28vh,250px)] cursor-grab select-none place-items-center overflow-hidden rounded-lg border border-border bg-muted p-[clamp(22px,4vw,46px)] shadow-none transition-transform duration-100 ease-out active:cursor-grabbing"
-              style={{ transform: `translateX(${dragX}px) rotate(${dragX / 24}deg)` }}
-              onPointerDown={(event) => {
-                setDragStart(event.clientX);
-                event.currentTarget.setPointerCapture(event.pointerId);
-              }}
-              onPointerMove={(event) => {
-                if (dragStart !== null) {
-                  setDragX(event.clientX - dragStart);
-                }
-              }}
-              onPointerUp={(event) => handlePointerUp(event.clientX)}
-              onPointerCancel={() => {
-                setDragStart(null);
-                setDragX(0);
-              }}
-            >
-              {stamp && (
-                <span
-                  className={cn(
-                    'absolute left-5 top-5 z-10 rounded-full border border-current bg-card px-3.5 py-2 text-[0.78rem] font-medium uppercase tracking-normal text-muted-foreground [transform:rotate(-6deg)]',
-                    stamp === 'right' && 'left-auto right-5 text-primary [transform:rotate(6deg)]',
-                  )}
-                >
-                  {stamp === 'right' ? 'Frequently' : 'Rarely'}
-                </span>
-              )}
-              <p className="mb-0 max-w-[820px] text-[clamp(1.18rem,2.6vw,2rem)] font-medium italic leading-[1.45] text-foreground max-[620px]:text-[1.08rem]">
-                "{current.statement}"
-              </p>
-            </article>
-          )}
-        </div>
-
-        <div className="grid w-full max-w-[440px] grid-cols-2 gap-3 max-[620px]:max-w-none" aria-label="Swipe decisions">
-          <Button
-            variant="choiceReject"
-            size="choice"
-            onClick={() => submitSwipe('left')}
-            disabled={isSaving || isShowingFeedback}
-          >
-            Rarely 💔
-          </Button>
-          <Button
-            size="choice"
-            className="border-primary bg-primary text-primary-foreground hover:border-primary-hover hover:bg-primary-hover"
-            onClick={() => submitSwipe('right')}
-            disabled={isSaving || isShowingFeedback}
-          >
-            Frequently 💘
-          </Button>
-        </div>
-
-        {isComplete && (
+        <div className="flex justify-end gap-3 max-[620px]:contents">
           <Button
             variant="ghostPill"
             size="compact"
             onClick={resetDeck}
-            disabled={isSaving || isShowingFeedback}
+            disabled={isSaving}
+            className="max-[620px]:w-full"
           >
             <RotateCcw size={17} />
-            Reset answers
+            Reset
           </Button>
-        )}
 
-        {saveError && <InlineError className="mb-0 text-center">{saveError}</InlineError>}
+          <Button
+            variant="ghostPill"
+            className="min-w-[150px] max-[620px]:w-full"
+            onClick={goNext}
+            disabled={!selectedAnswer || isSaving}
+          >
+            {isSaving ? 'Saving your pattern...' : isLast ? 'Lock my Actuals' : 'Next'}
+            <ArrowRight size={18} />
+          </Button>
+        </div>
+      }
+    >
+      <div className="grid max-w-[900px] gap-[clamp(14px,2vh,18px)]">
+        <Pill className="min-h-[34px] w-fit border-border-strong bg-card px-4 text-[0.92rem] tracking-normal text-foreground">
+          {contextLabels[current.key] ?? dimensionNames[current.key]}
+        </Pill>
+
+        <h2
+          className="mb-0 text-[clamp(1.15rem,2vw,1.45rem)] leading-[1.25] text-muted-foreground"
+          id="swipe-title"
+        >
+          How often did this show up in your past relationships?
+        </h2>
       </div>
+
+      <figure className="mb-0 grid min-h-[clamp(140px,22vh,190px)] place-items-center rounded-lg border border-border bg-muted p-[clamp(22px,4vw,38px)]">
+        <blockquote className="mb-0 max-w-[860px] text-[clamp(1.2rem,2.7vw,2rem)] font-medium italic leading-[1.45] text-foreground max-[620px]:text-[1.05rem]">
+          "{current.statement}"
+        </blockquote>
+      </figure>
+
+      <div className="grid gap-3" role="radiogroup" aria-labelledby="swipe-title">
+        <span className="text-[0.9rem] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+          How true was this for you
+        </span>
+        {frequencyOptions.map((option) => {
+          const isSelected = selectedAnswer === option.value;
+
+          return (
+            <Button
+              aria-checked={isSelected}
+              className={cn(
+                'grid min-h-[70px] grid-cols-[96px_1fr] items-center justify-start gap-3 rounded-lg px-6 py-4 text-left text-[clamp(1rem,1.45vw,1.12rem)] leading-[1.4] max-[620px]:min-h-[64px] max-[620px]:grid-cols-1 max-[620px]:gap-1.5 max-[620px]:px-4 max-[620px]:py-3',
+                isSelected
+                  ? 'border-primary bg-[#fff2f8] text-foreground hover:border-primary hover:bg-[#fff2f8]'
+                  : 'border-input bg-card text-muted-foreground hover:border-border-strong hover:bg-muted hover:text-foreground',
+              )}
+              key={option.value}
+              role="radio"
+              size="option"
+              type="button"
+              variant="option"
+              onClick={() => updateAnswer(option.value)}
+              disabled={isSaving}
+            >
+              <span className={cn('text-[0.96rem] text-muted-foreground', isSelected && 'text-primary')}>
+                {option.label}
+              </span>
+              <span className={cn('block', isSelected && 'font-semibold')}>{option.description}</span>
+            </Button>
+          );
+        })}
+      </div>
+
+      {saveError && <InlineError className="mb-0">{saveError}</InlineError>}
     </FlowCard>
   );
 }

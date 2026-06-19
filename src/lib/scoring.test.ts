@@ -10,19 +10,39 @@ import {
 } from './scoring';
 
 describe('Dating Mirror scoring', () => {
-  it('builds actual profile from right swipes and keeps left swipes neutral', () => {
-    const swipes = {
-      'CON-low': 'right',
-      'CON-high': 'left',
-      'INT-high': 'right',
-      'INT-low': 'left',
+  it('builds actual profile from weighted frequency answers', () => {
+    const answers = {
+      'CON-low': 'often',
+      'CON-high': 'sometimes',
+      'INT-high': 'always',
+      'INT-low': 'never',
     } as const;
 
-    const profile = buildActualProfile(swipes, swipeStatements);
+    const profile = buildActualProfile(answers, swipeStatements);
 
-    expect(profile.CON).toBe(3.25);
+    expect(profile.CON).toBe(4.75);
     expect(profile.INT).toBe(7.75);
     expect(profile.AUT).toBe(5.5);
+  });
+
+  it('keeps never answers at baseline and supports legacy swipe drafts', () => {
+    const neverAnswers = Object.fromEntries(swipeStatements.map((statement) => [statement.id, 'never'])) as Record<
+      string,
+      'never'
+    >;
+    const alwaysAnswers = Object.fromEntries(swipeStatements.map((statement) => [statement.id, 'always'])) as Record<
+      string,
+      'always'
+    >;
+    const legacyRightSwipes = Object.fromEntries(swipeStatements.map((statement) => [statement.id, 'right'])) as Record<
+      string,
+      'right'
+    >;
+
+    expect(buildActualProfile(neverAnswers, swipeStatements)).toEqual(baselineVector());
+    expect(buildActualProfile(alwaysAnswers, swipeStatements)).toEqual(
+      buildActualProfile(legacyRightSwipes, swipeStatements),
+    );
   });
 
   it('aggregates completed friend profiles by dimension', () => {
@@ -100,4 +120,3 @@ describe('Dating Mirror scoring', () => {
     expect(report.featuredDimensions.map((dimension) => dimension.key)).toEqual(['CON', 'INT']);
   });
 });
-
