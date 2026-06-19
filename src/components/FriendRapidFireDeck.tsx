@@ -9,6 +9,7 @@ import {
 import { appendLocalFriendProfile } from '../lib/localState';
 import { buildFriendProfile } from '../lib/scoring';
 import type { DimensionKey, RelationshipType } from '../types/dating-mirror';
+import { VerticalStoryCard } from './VerticalStoryCard';
 
 interface FriendRapidFireDeckProps {
   sessionId: string;
@@ -62,16 +63,17 @@ export function FriendRapidFireDeck({ sessionId, displayName }: FriendRapidFireD
   if (isComplete) {
     return (
       <main className="friend-screen friend-complete-screen">
-        <section className="friend-complete">
-          <HeartHandshake size={38} />
-          <p className="eyebrow">Feedback sent</p>
-          <h2>You did the brave friend thing.</h2>
-          <p>
-            Your individual answers stay private and only blend into {userLabel}'s aggregate
-            Dating Mirror.
-          </p>
-          {submitMessage && <p className="inline-error">{submitMessage}</p>}
-        </section>
+        <VerticalStoryCard
+          icon={<HeartHandshake size={38} />}
+          eyebrow="Feedback sent"
+          title="You did the brave friend thing."
+          body={
+            <p>
+              Your individual answers stay private and only blend into {userLabel}'s aggregate Dating Mirror.
+            </p>
+          }
+          meta={submitMessage ? <p className="inline-error">{submitMessage}</p> : undefined}
+        />
       </main>
     );
   }

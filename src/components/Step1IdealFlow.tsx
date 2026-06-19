@@ -125,7 +125,7 @@ export function Step1IdealFlow({ isSaving, saveError, onBack, onComplete }: Step
           {saveError && <p className="inline-error">{saveError}</p>}
 
           <button className="primary-button flow-continue" onClick={goNext} disabled={isSaving}>
-            {isSaving ? 'Saving your mirror...' : isLast ? 'Lock my ideal' : 'Next card'}
+            {isSaving ? 'Saving your mirror...' : isLast ? 'Lock my ideal' : 'Next'}
             <ArrowRight size={18} />
           </button>
         </article>

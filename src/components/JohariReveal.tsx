@@ -2,9 +2,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, ArrowRight, Flame, Sparkles, Trash2 } from 'lucide-react';
 import { dimensions, quadrantDetails } from '../data/datingMirrorContent';
 import type { JohariReport, UserSession } from '../types/dating-mirror';
-import { JohariMatrix } from './JohariMatrix';
 import { RadarChart } from './RadarChart';
 import { ShareCard } from './ShareCard';
+import { VerticalStoryCard } from './VerticalStoryCard';
 
 interface JohariRevealProps {
   report: JohariReport;
@@ -37,6 +37,8 @@ export function JohariReveal({ report, session, onBack, onBurnData }: JohariReve
   const [screenIndex, setScreenIndex] = useState(0);
   const topDimension = report.featuredDimensions[0];
   const secondDimension = report.featuredDimensions[1];
+  const topDimensionDetail = quadrantDetails[topDimension.quadrant];
+  const topDimensionName = dimensionName(topDimension.key);
 
   useEffect(() => {
     const timeout = window.setTimeout(() => setIsPolishing(false), 3000);
@@ -46,36 +48,36 @@ export function JohariReveal({ report, session, onBack, onBurnData }: JohariReve
   const screens = useMemo(
     () => [
       {
-        eyebrow: 'Screen 1 - The Magnet',
+        eyebrow: 'Magnet',
         title: ' Your Mirror Analysis',
         body: `${report.friendCount} people fed the mirror. The loudest signal is ${dimensionName(
           topDimension.key,
         )}, which landed in ${quadrantDetails[topDimension.quadrant].title}.`,
       },
       {
-        eyebrow: 'Screen 2 - The Mirage',
-        title: 'Your stated ideal and your actual choices are not always dating the same person.',
-        body: `${dimensionName(topDimension.key)} carries a ${topDimension.consciousGap.toFixed(
+        eyebrow: 'Mirage',
+        title: 'Your stated ideal and your actual choices are not in sync.',
+        body: `${topDimensionName} carries a ${topDimension.consciousGap.toFixed(
           1,
         )} self-gap. ${secondDimension ? `${dimensionName(secondDimension.key)} is right behind it.` : ''}`,
       },
       {
-        eyebrow: 'Screen 3 - The Breakdown',
-        title: 'Top two patterns, no clinical jargon.',
-        body: 'The report only features the highest-tension dimensions so the read stays sharp, not overwhelming.',
+        eyebrow: 'Breakdown',
+        title: 'Top two patterns.',
+        body: 'The report features top two highest-tension dimensions and they are:',
       },
       {
-        eyebrow: 'Screen 4 - Next Move',
-        title: 'Your 30-day micro-habit.',
+        eyebrow: 'Next Move',
+        title: 'For next 30-days.',
         body: nextMoveCopy(topDimension.key),
       },
       {
-        eyebrow: 'Screen 5 - The Share Card',
-        title: 'Export the receipt.',
-        body: 'Download a high-contrast card for Instagram, TikTok, or the group chat that already knew.',
+        eyebrow: 'Share',
+        title: 'Export the analysis.',
+        body: 'Share the analysis report on your socials.',
       },
     ],
-    [report.friendCount, secondDimension, topDimension],
+    [report.friendCount, secondDimension, topDimension, topDimensionName],
   );
 
   const current = screens[screenIndex];
@@ -108,58 +110,79 @@ export function JohariReveal({ report, session, onBack, onBurnData }: JohariReve
       </div>
 
       <section className="story-shell">
+        <article className={`story-panel ${screenIndex === 1 ? 'story-panel--mirage' : ''}`}>
+          <div className="story-content">
+            <p className="eyebrow">{current.eyebrow}</p>
+            <h3>{current.title}</h3>
+            <p>{current.body}</p>
+
+            {screenIndex === 0 && (
+              <RadarChart ideal={session.idealProfile} actual={session.actualProfile} social={session.socialProfile} />
+            )}
+
+            {screenIndex === 1 && (
+              <VerticalStoryCard
+                className="mirage-story-card"
+                icon={<span className="vertical-story-card__emoji">{topDimensionDetail.icon}</span>}
+                eyebrow="Screen 2 - The Mirage"
+                title={`${topDimensionName}: ${topDimensionDetail.title}`}
+                body={
+                  <>
+                    <p>
+                      Self-gap: {topDimension.consciousGap.toFixed(1)}. Blind-spot gap:{' '}
+                      {topDimension.blindSpotGap.toFixed(1)}.
+                    </p>
+                    <p>{topDimensionDetail.vibe}</p>
+                  </>
+                }
+                meta={`${topDimension.severityPercentage}% tension`}
+              />
+            )}
+
+            {screenIndex === 2 && (
+              <div className="breakdown-list">
+                {report.featuredDimensions.map((dimension) => {
+                  const detail = quadrantDetails[dimension.quadrant];
+                  return (
+                    <article key={dimension.key}>
+                      <span>{detail.icon}</span>
+                      <div>
+                        <h3>{dimensionName(dimension.key)}</h3>
+                        <p>{detail.vibe}</p>
+                        <strong>{dimension.severityPercentage}% tension</strong>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            )}
+
+            {screenIndex === 3 && (
+              <div className="habit-card">
+                <Flame size={28} />
+                <p>{nextMoveCopy(topDimension.key)}</p>
+              </div>
+            )}
+
+            {screenIndex === 4 && <ShareCard report={report} />}
+          </div>
+
+          <div className="story-actions">
+            <button
+              className="primary-button flow-continue"
+              onClick={() => (canGoNext ? setScreenIndex((index) => index + 1) : setScreenIndex(0))}
+            >
+              {canGoNext ? 'Next' : 'Replay'}
+              {canGoNext ? <ArrowRight size={18} /> : <Sparkles size={18} />}
+            </button>
+          </div>
+        </article>
+
         <div className="story-progress" aria-label={`Reveal screen ${screenIndex + 1} of ${screens.length}`}>
           {screens.map((screen) => (
             <span key={screen.eyebrow} className={screen.eyebrow === current.eyebrow ? 'active' : ''} />
           ))}
         </div>
-
-        <article className="story-panel">
-          <p className="eyebrow">{current.eyebrow}</p>
-          <h3>{current.title}</h3>
-          <p>{current.body}</p>
-
-          {screenIndex === 0 && (
-            <RadarChart ideal={session.idealProfile} actual={session.actualProfile} social={session.socialProfile} />
-          )}
-
-          {screenIndex === 1 && <JohariMatrix report={report} />}
-
-          {screenIndex === 2 && (
-            <div className="breakdown-list">
-              {report.featuredDimensions.map((dimension) => {
-                const detail = quadrantDetails[dimension.quadrant];
-                return (
-                  <article key={dimension.key}>
-                    <span>{detail.icon}</span>
-                    <div>
-                      <h3>{dimensionName(dimension.key)}</h3>
-                      <p>{detail.vibe}</p>
-                      <strong>{dimension.severityPercentage}% tension</strong>
-                    </div>
-                  </article>
-                );
-              })}
-            </div>
-          )}
-
-          {screenIndex === 3 && (
-            <div className="habit-card">
-              <Flame size={28} />
-              <p>{nextMoveCopy(topDimension.key)}</p>
-            </div>
-          )}
-
-          {screenIndex === 4 && <ShareCard report={report} />}
-
-          <button
-            className="primary-button flow-continue"
-            onClick={() => (canGoNext ? setScreenIndex((index) => index + 1) : setScreenIndex(0))}
-          >
-            {canGoNext ? 'Next reveal' : 'Replay reveal'}
-            {canGoNext ? <ArrowRight size={18} /> : <Sparkles size={18} />}
-          </button>
-        </article>
       </section>
     </main>
   );

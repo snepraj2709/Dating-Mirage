@@ -50,7 +50,7 @@ export function FriendSharePanel({
       <div className="flow-topbar">
         <button className="ghost-button" onClick={onBack}>
           <ArrowLeft size={18} />
-          Back to swipes
+          Back to Actual
         </button>
         <button className="ghost-button" onClick={onRefresh}>
           <RefreshCw size={17} />
@@ -86,7 +86,7 @@ export function FriendSharePanel({
               {copied ? 'Copied' : 'Copy link'}
             </button>
             <a className="secondary-link" href={shareUrl || '#'} target="_blank" rel="noreferrer">
-              Preview deck
+              Preview
               <ExternalLink size={16} />
             </a>
           </div>
