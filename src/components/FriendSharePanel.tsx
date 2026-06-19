@@ -7,8 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Pill } from '@/components/ui/pill';
 import { Surface } from '@/components/ui/surface';
-import { loadAnalysisAccess, saveAnalysisAccess } from '../lib/localState';
-import type { AnalysisAccessAccount, UserSession } from '../types/dating-mirror';
+import { isSupabaseConfigured, supabase } from '../lib/supabase';
+import type { UserSession } from '../types/dating-mirror';
 
 interface FriendSharePanelProps {
   session: UserSession | null;
@@ -16,13 +16,6 @@ interface FriendSharePanelProps {
   onBack: () => void;
   onRefresh: () => void;
   onContinue: () => void;
-}
-
-async function hashPassword(password: string) {
-  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(password));
-  return Array.from(new Uint8Array(digest))
-    .map((byte) => byte.toString(16).padStart(2, '0'))
-    .join('');
 }
 
 function isValidEmail(email: string) {
@@ -39,7 +32,7 @@ export function FriendSharePanel({
   const [displayName, setDisplayName] = useState('your friend');
   const [copied, setCopied] = useState(false);
   const [inviteSent, setInviteSent] = useState(false);
-  const [account, setAccount] = useState<AnalysisAccessAccount | null>(null);
+  const [registeredEmail, setRegisteredEmail] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -47,19 +40,40 @@ export function FriendSharePanel({
   const [loginPassword, setLoginPassword] = useState('');
   const [accessMessage, setAccessMessage] = useState<string | null>(null);
   const [accessError, setAccessError] = useState<string | null>(null);
+  const [authBusy, setAuthBusy] = useState(false);
 
   useEffect(() => {
-    const savedAccount = session?.id ? loadAnalysisAccess(session.id) : null;
-    setAccount(savedAccount);
-    setInviteSent(Boolean(savedAccount));
-    setEmail(savedAccount?.email ?? '');
-    setLoginEmail(savedAccount?.email ?? '');
-    setPassword('');
-    setConfirmPassword('');
-    setLoginPassword('');
-    setAccessMessage(null);
-    setAccessError(null);
-  }, [session?.id]);
+    if (!isSupabaseConfigured || !supabase) {
+      return;
+    }
+
+    let isMounted = true;
+    const applySignedInEmail = (nextEmail?: string) => {
+      if (!isMounted || !nextEmail) {
+        return;
+      }
+
+      const normalizedEmail = nextEmail.toLowerCase();
+      setRegisteredEmail(normalizedEmail);
+      setLoginEmail(normalizedEmail);
+      setInviteSent(true);
+    };
+
+    void supabase.auth.getUser().then(({ data }) => {
+      applySignedInEmail(data.user?.email);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      applySignedInEmail(session?.user.email);
+    });
+
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
+  }, []);
 
   const shareUrl = useMemo(() => {
     if (!session?.id) {
@@ -101,6 +115,11 @@ export function FriendSharePanel({
       return;
     }
 
+    if (!isSupabaseConfigured || !supabase) {
+      setAccessError('Supabase Auth is not configured. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.');
+      return;
+    }
+
     const nextEmail = email.trim().toLowerCase();
     if (!isValidEmail(nextEmail)) {
       setAccessError('Enter a valid email address.');
@@ -117,22 +136,37 @@ export function FriendSharePanel({
       return;
     }
 
-    const nextAccount = {
-      email: nextEmail,
-      passwordHash: await hashPassword(password),
-    };
-    saveAnalysisAccess(session.id, nextAccount);
-    setAccount(nextAccount);
-    setLoginEmail(nextEmail);
-    setPassword('');
-    setConfirmPassword('');
+    setAuthBusy(true);
     setAccessError(null);
-    setAccessMessage('Analysis access saved. Use this login once two friends respond.');
+    try {
+      const { error } = await supabase.auth.signUp({
+        email: nextEmail,
+        password,
+        options: {
+          data: {
+            dating_mirror_session_id: session.id,
+          },
+        },
+      });
+
+      if (error) {
+        setAccessError(error.message);
+        return;
+      }
+
+      setRegisteredEmail(nextEmail);
+      setLoginEmail(nextEmail);
+      setPassword('');
+      setConfirmPassword('');
+      setAccessMessage('Supabase account created. Check your email if confirmation is required, then sign in once two friends respond.');
+    } finally {
+      setAuthBusy(false);
+    }
   };
 
   const loginAndReveal = async () => {
-    if (!account) {
-      setAccessError('Create your analysis login first.');
+    if (!registeredEmail) {
+      setAccessError('Create your Supabase login first.');
       return;
     }
 
@@ -141,15 +175,34 @@ export function FriendSharePanel({
       return;
     }
 
+    if (!isSupabaseConfigured || !supabase) {
+      setAccessError('Supabase Auth is not configured. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.');
+      return;
+    }
+
     const submittedEmail = loginEmail.trim().toLowerCase();
-    const submittedHash = await hashPassword(loginPassword);
-    if (submittedEmail !== account.email || submittedHash !== account.passwordHash) {
+    if (submittedEmail !== registeredEmail) {
       setAccessError('Email or password is incorrect.');
       return;
     }
 
+    setAuthBusy(true);
     setAccessError(null);
-    onContinue();
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: submittedEmail,
+        password: loginPassword,
+      });
+
+      if (error) {
+        setAccessError('Email or password is incorrect.');
+        return;
+      }
+
+      onContinue();
+    } finally {
+      setAuthBusy(false);
+    }
   };
 
   const friendCount = session?.friendCount ?? 0;
@@ -250,10 +303,10 @@ export function FriendSharePanel({
                 Final analysis access
               </div>
               <p className="mb-0">
-                {account
-                  ? `Analysis delivery is set for ${account.email}. Sign in below once friends are done.`
+                {registeredEmail
+                  ? `Analysis delivery is set for ${registeredEmail}. Sign in below once friends are done.`
                   : inviteSent
-                  ? 'Add the email and password you will use to receive and open your final analysis.'
+                  ? 'Create a Supabase login with the email and password you will use to open your final analysis.'
                   : 'Copy the invite link or mark it sent to unlock analysis access setup.'}
               </p>
             </div>
@@ -262,14 +315,14 @@ export function FriendSharePanel({
 
         {inviteSent && (
           <Surface className="grid gap-4 p-[clamp(18px,2.6vw,28px)]">
-            {!account ? (
+            {!registeredEmail ? (
               <>
                 <div className="grid gap-1">
                   <h3 className="mb-0 text-[clamp(1.25rem,2vw,1.6rem)] leading-[1.15] text-foreground">
                     Where should we send your final analysis?
                   </h3>
                   <p className="mb-0">
-                    Once two friends respond, you will use this email and password to log in and see the result.
+                    Create a Supabase login. Once two friends respond, use this email and password to open the result.
                   </p>
                 </div>
 
@@ -304,9 +357,9 @@ export function FriendSharePanel({
                   </Label>
                 </div>
 
-                <Button className="w-[min(320px,100%)]" onClick={saveAccessDetails}>
+                <Button className="w-[min(320px,100%)]" onClick={saveAccessDetails} disabled={authBusy}>
                   <LockKeyhole size={18} />
-                  Save analysis login
+                  {authBusy ? 'Creating login...' : 'Create Supabase login'}
                 </Button>
               </>
             ) : (
@@ -316,7 +369,7 @@ export function FriendSharePanel({
                     Sign in to open your final analysis.
                   </h3>
                   <p className="mb-0">
-                    We will send the final analysis to <strong className="text-foreground">{account.email}</strong>.
+                    We will send the final analysis to <strong className="text-foreground">{registeredEmail}</strong>.
                     Use the same login once the two friend responses are in.
                   </p>
                 </div>
@@ -341,8 +394,8 @@ export function FriendSharePanel({
                       onChange={(event) => setLoginPassword(event.target.value)}
                     />
                   </Label>
-                  <Button className="min-h-[50px] px-6 max-[760px]:w-full" onClick={loginAndReveal} disabled={!reportUnlocked}>
-                    {reportUnlocked ? 'Log in and reveal' : 'Waiting for friends'}
+                  <Button className="min-h-[50px] px-6 max-[760px]:w-full" onClick={loginAndReveal} disabled={!reportUnlocked || authBusy}>
+                    {authBusy ? 'Signing in...' : reportUnlocked ? 'Log in and reveal' : 'Waiting for friends'}
                     <Sparkles size={18} />
                   </Button>
                 </div>

@@ -18,7 +18,6 @@ import { Eyebrow } from './components/ui/pill';
 import { Surface } from './components/ui/surface';
 import {
   clearActualSwipes,
-  clearAnalysisAccess,
   clearIdealDraft,
   clearLocalFriendProfiles,
   clearStoredSession,
@@ -226,7 +225,6 @@ export default function App() {
 
     if (sessionId) {
       clearLocalFriendProfiles(sessionId);
-      clearAnalysisAccess(sessionId);
     }
     clearStoredSession();
     clearIdealDraft();

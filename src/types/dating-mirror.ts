@@ -89,4 +89,3 @@ export interface StepProgress {
   friendCount: number;
   reportUnlocked: boolean;
 }
-
