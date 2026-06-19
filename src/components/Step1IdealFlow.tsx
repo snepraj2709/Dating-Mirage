@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react';
-import { ArrowLeft, ArrowRight, Save } from 'lucide-react';
+import { type CSSProperties, useMemo, useState } from 'react';
+import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { sliderQuestions } from '../data/datingMirrorContent';
 import { baselineVector, clampScore } from '../lib/scoring';
 import { loadIdealDraft, saveIdealDraft } from '../lib/localState';
@@ -23,7 +23,6 @@ export function Step1IdealFlow({ isSaving, saveError, onBack, onComplete }: Step
   const value = answers[question.key] ?? 5.5;
   const progress = activeIndex + 1;
   const isLast = activeIndex === sliderQuestions.length - 1;
-  const completedCount = sliderQuestions.filter((item) => answers[item.key] !== undefined).length;
 
   const updateAnswer = (key: DimensionKey, rawValue: number) => {
     const nextValue = clampScore(rawValue);
@@ -57,77 +56,71 @@ export function Step1IdealFlow({ isSaving, saveError, onBack, onComplete }: Step
     setActiveIndex((index) => index - 1);
   };
 
-  const highlightClass = value < 4 ? 'left' : value > 7 ? 'right' : 'center';
+  const selectedDetail =
+    value < 4
+      ? question.leftAnchor
+      : value > 7
+        ? question.rightAnchor
+        : question.centerAnchor;
+  const scorePercent = ((value - 1) / 9) * 100;
 
   return (
-    <main className="flow-screen">
-      <div className="flow-topbar">
-        <button className="ghost-button" onClick={goPrevious}>
-          <ArrowLeft size={18} />
-          {activeIndex === 0 ? 'Back' : 'Previous'}
-        </button>
-        <div className="progress-chip">
-          <Save size={16} />
-          Autosaved
-        </div>
-      </div>
-
+    <main className="flow-screen ideal-flow-screen">
       <section className="question-stage" aria-labelledby="ideal-title">
-        <div className="progress-rail" aria-label={`Question ${progress} of ${sliderQuestions.length}`}>
-          <span style={{ width: `${(progress / sliderQuestions.length) * 100}%` }} />
-        </div>
-        <p className="eyebrow">
-          {progress}/{sliderQuestions.length} - Who I Say I Want
-        </p>
         <article className="question-card">
           <div className="question-card-header">
+            <span>Launch my mirror: Step 1</span>
+            <span>
+              Dimension {progress} of {sliderQuestions.length}
+            </span>
+          </div>
+
+          <div className="progress-rail" aria-label={`Question ${progress} of ${sliderQuestions.length}`}>
+            <span style={{ width: `${(progress / sliderQuestions.length) * 100}%` }} />
+          </div>
+
+          <div className="question-card-body">
             <span className="dimension-token">{question.title}</span>
-            <span className="completed-token">{completedCount}/8 answered</span>
-          </div>
-          <h2 id="ideal-title">{question.scenario}</h2>
-
-          <div className={`anchor-grid anchor-${highlightClass}`}>
-            <button
-              className="anchor-copy"
-              aria-label="Choose the left anchor"
-              onClick={() => updateAnswer(question.key, 1)}
-            >
-              {question.leftAnchor}
-            </button>
-            <button
-              className="anchor-copy center-anchor"
-              aria-label="Choose the center anchor"
-              onClick={() => updateAnswer(question.key, 5.5)}
-            >
-              {question.centerAnchor}
-            </button>
-            <button
-              className="anchor-copy"
-              aria-label="Choose the right anchor"
-              onClick={() => updateAnswer(question.key, 10)}
-            >
-              {question.rightAnchor}
-            </button>
+            <h2 id="ideal-title">{question.scenario}</h2>
           </div>
 
-          <div className="slider-wrap">
-            <input
-              aria-label={`Preference slider for ${question.title}`}
-              type="range"
-              min="1"
-              max="10"
-              step="0.1"
-              value={value}
-              onChange={(event) => updateAnswer(question.key, Number(event.target.value))}
-            />
+          <div className="score-detail-panel">
+            <div className="score-target-row">
+              <span>Low score target</span>
+              <span>High score target</span>
+            </div>
+
+            <div className="score-track">
+              <input
+                aria-label={`Preference slider for ${question.title}`}
+                type="range"
+                min="1"
+                max="10"
+                step="0.1"
+                value={value}
+                style={{ '--score-percent': `${scorePercent}%` } as CSSProperties}
+                onChange={(event) => updateAnswer(question.key, Number(event.target.value))}
+              />
+            </div>
+
+            <div className="selected-detail">
+              <span>Selected direction detail</span>
+              <strong>{selectedDetail}</strong>
+            </div>
           </div>
 
           {saveError && <p className="inline-error">{saveError}</p>}
 
-          <button className="primary-button flow-continue" onClick={goNext} disabled={isSaving}>
-            {isSaving ? 'Saving your mirror...' : isLast ? 'Lock my ideal' : 'Next'}
-            <ArrowRight size={18} />
-          </button>
+          <div className="question-card-footer">
+            <button className="ghost-button" onClick={goPrevious}>
+              <ArrowLeft size={18} />
+              {activeIndex === 0 ? 'Back' : 'Previous'}
+            </button>
+            <button className="primary-button flow-continue" onClick={goNext} disabled={isSaving}>
+              {isSaving ? 'Saving your mirror...' : isLast ? 'Lock my ideal' : 'Next'}
+              <ArrowRight size={18} />
+            </button>
+          </div>
         </article>
       </section>
     </main>
