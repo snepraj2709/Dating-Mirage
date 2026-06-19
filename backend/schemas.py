@@ -50,6 +50,13 @@ class UserSessionResponse(BaseModel):
     social_profile: Optional[VectorProfileSchema]
     friend_count: int
     report_unlocked: bool
+    result_email: Optional[str] = None
+    result_email_saved_at: Optional[str] = None
+    result_email_sent_at: Optional[str] = None
+
+
+class SaveResultEmailRequest(BaseModel):
+    result_email: str
 
 
 class FriendFeedbackResponse(BaseModel):
@@ -69,4 +76,3 @@ class JohariReportResponse(BaseModel):
 
 class DeleteSessionResponse(BaseModel):
     deleted: bool
-

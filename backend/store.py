@@ -30,6 +30,15 @@ def init_db() -> None:
             )
             """
         )
+        existing_columns = {
+            row["name"] for row in connection.execute("PRAGMA table_info(sessions)").fetchall()
+        }
+        if "result_email" not in existing_columns:
+            connection.execute("ALTER TABLE sessions ADD COLUMN result_email TEXT")
+        if "result_email_saved_at" not in existing_columns:
+            connection.execute("ALTER TABLE sessions ADD COLUMN result_email_saved_at TEXT")
+        if "result_email_sent_at" not in existing_columns:
+            connection.execute("ALTER TABLE sessions ADD COLUMN result_email_sent_at TEXT")
         connection.execute(
             """
             CREATE TABLE IF NOT EXISTS friend_feedback (
@@ -93,6 +102,33 @@ def save_actual_profile(session_id: str, actual_profile: VectorProfileSchema) ->
     return get_session(session_id)
 
 
+def save_result_email(session_id: str, result_email: str) -> Optional[UserSessionResponse]:
+    init_db()
+    normalized_email = result_email.strip().lower()
+    with get_connection() as connection:
+        row = connection.execute("SELECT result_email FROM sessions WHERE id = ?", (session_id,)).fetchone()
+        if row is None:
+            return None
+
+        email_changed = (row["result_email"] or "").lower() != normalized_email
+        connection.execute(
+            """
+            UPDATE sessions
+            SET result_email = ?,
+                result_email_saved_at = CASE
+                  WHEN ? THEN CURRENT_TIMESTAMP
+                  ELSE COALESCE(result_email_saved_at, CURRENT_TIMESTAMP)
+                END,
+                result_email_sent_at = CASE WHEN ? THEN NULL ELSE result_email_sent_at END,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+            """,
+            (normalized_email, email_changed, email_changed, session_id),
+        )
+
+    return get_session(session_id)
+
+
 def save_friend_feedback(session_id: str, relationship_type: str, feedback_profile: VectorProfileSchema) -> Optional[int]:
     init_db()
     with get_connection() as connection:
@@ -112,6 +148,24 @@ def save_friend_feedback(session_id: str, relationship_type: str, feedback_profi
         ).fetchone()["friend_count"]
 
     return int(count)
+
+
+def mark_result_email_sent(session_id: str) -> Optional[UserSessionResponse]:
+    init_db()
+    with get_connection() as connection:
+        cursor = connection.execute(
+            """
+            UPDATE sessions
+            SET result_email_sent_at = COALESCE(result_email_sent_at, CURRENT_TIMESTAMP),
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+            """,
+            (session_id,),
+        )
+        if cursor.rowcount == 0:
+            return None
+
+    return get_session(session_id)
 
 
 def get_friend_profiles(session_id: str) -> List[VectorProfileSchema]:
@@ -142,6 +196,9 @@ def get_session(session_id: str) -> Optional[UserSessionResponse]:
             social_profile=social_profile,
             friend_count=len(friend_profiles),
             report_unlocked=len(friend_profiles) >= 2,
+            result_email=row["result_email"],
+            result_email_saved_at=row["result_email_saved_at"],
+            result_email_sent_at=row["result_email_sent_at"],
         )
 
 

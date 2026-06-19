@@ -1,5 +1,12 @@
 import { useEffect, useState } from 'react';
-import { burnSession, createOrUpdateSession, getReport, getSession, submitActualProfile } from './api/client';
+import {
+  burnSession,
+  createOrUpdateSession,
+  getReport,
+  getSession,
+  saveResultEmail as saveSessionResultEmail,
+  submitActualProfile,
+} from './api/client';
 import { FriendRapidFireDeck } from './components/FriendRapidFireDeck';
 import { FriendSharePanel } from './components/FriendSharePanel';
 import { Hero } from './components/Hero';
@@ -12,6 +19,7 @@ import { PrivacyStrip } from './components/PrivacyStrip';
 import { Step1IdealFlow } from './components/Step1IdealFlow';
 import { Step2RealityIntro } from './components/Step2RealityIntro';
 import { Step2SwipeMatrix } from './components/Step2SwipeMatrix';
+import { UnlockReportScreen } from './components/UnlockReportScreen';
 import { Button } from './components/ui/button';
 import { CompactLoader, InlineError } from './components/ui/flow';
 import { Eyebrow } from './components/ui/pill';
@@ -32,6 +40,8 @@ type AppStage = 'landing' | 'ideal' | 'actualIntro' | 'actual' | 'share' | 'reve
 
 export default function App() {
   const friendMatch = window.location.pathname.match(/^\/friend\/([^/]+)/);
+  const unlockMatch = window.location.pathname === '/unlock';
+  const unlockSessionId = new URLSearchParams(window.location.search).get('session_id');
   const [stage, setStage] = useState<AppStage>('landing');
   const [session, setSession] = useState<UserSession | null>(() => loadStoredSession());
   const [isSavingIdeal, setIsSavingIdeal] = useState(false);
@@ -59,11 +69,14 @@ export default function App() {
         socialProfile: session?.socialProfile ?? null,
         friendCount: session?.friendCount ?? 0,
         reportUnlocked: session?.reportUnlocked ?? false,
+        resultEmail: session?.resultEmail ?? null,
+        resultEmailSavedAt: session?.resultEmailSavedAt ?? null,
+        resultEmailSentAt: session?.resultEmailSentAt ?? null,
       };
       setSession(localSession);
       saveStoredSession(localSession);
       clearIdealDraft();
-      setSaveError('Saved locally. Start the backend before final report sync.');
+      setSaveError('Saved on this device for now.');
       setStage('actualIntro');
     } finally {
       setIsSavingIdeal(false);
@@ -103,7 +116,7 @@ export default function App() {
       setSession(localSession);
       saveStoredSession(localSession);
       clearActualSwipes();
-      setSaveError('Actual pattern saved locally. Backend sync can retry later.');
+      setSaveError('Your pattern is saved on this device for now.');
       setStage('share');
     } finally {
       setIsSavingActual(false);
@@ -126,14 +139,58 @@ export default function App() {
       saveStoredSession(nextSession);
     } catch {
       const friendCount = loadLocalFriendProfiles(session.id).length;
+      const now = new Date().toISOString();
       const nextSession = {
         ...session,
         friendCount,
         reportUnlocked: friendCount >= 2,
+        resultEmailSentAt:
+          friendCount >= 2 && session.resultEmail
+            ? session.resultEmailSentAt ?? now
+            : session.resultEmailSentAt ?? null,
       };
       setSession(nextSession);
       saveStoredSession(nextSession);
       setSaveError('Using locally saved friend responses.');
+    }
+  };
+
+  const handleResultEmailSave = async (email: string): Promise<UserSession> => {
+    if (!session) {
+      throw new Error('Finish Step 2 before holding your report.');
+    }
+
+    setSaveError(null);
+    const normalizedEmail = email.trim().toLowerCase();
+    try {
+      if (session.id.startsWith('local-')) {
+        throw new Error('Local session');
+      }
+
+      const nextSession = await saveSessionResultEmail(session.id, normalizedEmail);
+      setSession(nextSession);
+      saveStoredSession(nextSession);
+      return nextSession;
+    } catch {
+      const now = new Date().toISOString();
+      const emailChanged = session.resultEmail !== normalizedEmail;
+      const nextSession: UserSession = {
+        ...session,
+        resultEmail: normalizedEmail,
+        resultEmailSavedAt: emailChanged ? now : session.resultEmailSavedAt ?? now,
+        resultEmailSentAt:
+          session.friendCount >= 2
+            ? emailChanged
+              ? now
+              : session.resultEmailSentAt ?? now
+            : emailChanged
+            ? null
+            : session.resultEmailSentAt ?? null,
+      };
+      setSession(nextSession);
+      saveStoredSession(nextSession);
+      setSaveError('Email held on this device for now.');
+      return nextSession;
     }
   };
 
@@ -236,9 +293,13 @@ export default function App() {
     setStage('landing');
   };
 
-  const startReveal = () => {
+  const handleUnlockComplete = (nextSession: UserSession) => {
+    setSession(nextSession);
+    saveStoredSession(nextSession);
     setReport(null);
     setReportError(null);
+    setSaveError(null);
+    window.history.replaceState(null, '', '/');
     setStage('reveal');
   };
 
@@ -250,6 +311,16 @@ export default function App() {
       <FriendRapidFireDeck
         sessionId={decodeURIComponent(friendMatch[1])}
         displayName={searchParams.get('name') ?? 'your friend'}
+      />
+    );
+  }
+
+  if (unlockMatch) {
+    return (
+      <UnlockReportScreen
+        sessionId={unlockSessionId}
+        fallbackSession={session}
+        onUnlocked={handleUnlockComplete}
       />
     );
   }
@@ -297,7 +368,7 @@ export default function App() {
         statusMessage={saveError}
         onBack={() => setStage('actual')}
         onRefresh={refreshFriendCount}
-        onContinue={startReveal}
+        onSaveResultEmail={handleResultEmailSave}
       />
     );
   }

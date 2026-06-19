@@ -81,6 +81,9 @@ export interface UserSession {
   socialProfile: VectorProfile | null;
   friendCount: number;
   reportUnlocked: boolean;
+  resultEmail?: string | null;
+  resultEmailSavedAt?: string | null;
+  resultEmailSentAt?: string | null;
 }
 
 export interface StepProgress {

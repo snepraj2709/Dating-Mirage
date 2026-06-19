@@ -1,5 +1,17 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, Copy, ExternalLink, LockKeyhole, Mail, RefreshCw, Share2, Sparkles } from 'lucide-react';
+import {
+  ArrowLeft,
+  Check,
+  Clock3,
+  Copy,
+  ExternalLink,
+  Link as LinkIcon,
+  Mail,
+  Plus,
+  RefreshCw,
+  Send,
+  ShieldCheck,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { FlowCard } from '@/components/ui/flow-card';
 import { InlineError } from '@/components/ui/flow';
@@ -7,7 +19,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Pill } from '@/components/ui/pill';
 import { Surface } from '@/components/ui/surface';
-import { isSupabaseConfigured, supabase } from '../lib/supabase';
 import type { UserSession } from '../types/dating-mirror';
 
 interface FriendSharePanelProps {
@@ -15,11 +26,52 @@ interface FriendSharePanelProps {
   statusMessage?: string | null;
   onBack: () => void;
   onRefresh: () => void;
-  onContinue: () => void;
+  onSaveResultEmail: (email: string) => Promise<UserSession>;
 }
 
 function isValidEmail(email: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function ResponseDots({ count, target = 2 }: { count: number; target?: number }) {
+  return (
+    <span className="inline-flex items-center gap-1.5" aria-hidden="true">
+      {Array.from({ length: target }).map((_, index) => (
+        <span
+          key={index}
+          className={`size-1.5 rounded-full ${index < count ? 'bg-positive' : 'bg-border-strong'}`}
+        />
+      ))}
+    </span>
+  );
+}
+
+function InviteRow({
+  initials,
+  name,
+  note,
+  status,
+}: {
+  initials: string;
+  name: string;
+  note: string;
+  status: 'sent' | 'waiting';
+}) {
+  return (
+    <div className="grid min-h-[66px] grid-cols-[auto_1fr_auto] items-center gap-3 rounded-lg border border-border bg-muted/70 px-4 py-3 max-[520px]:grid-cols-[auto_1fr]">
+      <span className="inline-flex size-10 items-center justify-center rounded-full bg-card text-sm font-medium text-foreground">
+        {initials}
+      </span>
+      <span className="min-w-0">
+        <span className="block truncate text-[0.98rem] font-medium text-foreground">{name}</span>
+        <span className="block truncate text-[0.88rem] text-muted-foreground">{note}</span>
+      </span>
+      <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground max-[520px]:col-span-2 max-[520px]:ml-[52px]">
+        {status === 'sent' ? <Check size={15} className="text-positive" /> : <Clock3 size={15} />}
+        {status === 'sent' ? 'Sent' : 'Waiting'}
+      </span>
+    </div>
+  );
 }
 
 export function FriendSharePanel({
@@ -27,53 +79,25 @@ export function FriendSharePanel({
   statusMessage,
   onBack,
   onRefresh,
-  onContinue,
+  onSaveResultEmail,
 }: FriendSharePanelProps) {
   const [displayName, setDisplayName] = useState('your friend');
   const [copied, setCopied] = useState(false);
-  const [inviteSent, setInviteSent] = useState(false);
-  const [registeredEmail, setRegisteredEmail] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [loginEmail, setLoginEmail] = useState('');
-  const [loginPassword, setLoginPassword] = useState('');
-  const [accessMessage, setAccessMessage] = useState<string | null>(null);
-  const [accessError, setAccessError] = useState<string | null>(null);
-  const [authBusy, setAuthBusy] = useState(false);
+  const [email, setEmail] = useState(session?.resultEmail ?? '');
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const [isSavingEmail, setIsSavingEmail] = useState(false);
 
   useEffect(() => {
-    if (!isSupabaseConfigured || !supabase) {
-      return;
+    if (session?.resultEmail) {
+      setEmail(session.resultEmail);
     }
+  }, [session?.resultEmail]);
 
-    let isMounted = true;
-    const applySignedInEmail = (nextEmail?: string) => {
-      if (!isMounted || !nextEmail) {
-        return;
-      }
-
-      const normalizedEmail = nextEmail.toLowerCase();
-      setRegisteredEmail(normalizedEmail);
-      setLoginEmail(normalizedEmail);
-      setInviteSent(true);
-    };
-
-    void supabase.auth.getUser().then(({ data }) => {
-      applySignedInEmail(data.user?.email);
-    });
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      applySignedInEmail(session?.user.email);
-    });
-
-    return () => {
-      isMounted = false;
-      subscription.unsubscribe();
-    };
-  }, []);
+  const friendCount = session?.friendCount ?? 0;
+  const reportUnlocked = friendCount >= 2;
+  const resultEmail = session?.resultEmail ?? null;
+  const resultEmailSent = Boolean(session?.resultEmailSentAt);
+  const progressValue = Math.min((friendCount / 2) * 100, 100);
 
   const shareUrl = useMemo(() => {
     if (!session?.id) {
@@ -94,319 +118,272 @@ export function FriendSharePanel({
 
     await navigator.clipboard.writeText(shareUrl);
     setCopied(true);
-    setInviteSent(true);
-    setAccessMessage('Invite link copied. Set your analysis login next.');
-    setAccessError(null);
     window.setTimeout(() => setCopied(false), 1400);
   };
 
-  const markInviteSent = () => {
-    if (!shareUrl) {
-      return;
-    }
-    setInviteSent(true);
-    setAccessMessage('Invite marked as sent. Set your analysis login next.');
-    setAccessError(null);
-  };
-
-  const saveAccessDetails = async () => {
+  const submitEmail = async () => {
     if (!session?.id) {
-      setAccessError('Finish Step 2 before creating analysis access.');
-      return;
-    }
-
-    if (!isSupabaseConfigured || !supabase) {
-      setAccessError('Supabase Auth is not configured. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.');
+      setEmailError('Finish Step 2 before holding your report.');
       return;
     }
 
     const nextEmail = email.trim().toLowerCase();
     if (!isValidEmail(nextEmail)) {
-      setAccessError('Enter a valid email address.');
+      setEmailError('Enter a valid email address.');
       return;
     }
 
-    if (password.length < 8) {
-      setAccessError('Use at least 8 characters for your password.');
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      setAccessError('Passwords do not match.');
-      return;
-    }
-
-    setAuthBusy(true);
-    setAccessError(null);
+    setIsSavingEmail(true);
+    setEmailError(null);
     try {
-      const { error } = await supabase.auth.signUp({
-        email: nextEmail,
-        password,
-        options: {
-          data: {
-            dating_mirror_session_id: session.id,
-          },
-        },
-      });
-
-      if (error) {
-        setAccessError(error.message);
-        return;
-      }
-
-      setRegisteredEmail(nextEmail);
-      setLoginEmail(nextEmail);
-      setPassword('');
-      setConfirmPassword('');
-      setAccessMessage('Supabase account created. Check your email if confirmation is required, then sign in once two friends respond.');
+      await onSaveResultEmail(nextEmail);
+    } catch (error) {
+      setEmailError(error instanceof Error ? error.message : 'We could not hold that email. Try again.');
     } finally {
-      setAuthBusy(false);
+      setIsSavingEmail(false);
     }
   };
 
-  const loginAndReveal = async () => {
-    if (!registeredEmail) {
-      setAccessError('Create your Supabase login first.');
-      return;
-    }
-
-    if (!reportUnlocked) {
-      setAccessError('Your mirror unlocks after two friend responses.');
-      return;
-    }
-
-    if (!isSupabaseConfigured || !supabase) {
-      setAccessError('Supabase Auth is not configured. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.');
-      return;
-    }
-
-    const submittedEmail = loginEmail.trim().toLowerCase();
-    if (submittedEmail !== registeredEmail) {
-      setAccessError('Email or password is incorrect.');
-      return;
-    }
-
-    setAuthBusy(true);
-    setAccessError(null);
-    try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email: submittedEmail,
-        password: loginPassword,
-      });
-
-      if (error) {
-        setAccessError('Email or password is incorrect.');
-        return;
-      }
-
-      onContinue();
-    } finally {
-      setAuthBusy(false);
-    }
-  };
-
-  const friendCount = session?.friendCount ?? 0;
-  const reportUnlocked = friendCount >= 2;
-  const progressValue = Math.min((friendCount / 2) * 100, 100);
+  const footerRight = (
+    <Button variant="ghostPill" size="compact" onClick={onRefresh} className="max-[620px]:w-full">
+      <RefreshCw size={17} />
+      Refresh
+    </Button>
+  );
 
   return (
     <FlowCard
       aria-labelledby="share-title"
-      headerLabel="LAUNCH MY MIRROR: STEP 3 (SOCIAL MIRROR)"
-      headerMeta={`FRIENDS ${friendCount} OF 2`}
+      headerLabel="STEP 3 - SOCIAL MIRROR"
+      headerMeta={
+        <span className="inline-flex items-center gap-2">
+          Friends <ResponseDots count={friendCount} /> {friendCount} of 2
+        </span>
+      }
       progressValue={progressValue}
       progressLabel={`${friendCount} of 2 friend responses`}
-      contentClassName="place-items-center"
+      contentClassName="pt-[clamp(18px,3vh,34px)]"
       footerLeft={
         <Button variant="ghostPill" onClick={onBack} className="max-[620px]:w-full">
           <ArrowLeft size={18} />
           Back
         </Button>
       }
-      footerRight={
-        <Button variant="ghostPill" size="compact" onClick={onRefresh} className="max-[620px]:w-full">
-          <RefreshCw size={17} />
-          Refresh
-        </Button>
-      }
+      footerRight={footerRight}
     >
-      <div className="grid w-full max-w-[940px] gap-[clamp(18px,3vh,30px)]">
-        <div className="grid justify-items-center gap-4 text-center">
-          <Pill className="min-h-[34px] border-border-strong bg-muted px-5 text-[0.86rem] uppercase tracking-normal text-foreground">
-            SOCIAL MIRROR INVITES
-          </Pill>
-          <h2
-            id="share-title"
-            className="mb-0 max-w-[800px] text-[clamp(1.85rem,4vw,3rem)] leading-[1.08] text-foreground max-[620px]:text-[clamp(1.55rem,8vw,2.2rem)]"
-          >
-            Send the vibe check to people who have seen the pattern.
-          </h2>
-          <p className="mb-0 max-w-[720px] font-medium leading-[1.5] text-muted-foreground">
-            Friends get a private 8-question rapid-fire deck. You only see the count and aggregate signal,
-            never individual answers.
-          </p>
-          {statusMessage && <InlineError className="mb-0 text-center">{statusMessage}</InlineError>}
-        </div>
-
-        <div className="grid grid-cols-[minmax(0,1.05fr)_minmax(320px,0.95fr)] gap-4 max-[760px]:grid-cols-1">
-          <Surface className="grid gap-4 p-[clamp(18px,2.6vw,28px)]" variant="muted">
-            <Label>
-              What should friends call you?
-              <Input value={displayName} onChange={(event) => setDisplayName(event.target.value)} />
-            </Label>
-
-            <div className="grid min-h-[58px] grid-cols-[auto_1fr] items-center gap-2.5 overflow-hidden rounded-lg border border-border bg-card p-3.5 text-foreground">
-              <Share2 size={18} />
-              <span className="overflow-hidden text-ellipsis whitespace-nowrap text-[0.92rem] font-medium text-foreground">
-                {shareUrl || 'Finish Step 1 and Step 2 to generate a link.'}
-              </span>
-            </div>
-
-            <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-3 max-[620px]:grid-cols-1">
-              <Button onClick={copyLink} disabled={!shareUrl}>
-                <Copy size={18} />
-                {copied ? 'Copied' : 'Copy invite'}
-              </Button>
-              <Button asChild variant="secondaryPill" className={!shareUrl ? 'pointer-events-none opacity-60' : ''}>
-                <a href={shareUrl || '#'} target="_blank" rel="noreferrer">
-                  Preview
-                  <ExternalLink size={16} />
-                </a>
-              </Button>
-            </div>
-
-            <Button variant="ghostPill" onClick={markInviteSent} disabled={!shareUrl}>
-              I sent the invite
-            </Button>
-          </Surface>
-
-          <Surface className="grid gap-4 p-[clamp(18px,2.6vw,28px)]">
-            <div className="grid grid-cols-[auto_1fr] items-center gap-3.5">
-              <span className="inline-flex size-[62px] items-center justify-center rounded-full bg-foreground font-medium text-background">
-                {friendCount}/2
-              </span>
-              <div>
-                <h3 className="mb-0 text-xl leading-[1.2] text-foreground">
-                  {reportUnlocked ? 'Mirror unlocked' : 'Waiting for two friends'}
-                </h3>
-                <p className="mb-0">
-                  {reportUnlocked
-                    ? 'Your analysis is ready. Sign in below to open it.'
-                    : 'Your final analysis unlocks after two completed friend decks.'}
-                </p>
-              </div>
-            </div>
-
-            <div className="grid gap-2 rounded-lg border border-border bg-muted p-4">
-              <div className="flex items-center gap-2 text-[0.88rem] font-medium uppercase tracking-normal text-subtle-foreground">
-                <Mail size={16} />
-                Final analysis access
-              </div>
-              <p className="mb-0">
-                {registeredEmail
-                  ? `Analysis delivery is set for ${registeredEmail}. Sign in below once friends are done.`
-                  : inviteSent
-                  ? 'Create a Supabase login with the email and password you will use to open your final analysis.'
-                  : 'Copy the invite link or mark it sent to unlock analysis access setup.'}
+      {!resultEmail && (
+        <div className="grid w-full gap-[clamp(18px,3vh,30px)]">
+          <div className="grid max-w-[760px] gap-4">
+            <Pill className="w-fit border-border-strong bg-muted px-4 text-[0.9rem] tracking-normal text-foreground">
+              <span className="size-1.5 rounded-full bg-positive" />
+              Your reflection is saved
+            </Pill>
+            <div>
+              <h2
+                id="share-title"
+                className="mb-3 max-w-[620px] text-[clamp(2rem,4.2vw,3.2rem)] leading-[1.02] text-foreground max-[620px]:text-[clamp(1.8rem,9vw,2.55rem)]"
+              >
+                Now send it to people who've seen the pattern.
+              </h2>
+              <p className="mb-0 max-w-[760px] text-[clamp(1rem,1.8vw,1.18rem)] leading-[1.5]">
+                Pick 2-4 people who've watched you date. They get 8 quick questions; you only see
+                the pattern they confirm, never their exact words.
               </p>
             </div>
+            {statusMessage && <InlineError className="mb-0">{statusMessage}</InlineError>}
+          </div>
+
+          <div className="grid gap-3">
+            <Label className="max-w-[840px]">
+              Your invite link
+              <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] gap-3 max-[720px]:grid-cols-1">
+                <div className="grid min-h-[50px] grid-cols-[auto_1fr] items-center gap-3 overflow-hidden rounded-lg border border-input bg-card px-4 text-foreground">
+                  <LinkIcon size={17} className="text-muted-foreground" />
+                  <span className="overflow-hidden text-ellipsis whitespace-nowrap text-[0.95rem] font-medium">
+                    {shareUrl || 'Finish Step 1 and Step 2 to generate a link.'}
+                  </span>
+                </div>
+                <Button variant="ghostPill" onClick={copyLink} disabled={!shareUrl}>
+                  <Copy size={17} />
+                  {copied ? 'Copied' : 'Copy'}
+                </Button>
+                <Button asChild variant="secondaryPill" className={!shareUrl ? 'pointer-events-none opacity-60' : ''}>
+                  <a href={shareUrl || '#'} target="_blank" rel="noreferrer">
+                    Preview
+                    <ExternalLink size={16} />
+                  </a>
+                </Button>
+              </div>
+            </Label>
+            <p className="mb-0 inline-flex items-center gap-2 text-[0.94rem]">
+              <ShieldCheck size={16} />
+              One link, multiple friends. They can choose to stay anonymous.
+            </p>
+          </div>
+
+          <div className="grid gap-2.5">
+            <InviteRow initials="F1" name="Friend one" note="Send the link when ready" status={friendCount >= 1 ? 'sent' : 'waiting'} />
+            <InviteRow initials="F2" name="Friend two" note="Second response unlocks your report" status={friendCount >= 2 ? 'sent' : 'waiting'} />
+            <div className="grid min-h-[66px] grid-cols-[auto_1fr] items-center gap-3 rounded-lg border border-dashed border-border-strong bg-card px-4 py-3 text-muted-foreground">
+              <span className="inline-flex size-10 items-center justify-center rounded-full bg-muted text-foreground">
+                <Plus size={18} />
+              </span>
+              <span>
+                <span className="block font-medium text-foreground">Add another</span>
+                <span className="block text-[0.88rem]">Optional; more people can sharpen the mirror.</span>
+              </span>
+            </div>
+          </div>
+
+          <Surface className="grid gap-4 p-[clamp(18px,2.5vw,26px)]" variant="muted">
+            <div>
+              <h3 className="mb-1 text-[clamp(1.2rem,2vw,1.45rem)] leading-[1.18] text-foreground">
+                Where should we send your results?
+              </h3>
+              <p className="mb-0">
+                We'll email you the moment 2 friends respond. No password yet; just your email to
+                hold your spot.
+              </p>
+            </div>
+            <div className="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-3 max-[720px]:grid-cols-1">
+              <Label>
+                Email
+                <Input
+                  autoComplete="email"
+                  inputMode="email"
+                  type="email"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  placeholder="you@example.com"
+                />
+              </Label>
+              <Button className="min-h-[50px] px-6 max-[720px]:w-full" onClick={submitEmail} disabled={isSavingEmail}>
+                <Send size={18} />
+                {isSavingEmail ? 'Holding...' : 'Secure your Mirror Report'}
+              </Button>
+            </div>
+            <p className="mb-0 inline-flex items-center gap-2 text-[0.94rem]">
+              <ShieldCheck size={16} />
+              Never shared. Used only to deliver your mirror.
+            </p>
+            {emailError && <InlineError className="mb-0">{emailError}</InlineError>}
           </Surface>
         </div>
+      )}
 
-        {inviteSent && (
-          <Surface className="grid gap-4 p-[clamp(18px,2.6vw,28px)]">
-            {!registeredEmail ? (
-              <>
-                <div className="grid gap-1">
-                  <h3 className="mb-0 text-[clamp(1.25rem,2vw,1.6rem)] leading-[1.15] text-foreground">
-                    Where should we send your final analysis?
-                  </h3>
-                  <p className="mb-0">
-                    Create a Supabase login. Once two friends respond, use this email and password to open the result.
-                  </p>
-                </div>
+      {resultEmail && !reportUnlocked && (
+        <div className="grid w-full place-items-center gap-[clamp(20px,4vh,38px)] text-center">
+          <span className="inline-flex size-16 items-center justify-center rounded-full border border-input bg-card">
+            <Mail size={28} />
+          </span>
+          <div className="grid max-w-[620px] gap-3">
+            <h2
+              id="share-title"
+              className="mb-0 text-[clamp(1.9rem,3.8vw,2.8rem)] leading-[1.06] text-foreground"
+            >
+              Your mirror is reflecting.
+            </h2>
+            <p className="mb-0 text-[clamp(1rem,1.7vw,1.15rem)] leading-[1.5]">
+              Your results are being held at this address. We'll email you the second your second
+              friend responds.
+            </p>
+          </div>
+          <Pill className="border-border-strong bg-muted px-4 text-[0.92rem] tracking-normal text-foreground">
+            <Mail size={15} />
+            {resultEmail}
+          </Pill>
 
-                <div className="grid grid-cols-3 gap-3 max-[760px]:grid-cols-1">
-                  <Label>
-                    Email
-                    <Input
-                      autoComplete="email"
-                      inputMode="email"
-                      type="email"
-                      value={email}
-                      onChange={(event) => setEmail(event.target.value)}
-                    />
-                  </Label>
-                  <Label>
-                    Password
-                    <Input
-                      autoComplete="new-password"
-                      type="password"
-                      value={password}
-                      onChange={(event) => setPassword(event.target.value)}
-                    />
-                  </Label>
-                  <Label>
-                    Confirm password
-                    <Input
-                      autoComplete="new-password"
-                      type="password"
-                      value={confirmPassword}
-                      onChange={(event) => setConfirmPassword(event.target.value)}
-                    />
-                  </Label>
-                </div>
+          <div className="grid justify-items-center gap-3">
+            <div className="grid size-[86px] place-items-center rounded-full border-[5px] border-border border-r-foreground text-[1.65rem] font-medium text-foreground">
+              {friendCount}
+            </div>
+            <p className="mb-0 text-[0.96rem]">{friendCount} of 2 friends responded</p>
+            <div className="grid min-w-[min(360px,100%)] grid-cols-[auto_1fr_auto] items-center gap-3 text-left text-[0.96rem] max-[520px]:grid-cols-[auto_1fr]">
+              <span className="size-2 rounded-full bg-positive" />
+              <span>First response</span>
+              <span className="text-positive max-[520px]:col-span-2 max-[520px]:ml-5">
+                {friendCount >= 1 ? 'Done' : 'Waiting...'}
+              </span>
+              <span className={`size-2 rounded-full ${friendCount >= 2 ? 'bg-positive' : 'bg-border-strong'}`} />
+              <span>Second response</span>
+              <span className={friendCount >= 2 ? 'text-positive max-[520px]:col-span-2 max-[520px]:ml-5' : 'text-muted-foreground max-[520px]:col-span-2 max-[520px]:ml-5'}>
+                {friendCount >= 2 ? 'Done' : 'Waiting...'}
+              </span>
+            </div>
+            <Button variant="ghostPill" onClick={copyLink} disabled={!shareUrl}>
+              <Copy size={17} />
+              {copied ? 'Copied' : 'Copy reminder link'}
+            </Button>
+          </div>
 
-                <Button className="w-[min(320px,100%)]" onClick={saveAccessDetails} disabled={authBusy}>
-                  <LockKeyhole size={18} />
-                  {authBusy ? 'Creating login...' : 'Create Supabase login'}
-                </Button>
-              </>
-            ) : (
-              <>
-                <div className="grid gap-1">
-                  <h3 className="mb-0 text-[clamp(1.25rem,2vw,1.6rem)] leading-[1.15] text-foreground">
-                    Sign in to open your final analysis.
-                  </h3>
-                  <p className="mb-0">
-                    We will send the final analysis to <strong className="text-foreground">{registeredEmail}</strong>.
-                    Use the same login once the two friend responses are in.
-                  </p>
-                </div>
+          <div className="grid w-full gap-4 border-t border-border pt-[clamp(18px,3vh,26px)] text-left">
+            <div>
+              <h3 className="mb-1 text-[1.05rem] text-foreground">A peek at what's coming</h3>
+              <p className="mb-0">
+                Your mirror is already forming. The full picture unlocks when your second friend responds.
+              </p>
+            </div>
+            <div className="mx-auto grid w-[min(640px,100%)] gap-3 rounded-lg border border-border-strong bg-muted p-5">
+              <span className="text-[0.78rem] uppercase tracking-[0.24em] text-subtle-foreground">
+                Your Dating Mirror - Partial
+              </span>
+              <div>
+                <span className="text-[0.78rem] uppercase tracking-[0.18em] text-subtle-foreground">
+                  Who you say you want
+                </span>
+                <p className="mb-0 mt-1 text-foreground">
+                  Someone emotionally steady, warm, and easy to be around.
+                </p>
+              </div>
+              <div className="h-px bg-border" />
+              <div className="grid gap-2 blur-[5px] select-none">
+                <span className="h-4 w-4/5 rounded bg-border" />
+                <span className="h-4 w-2/3 rounded bg-border" />
+                <span className="h-4 w-3/4 rounded bg-border" />
+              </div>
+              <p className="mb-0 text-center text-[0.92rem]">2 more buckets unlock with your second response</p>
+            </div>
+          </div>
+          {statusMessage && <InlineError className="mb-0">{statusMessage}</InlineError>}
+        </div>
+      )}
 
-                <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] items-end gap-3 max-[760px]:grid-cols-1">
-                  <Label>
-                    Email
-                    <Input
-                      autoComplete="email"
-                      inputMode="email"
-                      type="email"
-                      value={loginEmail}
-                      onChange={(event) => setLoginEmail(event.target.value)}
-                    />
-                  </Label>
-                  <Label>
-                    Password
-                    <Input
-                      autoComplete="current-password"
-                      type="password"
-                      value={loginPassword}
-                      onChange={(event) => setLoginPassword(event.target.value)}
-                    />
-                  </Label>
-                  <Button className="min-h-[50px] px-6 max-[760px]:w-full" onClick={loginAndReveal} disabled={!reportUnlocked || authBusy}>
-                    {authBusy ? 'Signing in...' : reportUnlocked ? 'Log in and reveal' : 'Waiting for friends'}
-                    <Sparkles size={18} />
-                  </Button>
-                </div>
-              </>
-            )}
-
-            {accessMessage && <p className="mb-0 font-medium text-muted-foreground">{accessMessage}</p>}
-            {accessError && <InlineError className="mb-0">{accessError}</InlineError>}
+      {resultEmail && reportUnlocked && (
+        <div className="grid w-full place-items-center gap-[clamp(20px,4vh,38px)] text-center">
+          <span className="inline-flex size-16 items-center justify-center rounded-full border border-input bg-card">
+            <Check size={30} className="text-positive" />
+          </span>
+          <div className="grid max-w-[620px] gap-3">
+            <h2
+              id="share-title"
+              className="mb-0 text-[clamp(1.9rem,3.8vw,2.8rem)] leading-[1.06] text-foreground"
+            >
+              Your mirror is ready.
+            </h2>
+            <p className="mb-0 text-[clamp(1rem,1.7vw,1.15rem)] leading-[1.5]">
+              {resultEmailSent
+                ? `We sent the unlock link to ${resultEmail}. Open it to set a password and see your mirror.`
+                : `Your results are ready for ${resultEmail}. Refresh once if the unlock email has not arrived yet.`}
+            </p>
+          </div>
+          <Pill className="border-border-strong bg-muted px-4 text-[0.92rem] tracking-normal text-foreground">
+            <Mail size={15} />
+            {resultEmail}
+          </Pill>
+          <Surface className="grid w-[min(620px,100%)] gap-3 p-5 text-left" variant="muted">
+            <span className="text-[0.78rem] uppercase tracking-[0.22em] text-subtle-foreground">
+              The result notification email
+            </span>
+            <p className="mb-0 text-foreground">
+              Subject: <strong>Your mirror is ready.</strong>
+            </p>
+            <p className="mb-0">
+              The link opens a private unlock screen where you set a password and go straight to the full report.
+            </p>
           </Surface>
-        )}
-      </div>
+          {statusMessage && <InlineError className="mb-0">{statusMessage}</InlineError>}
+        </div>
+      )}
     </FlowCard>
   );
 }

@@ -11,6 +11,9 @@ interface ApiSession {
   social_profile: ApiVectorProfile | null;
   friend_count: number;
   report_unlocked: boolean;
+  result_email?: string | null;
+  result_email_saved_at?: string | null;
+  result_email_sent_at?: string | null;
 }
 
 interface ApiReport {
@@ -44,6 +47,9 @@ function toUserSession(session: ApiSession): UserSession {
     socialProfile: session.social_profile,
     friendCount: session.friend_count,
     reportUnlocked: session.report_unlocked,
+    resultEmail: session.result_email ?? null,
+    resultEmailSavedAt: session.result_email_saved_at ?? null,
+    resultEmailSentAt: session.result_email_sent_at ?? null,
   };
 }
 
@@ -110,6 +116,15 @@ export async function submitActualProfile(sessionId: string, actualProfile: Vect
   return toUserSession(session);
 }
 
+export async function saveResultEmail(sessionId: string, resultEmail: string): Promise<UserSession> {
+  const session = await request<ApiSession>(`/sessions/${sessionId}/result-email`, {
+    method: 'POST',
+    body: JSON.stringify({ result_email: resultEmail }),
+  });
+
+  return toUserSession(session);
+}
+
 export async function submitFriendFeedback(
   sessionId: string,
   relationshipType: RelationshipType,
@@ -136,4 +151,3 @@ export async function getReport(sessionId: string): Promise<JohariReport> {
 export async function burnSession(sessionId: string): Promise<{ deleted: boolean }> {
   return request(`/sessions/${sessionId}`, { method: 'DELETE' });
 }
-
