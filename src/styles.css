@@ -43,6 +43,11 @@ button {
   cursor: pointer;
 }
 
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.66;
+}
+
 img {
   display: block;
   max-width: 100%;
@@ -347,6 +352,188 @@ p {
   backdrop-filter: blur(18px);
 }
 
+.flow-screen {
+  min-height: 100vh;
+  width: min(980px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 24px 0 48px;
+}
+
+.flow-topbar {
+  display: flex;
+  min-height: 64px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.progress-chip,
+.dimension-token,
+.completed-token {
+  display: inline-flex;
+  min-height: 34px;
+  align-items: center;
+  gap: 8px;
+  border-radius: 999px;
+  padding: 0 12px;
+  background: rgba(255, 255, 255, 0.68);
+  color: var(--crush-subtext);
+  font-size: 0.88rem;
+  font-weight: 850;
+}
+
+.question-stage {
+  display: grid;
+  gap: 18px;
+}
+
+.progress-rail {
+  height: 9px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(235, 72, 221, 0.12);
+}
+
+.progress-rail span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--crush-secondary), var(--crush-primary));
+  transition: width 220ms ease;
+}
+
+.question-card {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--glass-border);
+  border-radius: 34px;
+  background: var(--glass);
+  padding: clamp(22px, 5vw, 42px);
+  box-shadow: var(--shadow-pink);
+  backdrop-filter: blur(18px);
+}
+
+.question-card::before {
+  position: absolute;
+  inset: auto -10% -46% 36%;
+  width: 420px;
+  height: 420px;
+  content: "";
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(235, 72, 221, 0.14), transparent 62%);
+  pointer-events: none;
+}
+
+.question-card > * {
+  position: relative;
+}
+
+.question-card-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.dimension-token {
+  background: var(--crush-card);
+  color: var(--crush-primary);
+}
+
+.question-card h1 {
+  max-width: 820px;
+  font-size: clamp(2rem, 6vw, 4.7rem);
+}
+
+.anchor-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 24px 0;
+}
+
+.anchor-copy {
+  min-height: 160px;
+  border: 1px solid rgba(235, 72, 221, 0.12);
+  border-radius: 24px;
+  background: rgba(255, 249, 250, 0.76);
+  padding: 18px;
+  color: var(--crush-subtext);
+  line-height: 1.45;
+  text-align: left;
+  transition:
+    border 160ms ease,
+    box-shadow 160ms ease,
+    color 160ms ease,
+    transform 160ms ease;
+}
+
+.anchor-copy:hover {
+  transform: translateY(-2px);
+}
+
+.anchor-left .anchor-copy:first-child,
+.anchor-center .center-anchor,
+.anchor-right .anchor-copy:last-child {
+  border-color: rgba(235, 72, 221, 0.42);
+  color: var(--crush-dark);
+  box-shadow: 0 16px 34px -26px rgba(235, 72, 221, 0.8);
+}
+
+.slider-wrap {
+  position: relative;
+  padding: 18px 0 12px;
+}
+
+.slider-wrap input[type="range"] {
+  width: 100%;
+  height: 34px;
+  accent-color: var(--crush-primary);
+}
+
+.slider-wrap input[type="range"]::-webkit-slider-thumb {
+  width: 30px;
+  height: 30px;
+}
+
+.heart-pop {
+  position: absolute;
+  right: 22%;
+  top: -2px;
+  display: inline-flex;
+  color: var(--crush-primary);
+  animation: heart-pop 720ms ease forwards;
+  pointer-events: none;
+}
+
+@keyframes heart-pop {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.72);
+  }
+  35% {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-34px) scale(1.2);
+  }
+}
+
+.inline-error {
+  margin-bottom: 14px;
+  color: var(--crush-primary);
+  font-weight: 800;
+}
+
+.flow-continue {
+  width: 100%;
+  min-height: 56px;
+}
+
 @media (max-width: 880px) {
   .hero-section {
     min-height: auto;
@@ -410,5 +597,26 @@ p {
 
   .flow-step {
     min-height: 204px;
+  }
+
+  .flow-screen {
+    width: min(100% - 24px, 520px);
+    padding-top: 16px;
+  }
+
+  .flow-topbar {
+    margin-bottom: 12px;
+  }
+
+  .progress-chip {
+    display: none;
+  }
+
+  .anchor-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .anchor-copy {
+    min-height: 124px;
   }
 }
