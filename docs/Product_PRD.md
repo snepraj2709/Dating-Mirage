@@ -141,7 +141,7 @@ If $\Delta \ge 3.0$, it triggers a specific copy block:
 
 #### UI/UX Flow: The Reveal
 
-Dark mode, Instagram Story-style tap-through reveal.
+Light mode, Instagram Story-style tap-through reveal.
 
 | Screen | Description |
 | --- | --- |
