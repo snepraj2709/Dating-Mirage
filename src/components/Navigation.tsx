@@ -27,7 +27,7 @@ export function Navigation({ onStart }: NavigationProps) {
       >
         <a href="#how-it-works">How it works</a>
         <a href="#matrix-breakdown">Matrix</a>
-        <a href="#mirror-sandbox">Simulator</a>
+        <a href="#map-analysis">Map Analysis</a>
       </nav>
       <Button variant="nav" size="nav" className="max-[620px]:min-h-[38px] max-[620px]:px-3" onClick={onStart}>
         Start
