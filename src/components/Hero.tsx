@@ -23,8 +23,8 @@ export function Hero({ onStart }: HeroProps) {
             </span>
           </h1>
           <p className="mb-[26px] max-w-[690px] text-[clamp(1.05rem,2vw,1.25rem)] leading-[1.6] text-white/80 max-[620px]:text-base">
-            You know what you claim to want. Your friends know who you actually choose. Dating Mirror
-            compares both before the pattern repeats.
+            You know how your Ideal partner should be. Your friends know who you actually date. Dating Mirror
+            compares both before giving you your dating pattern that's causing you mental fatigue.
           </p>
           <div className="flex flex-wrap items-center justify-start gap-3 max-[620px]:flex-col max-[620px]:items-stretch">
             <Button className="min-w-[min(100%,280px)] max-[620px]:w-full" onClick={onStart}>

@@ -1,275 +1,535 @@
-import { useState, type CSSProperties } from 'react';
-import {
-  FlaskConical,
-  HeartCrack,
-  MessageSquareText,
-  Shield,
-  ShipWheel,
-  SmilePlus,
-  TrendingUpDown,
-  Trophy,
-  Waves,
-  Zap,
-  type LucideIcon,
-} from 'lucide-react';
+import { useState } from 'react';
 import { dimensions } from '../data/datingMirrorContent';
 import { cn } from '../lib/utils';
 import type { DimensionKey } from '../types/dating-mirror';
 
-type MirrorSourceId = 'ideal' | 'actual' | 'friends';
+type JourneyStepId = 'ideal' | 'actual' | 'social' | 'pattern';
+type VectorKey = 'ideal' | 'actual' | 'social';
 
-interface MirrorSource {
-  id: MirrorSourceId;
+interface JourneyInsight {
   title: string;
-  description: string;
-  measurement: string;
+  body: string;
 }
 
-interface DimensionVisual {
-  Icon: LucideIcon;
-  SecondaryIcon?: LucideIcon;
-  color: string;
-  background: string;
-  border: string;
-  cue: string;
+interface JourneyStep {
+  id: JourneyStepId;
+  title: string;
+  navDescription: string;
+  headline: string;
+  body: string;
+  visualTitle: string;
+  activeVectors: VectorKey[];
+  drawVector: VectorKey | 'all';
+  insights: JourneyInsight[];
 }
 
-const mirrorSources: MirrorSource[] = [
+const JOURNEY_STEPS: JourneyStep[] = [
   {
     id: 'ideal',
     title: 'Ideal',
-    description: 'What type of partner do you dream to spend your life with?',
-    measurement:
-      'Measured as the I vector: your stated partner standard scores all eight dimensions from 1.0 to 10.0.',
+    navDescription: 'What you say you want.',
+    headline: 'Ideal partner signals.',
+    body:
+      'The mirror starts with your stated standards. Instead of treating desire as a vague wishlist, it separates what you admire from what actually makes you feel safe, chosen, calm, wanted, or alive.',
+    visualTitle: 'The baseline appears',
+    activeVectors: ['ideal'],
+    drawVector: 'ideal',
+    insights: [
+      {
+        title: 'Attachment signal',
+        body: 'Do they want closeness, space, chase, or steadiness?',
+      },
+      {
+        title: 'Emotional rhythm',
+        body: 'Is their ideal calm, intense, slow, or consuming?',
+      },
+      {
+        title: 'Safety marker',
+        body: 'What makes love feel stable instead of exciting-but-unsafe?',
+      },
+      {
+        title: 'Baseline',
+        body: 'Every later gap is measured against this line.',
+      },
+    ],
   },
   {
     id: 'actual',
     title: 'Actual',
-    description: 'What type of person have you been attracting so far?',
-    measurement:
-      'Measured as the A vector: your dating-history response pattern shifts each dimension toward repeated behavior.',
+    navDescription: 'Who your dating history shows.',
+    headline: 'Compare the dream with the pattern.',
+    body:
+      'Your dating history shows where attraction behaves differently from intention. This step looks at the people you actually choose, tolerate, chase, wait for, explain, or keep returning to.',
+    visualTitle: 'The history line appears',
+    activeVectors: ['ideal', 'actual'],
+    drawVector: 'actual',
+    insights: [
+      {
+        title: 'Repeated pull',
+        body: 'What kind of person keeps getting your attention?',
+      },
+      {
+        title: 'Chemistry pattern',
+        body: 'Where does excitement override your stated standards?',
+      },
+      {
+        title: 'Tolerance zone',
+        body: 'What behavior do you accept more often than you admit?',
+      },
+      {
+        title: 'Gap signal',
+        body: 'This reveals the guilty-pleasure pattern.',
+      },
+    ],
   },
   {
-    id: 'friends',
-    title: 'Observation',
-    description: 'What outside outlook do your friends have on your dating life?',
-    measurement:
-      'Measured as the S vector: anonymous friend feedback is averaged into the outside-observed profile.',
+    id: 'social',
+    title: 'Social',
+    navDescription: 'What trusted people notice.',
+    headline: 'Add the outside view.',
+    body:
+      'Friends often see the pattern before you do because they are not inside the chemistry. This layer captures what trusted observers notice when you like someone: whether you become calmer, smaller, reactive, unavailable, over-giving, or more yourself.',
+    visualTitle: 'The social mirror enters',
+    activeVectors: ['ideal', 'actual', 'social'],
+    drawVector: 'social',
+    insights: [
+      {
+        title: 'Outside pattern',
+        body: 'What changes in you when you start liking someone?',
+      },
+      {
+        title: 'Blind spot',
+        body: 'What others can see that you explain away?',
+      },
+      {
+        title: 'Social proof',
+        body: 'The report uses patterns, not individual gossip.',
+      },
+      {
+        title: 'Reality check',
+        body: 'This reveals the true blind spot.',
+      },
+    ],
+  },
+  {
+    id: 'pattern',
+    title: 'Pattern Map',
+    navDescription: 'The gap becomes visible.',
+    headline: 'The gap becomes visible.',
+    body:
+      'The final mirror overlays desire, history, and social observation. Where the lines separate, the app names the pattern: what you know, what others see, what you hide, and what should not be scored.',
+    visualTitle: 'The mirror is formed',
+    activeVectors: ['ideal', 'actual', 'social'],
+    drawVector: 'all',
+    insights: [
+      {
+        title: 'Guilty pleasure',
+        body: 'You know the mismatch, but still choose it.',
+      },
+      {
+        title: 'Blind spot',
+        body: 'Others see a pattern you cannot yet see.',
+      },
+      {
+        title: 'Facade',
+        body: 'Your private choices and public story differ.',
+      },
+      {
+        title: 'Next move',
+        body: 'The report turns the gap into one action.',
+      },
+    ],
   },
 ];
 
-const dimensionVisuals: Record<DimensionKey, DimensionVisual> = {
-  CON: {
-    Icon: Waves,
-    color: '#0284c7',
-    background: '#f0f9ff',
-    border: '#bae6fd',
-    cue: 'calm water',
+const vectorConfig: Record<
+  VectorKey,
+  {
+    label: string;
+    className: string;
+    points: string;
+  }
+> = {
+  ideal: {
+    label: 'IDEAL',
+    className: 'journey-vector-line--ideal',
+    points: '28,54 96,42 166,61 236,44 332,56',
   },
-  INT: {
-    Icon: Zap,
-    color: '#ca8a04',
-    background: '#fefce8',
-    border: '#fde68a',
-    cue: 'bolt charge',
+  actual: {
+    label: 'ACTUAL',
+    className: 'journey-vector-line--actual',
+    points: '28,92 96,113 166,83 236,119 332,98',
   },
-  AUT: {
-    Icon: ShipWheel,
-    color: '#15803d',
-    background: '#f0fdf4',
-    border: '#bbf7d0',
-    cue: 'hands on wheel',
-  },
-  VAL: {
-    Icon: SmilePlus,
-    SecondaryIcon: Trophy,
-    color: '#9333ea',
-    background: '#faf5ff',
-    border: '#e9d5ff',
-    cue: 'praise pull',
-  },
-  GOC: {
-    Icon: MessageSquareText,
-    color: '#0f766e',
-    background: '#f0fdfa',
-    border: '#99f6e4',
-    cue: 'repair dialogue',
-  },
-  VUL: {
-    Icon: HeartCrack,
-    SecondaryIcon: Shield,
-    color: '#dc2626',
-    background: '#fef2f2',
-    border: '#fecaca',
-    cue: 'shown weakness',
-  },
-  REA: {
-    Icon: FlaskConical,
-    color: '#ea580c',
-    background: '#fff7ed',
-    border: '#fed7aa',
-    cue: 'chemical reaction',
-  },
-  RWO: {
-    Icon: TrendingUpDown,
-    color: '#4338ca',
-    background: '#eef2ff',
-    border: '#c7d2fe',
-    cue: 'worth signal',
+  social: {
+    label: 'SOCIAL',
+    className: 'journey-vector-line--social',
+    points: '28,130 96,119 166,138 236,106 332,128',
   },
 };
 
-const sourceById = mirrorSources.reduce(
-  (sources, source) => ({ ...sources, [source.id]: source }),
-  {} as Record<MirrorSourceId, MirrorSource>,
-);
+const vectorOrder: VectorKey[] = ['ideal', 'actual', 'social'];
 
-function SourceQuadrant({
-  className,
-  isActive,
-  onActivate,
-  source,
-}: {
-  className?: string;
-  isActive: boolean;
-  onActivate: () => void;
-  source: MirrorSource;
-}) {
+const miniRadarVectors: Record<VectorKey, Record<DimensionKey, number>> = {
+  ideal: {
+    CON: 8.6,
+    INT: 3.2,
+    AUT: 7.2,
+    VAL: 2.9,
+    GOC: 7.5,
+    VUL: 6.6,
+    REA: 2.8,
+    RWO: 8.4,
+  },
+  actual: {
+    CON: 3.0,
+    INT: 8.8,
+    AUT: 3.2,
+    VAL: 6.7,
+    GOC: 3.8,
+    VUL: 4.8,
+    REA: 7.2,
+    RWO: 4.1,
+  },
+  social: {
+    CON: 4.2,
+    INT: 6.2,
+    AUT: 5.6,
+    VAL: 5.8,
+    GOC: 5.8,
+    VUL: 3.3,
+    REA: 4.8,
+    RWO: 6.8,
+  },
+};
+
+const miniRadarSeries: Array<{
+  key: VectorKey;
+  label: string;
+  className: string;
+  pointClassName: string;
+  dashed?: boolean;
+}> = [
+  {
+    key: 'ideal',
+    label: 'Ideal',
+    className: 'journey-radar-series--ideal',
+    pointClassName: 'journey-radar-point--ideal',
+  },
+  {
+    key: 'actual',
+    label: 'Actual',
+    className: 'journey-radar-series--actual',
+    pointClassName: 'journey-radar-point--actual',
+  },
+  {
+    key: 'social',
+    label: 'Social',
+    className: 'journey-radar-series--social',
+    pointClassName: 'journey-radar-point--social',
+    dashed: true,
+  },
+];
+
+const miniRadarSize = 420;
+const miniRadarCenter = miniRadarSize / 2;
+const miniRadarRadius = 112;
+const miniRadarLabelRadius = 158;
+
+function miniRadarAngle(index: number) {
+  return -Math.PI / 2 + (index / dimensions.length) * Math.PI * 2;
+}
+
+function miniRadarPoint(index: number, radius: number) {
+  const angle = miniRadarAngle(index);
+
+  return {
+    x: miniRadarCenter + Math.cos(angle) * radius,
+    y: miniRadarCenter + Math.sin(angle) * radius,
+  };
+}
+
+function miniRadarPointsFor(values: Record<DimensionKey, number>) {
+  return dimensions.map((dimension, index) => {
+    const valueRadius = ((values[dimension.key] - 1) / 9) * miniRadarRadius;
+
+    return miniRadarPoint(index, valueRadius);
+  });
+}
+
+function miniRadarPolygon(points: Array<{ x: number; y: number }>) {
+  return points.map((point) => `${point.x},${point.y}`).join(' ');
+}
+
+function miniRadarClosedPolyline(points: Array<{ x: number; y: number }>) {
+  return miniRadarPolygon([...points, points[0]]);
+}
+
+function MiniPatternRadar() {
+  const ringPoints = [0.25, 0.5, 0.75, 1].map((scale) =>
+    miniRadarPolygon(dimensions.map((_, index) => miniRadarPoint(index, miniRadarRadius * scale))),
+  );
+
   return (
-    <button
-      aria-label={`${source.title} input: ${source.description}`}
-      aria-pressed={isActive}
-      className={cn(
-        'group relative grid min-h-0 w-full place-items-center overflow-hidden bg-card p-[clamp(22px,3vw,44px)] text-center transition-[background,border-color,color,transform] duration-150 ease-out focus-visible:z-10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-foreground max-[760px]:min-h-[180px] max-[760px]:p-6',
-        isActive ? 'border-primary bg-[#fff7fb]' : 'border-border hover:border-border-strong',
-        className,
-      )}
-      onClick={onActivate}
-      onFocus={onActivate}
-      onMouseMove={onActivate}
-      type="button"
-    >
-      <span className="grid max-w-[620px] justify-items-center gap-3">
-        <span
-          className="block text-[clamp(2rem,4.8vw,4.65rem)] leading-none text-foreground max-[1080px]:text-[clamp(1.9rem,4.5vw,3.5rem)]"
-        >
-          {source.title}
-        </span>
-        <span className="block text-[clamp(0.95rem,1.45vw,1.24rem)] leading-[1.55] text-muted-foreground max-[1080px]:text-[0.95rem]">
-          {source.description}
-        </span>
-      </span>
-    </button>
+    <div className="journey-pattern-radar" aria-hidden="true">
+      <svg className="mx-auto h-auto w-1/2" viewBox="0 0 420 390" role="img">
+        <g className="journey-radar-grid">
+          {ringPoints.map((points) => (
+            <polygon fill="none" key={points} points={points} />
+          ))}
+          {dimensions.map((dimension, index) => {
+            const point = miniRadarPoint(index, miniRadarRadius);
+
+            return <line key={dimension.key} x1={miniRadarCenter} x2={point.x} y1={miniRadarCenter} y2={point.y} />;
+          })}
+        </g>
+
+        <g className="journey-radar-gap-layer">
+          <circle cx="292" cy="118" r="44" />
+          <circle cx="166" cy="122" r="32" />
+          <circle cx="150" cy="260" r="25" />
+        </g>
+
+        {miniRadarSeries.map((series) => {
+          const points = miniRadarPointsFor(miniRadarVectors[series.key]);
+
+          return (
+            <g className="journey-radar-series" key={series.key}>
+              <polygon
+                className={cn('journey-radar-fill', series.className)}
+                points={miniRadarPolygon(points)}
+              />
+              <polyline
+                className={cn('journey-radar-line', series.className, series.dashed && 'journey-radar-line--dashed')}
+                points={miniRadarClosedPolyline(points)}
+              />
+              {points.map((point, index) => (
+                <circle
+                  className={cn('journey-radar-point', series.pointClassName)}
+                  cx={point.x}
+                  cy={point.y}
+                  key={`${series.key}-${dimensions[index].key}`}
+                  r="4.8"
+                />
+              ))}
+            </g>
+          );
+        })}
+
+        <g className="journey-radar-labels">
+          {dimensions.map((dimension, index) => {
+            const point = miniRadarPoint(index, miniRadarLabelRadius);
+            const horizontal = Math.cos(miniRadarAngle(index));
+            const anchor = horizontal > 0.35 ? 'start' : horizontal < -0.35 ? 'end' : 'middle';
+            const x = anchor === 'start' ? Math.min(point.x, 292) : anchor === 'end' ? Math.max(point.x, 116) : point.x;
+
+            return (
+              <text key={dimension.key} textAnchor={anchor} x={x} y={point.y}>
+                {dimension.name}
+              </text>
+            );
+          })}
+        </g>
+      </svg>
+
+      <div className="journey-radar-legend">
+        {miniRadarSeries.map((series) => (
+          <span className="journey-radar-legend-item" key={series.key}>
+            <span className={cn('journey-radar-legend-line', series.className, series.dashed && 'journey-radar-legend-line--dashed')} />
+            {series.label}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function MiniVectorMap({ step }: { step: JourneyStep }) {
+  if (step.id === 'pattern') {
+    return <MiniPatternRadar />;
+  }
+
+  const activeVectorSet = new Set(step.activeVectors);
+  const showActualGap = step.id === 'actual';
+  const showSocialPulse = step.id === 'social';
+
+  return (
+    <div className="vector-mini-map" aria-hidden="true">
+      <svg className="h-[188px] w-full" viewBox="0 0 360 180" role="img">
+        <defs>
+          <linearGradient id="journey-gap-gradient" x1="0" x2="1" y1="0" y2="1">
+            <stop offset="0%" stopColor="#e83e8c" stopOpacity="0.18" />
+            <stop offset="100%" stopColor="#d6a63f" stopOpacity="0.04" />
+          </linearGradient>
+        </defs>
+        <path
+          className={cn('journey-gap-glow', showActualGap && 'journey-gap-glow--visible')}
+          d="M88 46 C132 102 164 98 226 47 C242 82 258 112 320 97 C254 126 219 131 166 86 C130 118 104 115 88 46 Z"
+          fill="url(#journey-gap-gradient)"
+        />
+        <circle
+          className={cn('journey-social-pulse', showSocialPulse && 'journey-social-pulse--visible')}
+          cx="166"
+          cy="124"
+          fill="none"
+          r="31"
+          stroke="#e83e8c"
+        />
+        <circle
+          className="journey-map-complete"
+          cx="248"
+          cy="82"
+          fill="none"
+          r="52"
+          stroke="#e83e8c"
+        />
+
+        {vectorOrder.map((vector) => {
+          const isActive = activeVectorSet.has(vector);
+          const isDrawing = step.drawVector === vector || step.drawVector === 'all';
+          const config = vectorConfig[vector];
+
+          return (
+            <polyline
+              className={cn(
+                'journey-vector-line',
+                config.className,
+                isActive ? 'journey-vector-line--active' : 'journey-vector-line--muted',
+                isDrawing && 'journey-vector-line--draw',
+              )}
+              key={`${step.id}-${vector}`}
+              points={config.points}
+            />
+          );
+        })}
+      </svg>
+
+      <div className="grid grid-cols-3 gap-2 text-[0.72rem] font-medium uppercase tracking-normal text-subtle-foreground">
+        {vectorOrder.map((vector) => (
+          <span
+            className={cn(vectorConfig[vector].className, activeVectorSet.has(vector) && 'text-foreground')}
+            key={vector}
+          >
+            {vectorConfig[vector].label}
+          </span>
+        ))}
+      </div>
+    </div>
   );
 }
 
 export function MirrorStepper() {
-  const [activeSource, setActiveSource] = useState<MirrorSourceId>('ideal');
-  const selectedSource = sourceById[activeSource];
+  const [activeStep, setActiveStep] = useState(0);
+  const selectedStep = JOURNEY_STEPS[activeStep];
 
   return (
     <section
       aria-labelledby="how-it-works-title"
-      className="scroll-mt-[72px] border-y border-border bg-background min-[761px]:h-[calc(100svh-72px)] min-[761px]:overflow-hidden max-[620px]:scroll-mt-16"
+      className="scroll-mt-[72px] bg-[#fffaf6] px-[clamp(16px,5vw,64px)] py-[clamp(64px,9vw,112px)] max-[620px]:scroll-mt-16 max-[620px]:px-3 max-[620px]:py-12"
       id="how-it-works"
     >
-      <div className="mx-auto grid w-full max-w-[1440px] grid-rows-[auto_minmax(0,1fr)] min-[761px]:h-full max-[760px]:w-[min(100%_-_24px,520px)]">
-        <header className="mx-auto grid max-w-[820px] justify-items-center gap-2.5 px-4 py-[clamp(18px,3vh,30px)] text-center max-[760px]:py-7">
-          <p className="m-0 mb-3 text-[0.88rem] font-medium uppercase tracking-normal text-muted-foreground">
+      <div className="mx-auto grid w-full max-w-[1480px] gap-[clamp(28px,4vw,44px)]">
+        <header className="mx-auto grid max-w-[760px] justify-items-center gap-4 text-center">
+          <p className="m-0 text-[0.82rem] font-medium uppercase tracking-normal text-subtle-foreground">
             How your mirror gets formed
           </p>
           <h2
-            className="mb-0 text-[clamp(1.75rem,4vw,3rem)] leading-[1.05] tracking-normal text-foreground"
+            className="mb-0 text-[clamp(1.25rem,5vw,2.5rem)] leading-[0.98] tracking-normal text-foreground"
             id="how-it-works-title"
           >
             How it works
           </h2>
         </header>
 
-        <div className="grid w-full grid-cols-2 grid-rows-2 border-x border-border min-[761px]:min-h-0 max-[760px]:grid-cols-1 max-[760px]:grid-rows-none max-[760px]:border-t">
-        <SourceQuadrant
-          className="border-b border-r max-[760px]:border-r-0"
-          isActive={activeSource === 'ideal'}
-          onActivate={() => setActiveSource('ideal')}
-          source={sourceById.ideal}
-        />
-
-        <aside className="relative min-h-0 overflow-hidden border-b border-border bg-[#fbfbfb] p-[clamp(18px,2.8vw,36px)] max-[1080px]:p-[18px] max-[760px]:min-h-[420px] max-[760px]:p-5">
-          <div
-            className="mirror-arena-enter flex h-full min-h-0 flex-col justify-between gap-4"
-            key={activeSource}
-          >
-            <div className="grid gap-3 max-[1080px]:gap-2">
-              <div className="flex flex-wrap items-center justify-between gap-3 text-[0.78rem] font-medium uppercase tracking-normal text-subtle-foreground">
-                <span className="text-primary">{selectedSource.title}</span>
-              </div>
-              <div className="grid gap-2">
-                <p className="mb-0 max-w-[700px] text-[clamp(0.9rem,1.2vw,1rem)] leading-[1.5] text-muted-foreground max-[1080px]:text-[0.84rem] max-[1080px]:leading-[1.35]">
-                  {selectedSource.measurement}
-                </p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-4 gap-2 max-[1080px]:gap-1.5 max-[760px]:grid-cols-2 max-[760px]:gap-2.5">
-              {dimensions.map((dimension, index) => {
-                const visual = dimensionVisuals[dimension.key];
-                const Icon = visual.Icon;
-                const SecondaryIcon = visual.SecondaryIcon;
+        <div className="guided-journey journey-shell grid overflow-hidden rounded-[28px] border border-border bg-white shadow-[0_24px_80px_rgba(17,17,17,0.08)] min-[1021px]:grid-cols-[minmax(260px,320px)_minmax(0,1fr)_minmax(340px,0.92fr)] max-[1020px]:rounded-[22px]">
+          <aside className="journey-sidebar grid content-start gap-4 border-border bg-[#fff4f9] p-5 min-[1021px]:border-r max-[1020px]:border-b max-[1020px]:p-4">
+            <p className="m-0 px-2 text-[0.76rem] font-medium uppercase tracking-normal text-subtle-foreground">
+              Build the mirror
+            </p>
+            <div
+              aria-label="How your mirror gets formed steps"
+              className="grid gap-3 max-[1020px]:flex max-[1020px]:overflow-x-auto max-[1020px]:pb-1"
+              role="tablist"
+            >
+              {JOURNEY_STEPS.map((step, index) => {
+                const isActive = index === activeStep;
 
                 return (
-                  <div
-                    className="mirror-dimension-tag grid min-h-[clamp(66px,9vh,92px)] content-between gap-2 rounded-md border p-2.5 max-[1080px]:min-h-[52px] max-[1080px]:gap-1.5 max-[1080px]:p-2 max-[760px]:min-h-[96px] max-[760px]:gap-2 max-[760px]:p-3"
-                    key={dimension.key}
-                    style={
-                      {
-                        '--tag-index': index,
-                        backgroundColor: visual.background,
-                        borderColor: visual.border,
-                      } as CSSProperties
-                    }
+                  <button
+                    aria-controls="journey-step-panel"
+                    aria-selected={isActive}
+                    className={cn(
+                      'journey-step group grid min-h-[118px] w-full grid-cols-[40px_minmax(0,1fr)] items-start gap-3 rounded-lg border bg-white/62 p-4 text-left transition-[background,border-color,box-shadow,transform] duration-200 ease-out focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-foreground max-[1020px]:min-h-[86px] max-[1020px]:min-w-[232px] max-[1020px]:items-center max-[1020px]:rounded-full max-[1020px]:p-3 max-[620px]:grid-cols-[40px_minmax(0,1fr)]',
+                      isActive
+                        ? 'active border-primary bg-white shadow-[0_14px_36px_rgba(232,62,140,0.16)]'
+                        : 'border-border text-muted-foreground hover:border-border-strong hover:bg-white',
+                    )}
+                    id={`journey-step-${step.id}`}
+                    key={step.id}
+                    onClick={() => setActiveStep(index)}
+                    role="tab"
+                    type="button"
                   >
-                    <span className="flex items-start justify-between gap-2">
-                      <span
-                        className="relative grid size-8 shrink-0 place-items-center rounded-full bg-white max-[1080px]:size-6 max-[760px]:size-8"
-                        style={{ color: visual.color }}
-                        aria-hidden="true"
-                      >
-                        <Icon size={17} />
-                        {SecondaryIcon && (
-                          <SecondaryIcon
-                            className="absolute -right-1 -top-1 rounded-full bg-white"
-                            size={12}
-                            strokeWidth={2.4}
-                          />
-                        )}
-                      </span>
-                      <span className="text-right text-[0.64rem] font-medium uppercase leading-tight text-muted-foreground max-[1080px]:hidden">
-                        {visual.cue}
-                      </span>
+                    <span
+                      className={cn(
+                        'grid size-10 place-items-center rounded-full text-[0.86rem] leading-none transition-colors',
+                        isActive ? 'bg-primary text-white' : 'bg-muted text-subtle-foreground group-hover:text-foreground',
+                      )}
+                      aria-hidden="true"
+                    >
+                      {String(index + 1).padStart(2, '0')}
                     </span>
-                    <strong className="text-[clamp(0.78rem,0.95vw,0.92rem)] leading-tight text-foreground max-[1080px]:text-[0.72rem] max-[760px]:text-[clamp(0.78rem,0.95vw,0.92rem)]">
-                      {dimension.name}
-                    </strong>
-                  </div>
+                    <span className="grid gap-1.5">
+                      <span className={cn('text-[1rem] leading-tight text-foreground', !isActive && 'text-foreground/78')}>
+                        {step.title}
+                      </span>
+                      <span className="text-[0.9rem] leading-[1.4] text-muted-foreground">{step.navDescription}</span>
+                    </span>
+                  </button>
                 );
               })}
             </div>
+          </aside>
+
+          <div
+            aria-labelledby={`journey-step-${selectedStep.id}`}
+            className="journey-main grid content-center border-border p-[clamp(28px,5vw,64px)] min-[1021px]:border-r"
+            id="journey-step-panel"
+            role="tabpanel"
+            tabIndex={0}
+          >
+            <div className="journey-content-enter grid max-w-[620px] gap-5" key={selectedStep.id}>
+              <h3 className="mb-0 text-[clamp(2.35rem,4.8vw,5.25rem)] leading-[0.96] tracking-normal text-foreground">
+                {selectedStep.headline}
+              </h3>
+              <p className="mb-0 text-[clamp(1rem,1.35vw,1.2rem)] leading-[1.7] text-muted-foreground">
+                {selectedStep.body}
+              </p>
+            </div>
           </div>
-        </aside>
 
-        <SourceQuadrant
-          className="border-r max-[760px]:border-b max-[760px]:border-r-0"
-          isActive={activeSource === 'actual'}
-          onActivate={() => setActiveSource('actual')}
-          source={sourceById.actual}
-        />
+          <aside className="journey-visual-enter journey-visual-card grid content-center">
+            <div className="grid h-full content-center gap-5 bg-white p-[clamp(28px,3.8vw,56px)]">
+              <div className="grid gap-2">
+                <p className="m-0 text-[0.76rem] font-medium uppercase tracking-normal text-subtle-foreground">
+                  What changes on the map
+                </p>
+                <h3 className="mb-0 text-[clamp(1.35rem,2vw,1.85rem)] leading-tight text-foreground">
+                  {selectedStep.visualTitle}
+                </h3>
+              </div>
 
-        <SourceQuadrant
-          className="max-[760px]:border-b"
-          isActive={activeSource === 'friends'}
-          onActivate={() => setActiveSource('friends')}
-          source={sourceById.friends}
-        />
+              <MiniVectorMap step={selectedStep} />
+
+              <div className="insight-grid grid grid-cols-2 gap-3 max-[560px]:grid-cols-1">
+                {selectedStep.insights.map((insight) => (
+                  <div className="insight-tile grid gap-1.5 rounded-lg border border-border bg-white p-4" key={insight.title}>
+                    <h4 className="mb-0 text-[0.95rem] leading-tight text-foreground">{insight.title}</h4>
+                    <p className="mb-0 text-[0.83rem] leading-[1.45] text-muted-foreground">{insight.body}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </aside>
         </div>
       </div>
     </section>
