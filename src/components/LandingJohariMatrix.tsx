@@ -2,8 +2,8 @@ import { CircleDashed, Eye, EyeOff, ShieldAlert } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { IconBadge } from '@/components/ui/icon-badge';
-import { Eyebrow, Pill } from '@/components/ui/pill';
-import { ContentBand, SectionHeading } from '@/components/ui/section';
+import { Eyebrow } from '@/components/ui/pill';
+import { ContentBand } from '@/components/ui/section';
 import { Surface } from '@/components/ui/surface';
 import { cn } from '@/lib/utils';
 
@@ -66,22 +66,27 @@ export function LandingJohariMatrix() {
   const ActiveIcon = activeItem.icon;
 
   return (
-    <ContentBand className="pt-[72px]" id="matrix-breakdown">
-      <SectionHeading
-        centered
-        eyebrow="Dating Johari Matrix"
-        title="The report separates what you know from what others can see."
-      />
+    <ContentBand className="grid content-center gap-5 py-[clamp(34px,6svh,56px)] max-[620px]:content-start max-[620px]:gap-4 max-[620px]:py-5" id="matrix-breakdown">
+      <div className="mx-auto grid max-w-[760px] justify-items-center gap-2 text-center">
+        <Eyebrow>Dating Matrix</Eyebrow>
+        <h2 className="mb-0 text-[clamp(1.65rem,3.2vw,2.5rem)] leading-[1.08] tracking-normal text-foreground max-[620px]:text-[clamp(1.35rem,7vw,1.8rem)]">
+          What you know <span className="text-primary">Vs</span>{' '}
+          <span className="underline decoration-primary decoration-[0.08em] underline-offset-[0.12em]">
+            What others can see
+          </span>
+          .
+        </h2>
+      </div>
 
-      <div className="grid grid-cols-[minmax(0,1.2fr)_minmax(280px,0.8fr)] items-stretch gap-6 max-[960px]:grid-cols-1">
-        <div className="grid grid-cols-2 gap-3.5 max-[620px]:grid-cols-1" role="list">
+      <div className="grid grid-cols-[minmax(0,1.2fr)_minmax(280px,0.8fr)] items-stretch gap-5 max-[960px]:grid-cols-1 max-[620px]:block">
+        <div className="mobile-snap-row grid grid-cols-2 gap-3 max-[620px]:grid-cols-none" role="list">
           {matrixItems.map((item) => {
             const Icon = item.icon;
             const isActive = item.key === activeKey;
             return (
               <Button
                 className={cn(
-                  'grid min-h-[230px] content-start gap-3 rounded-lg p-5 text-left font-medium text-foreground max-[620px]:min-h-auto',
+                  'mobile-snap-item grid min-h-[176px] content-start gap-2.5 rounded-lg p-4 text-left font-medium text-foreground max-[620px]:min-h-[330px] max-[620px]:w-[min(82vw,312px)] max-[620px]:gap-3',
                   isActive && 'border-foreground bg-muted',
                 )}
                 variant="option"
@@ -98,21 +103,26 @@ export function LandingJohariMatrix() {
                   <span className="text-[0.86rem] text-subtle-foreground">{item.label}</span>
                 </span>
                 <span className="text-[0.86rem] text-subtle-foreground">{item.badge}</span>
-                <strong className="text-[1.18rem] leading-[1.25] text-foreground">{item.title}</strong>
-                <span className="text-muted-foreground leading-[1.5]">{item.copy}</span>
+                <strong className="text-[1.08rem] leading-[1.22] text-foreground">{item.title}</strong>
+                <span className="text-[0.92rem] leading-[1.42] text-muted-foreground">{item.copy}</span>
+                {isActive && (
+                  <span className="mt-1 hidden border-t border-border pt-3 text-[0.9rem] leading-[1.45] text-muted-foreground max-[620px]:block">
+                    {item.detail}
+                  </span>
+                )}
               </Button>
             );
           })}
         </div>
 
-        <Surface asChild className="grid content-start gap-3 p-6" aria-live="polite">
+        <Surface asChild className="grid content-start gap-3 p-5 max-[620px]:hidden" aria-live="polite">
           <aside>
-          <IconBadge aria-hidden="true">
-            <ActiveIcon size={22} />
-          </IconBadge>
-          <Eyebrow>{activeItem.badge}</Eyebrow>
-          <h3 className="mb-0 text-xl leading-[1.2] text-foreground">{activeItem.title}</h3>
-          <p className="mb-0">{activeItem.detail}</p>
+            <IconBadge aria-hidden="true">
+              <ActiveIcon size={22} />
+            </IconBadge>
+            <Eyebrow>{activeItem.badge}</Eyebrow>
+            <h3 className="mb-0 text-xl leading-[1.2] text-foreground">{activeItem.title}</h3>
+            <p className="mb-0 text-[0.95rem] leading-[1.5]">{activeItem.detail}</p>
           </aside>
         </Surface>
       </div>

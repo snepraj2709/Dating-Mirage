@@ -1,10 +1,9 @@
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, FlagTriangleRight, Lightbulb } from 'lucide-react';
 import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { dimensions } from '@/data/datingMirrorContent';
 import { cn } from '@/lib/utils';
 import type { DimensionKey, VectorProfile } from '@/types/dating-mirror';
 import { Button } from '@/components/ui/button';
-import { Pill } from '@/components/ui/pill';
 import { ContentBand } from '@/components/ui/section';
 import { Surface } from '@/components/ui/surface';
 
@@ -124,7 +123,6 @@ const lensContent: Record<
   PatternLensKey,
   {
     tab: string;
-    label: string;
     title: string;
     body: string[];
     action?: string;
@@ -134,12 +132,8 @@ const lensContent: Record<
 > = {
   all: {
     tab: 'All',
-    label: 'Your dating pattern map',
-    title: 'Your dating pattern map',
+    title: 'Where the lines separate',
     body: [
-      'Gold shows what you say you want.',
-      'Blue shows who you actually choose.',
-      'Dashed brown shows what people close to you notice.',
       'The emotional truth is not inside one line.',
       'It lives in the distance between the lines.',
     ],
@@ -147,7 +141,6 @@ const lensContent: Record<
   },
   guilty: {
     tab: 'Guilty pleasure',
-    label: 'Known mismatch',
     title: 'The choice you know is not aligned',
     body: [
       'You say you want calm, consistency, and emotional safety.',
@@ -163,22 +156,20 @@ const lensContent: Record<
   },
   blindSpot: {
     tab: 'Blind spot',
-    label: 'Friend-revealed pattern',
     title: 'The pattern others see before you do',
     body: [
       'You believe your choices match your standards.',
       'But your social circle notice a different emotional pattern.',
-      'Attraction feels private from the inside, but the patterns are obvious to a person outside the whirlwind of your emotional rollercoaster.',
+      'The Attraction might feel intense to you, but the patterns is obvious to a person outside the whirlwind of your emotional rollercoaster.',
     ],
     action:
-      'Ask one trusted friend: "When I like someone, what do I start tolerating that I normally wouldn\'t?"',
+      'Ask a close friend: "When I like someone, what do I start tolerating that I normally wouldn\'t?"',
   },
   facade: {
     tab: 'Facade',
-    label: 'Hidden mismatch',
     title: 'The version you live vs. the version people see',
     body: [
-      'Your actual dating choices show one pattern.',
+      'Your dating choices show one pattern.',
       'But your friends see a different pattern.',
       'You may look composed from the outside, while privately you are over-accommodating, waiting, explaining, or self-doubting.',
     ],
@@ -233,13 +224,6 @@ function labelAnchor(index: number) {
   }
 
   return 'middle';
-}
-
-function midpoint(firstPoint: RadarPoint, secondPoint: RadarPoint): RadarPoint {
-  return {
-    x: (firstPoint.x + secondPoint.x) / 2,
-    y: (firstPoint.y + secondPoint.y) / 2,
-  };
 }
 
 function pairForLens(lens: PatternLensKey): [VectorKey, VectorKey] {
@@ -326,11 +310,11 @@ function RadarLensScene({ activeLens }: { activeLens: PatternLensKey }) {
 
   return (
     <figure
-      className="map-radar-shell m-0 grid min-h-[520px] content-center justify-items-center overflow-hidden rounded-lg bg-[#fbfbfb] px-4 py-6 max-[620px]:min-h-[430px] max-[620px]:px-2"
+      className="map-radar-shell m-0 grid min-h-[460px] content-center justify-items-center overflow-hidden rounded-lg bg-[#fbfbfb] px-4 py-5 max-[620px]:min-h-[238px] max-[620px]:px-2 max-[620px]:py-2"
       aria-label="Animated radar map comparing stated preference, actual choices, and friend-observed patterns"
     >
       <svg
-        className="h-auto w-[min(100%,620px)] overflow-visible"
+        className="h-[min(42svh,420px)] w-auto max-w-full overflow-visible max-[620px]:h-[210px]"
         viewBox={`0 0 ${chartWidth} ${chartHeight}`}
         role="img"
       >
@@ -401,8 +385,7 @@ function RadarLensScene({ activeLens }: { activeLens: PatternLensKey }) {
           </g>
         )}
 
-        {highlights.map((highlight, index) => {
-          const mid = midpoint(highlight.from, highlight.to);
+        {highlights.map((highlight) => {
           return (
             <g key={`${activeLens}-${highlight.key}`}>
               <line
@@ -417,23 +400,10 @@ function RadarLensScene({ activeLens }: { activeLens: PatternLensKey }) {
                 y2={highlight.to.y}
                 stroke={gapColor}
                 strokeLinecap="round"
-                strokeWidth={activeLens === 'all' ? 10 : 8}
+                strokeWidth={activeLens === 'blindSpot' || activeLens === 'all' ? 10 : 8}
                 filter="url(#map-analysis-glow)"
                 style={{ '--gap-delay': `${highlight.delay}ms` } as CSSProperties}
               />
-              {activeLens === 'blindSpot' && (
-                <line
-                  className="map-outside-pulse"
-                  x1={highlight.to.x}
-                  y1={highlight.to.y}
-                  x2={mid.x}
-                  y2={mid.y}
-                  stroke="#d946ef"
-                  strokeLinecap="round"
-                  strokeWidth="3"
-                  style={{ '--gap-delay': `${highlight.delay + index * 70}ms` } as CSSProperties}
-                />
-              )}
             </g>
           );
         })}
@@ -484,7 +454,7 @@ function RadarLensScene({ activeLens }: { activeLens: PatternLensKey }) {
           );
         })}
       </svg>
-      <figcaption className="mt-2 flex w-full flex-nowrap items-center justify-center gap-x-5 px-2 text-[0.76rem] font-medium text-muted-foreground max-[620px]:gap-x-3 max-[620px]:text-[0.68rem]">
+      <figcaption className="mt-2 flex w-full flex-nowrap items-center justify-center gap-x-5 px-2 text-[0.76rem] font-medium text-muted-foreground max-[620px]:mt-0 max-[620px]:gap-x-3 max-[620px]:text-[0.66rem]">
         {radarLegend.map((item) => (
           <span className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap" key={item.key}>
             <i
@@ -549,15 +519,15 @@ export function MapAnalysisSection({ onStart }: MapAnalysisSectionProps) {
   };
 
   return (
-    <ContentBand className="grid min-h-screen content-start gap-6 pt-[72px] pb-20" id="map-analysis">
-      <div className="grid gap-5">
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <h2 className="mb-0 text-[clamp(1.75rem,4vw,3rem)] leading-[1.05] tracking-normal text-foreground">
+    <ContentBand className="grid content-center gap-4 py-[clamp(34px,6svh,56px)] max-[620px]:content-start max-[620px]:gap-3 max-[620px]:py-5" id="map-analysis">
+      <div className="grid gap-4 max-[620px]:gap-3">
+        <div className="flex items-end justify-between gap-4 max-[620px]:grid max-[620px]:gap-2">
+          <h2 className="mb-0 text-[clamp(1.65rem,3.6vw,2.65rem)] leading-[1.05] tracking-normal text-foreground max-[620px]:text-[1.45rem]">
             Map Analysis
           </h2>
           <div
             aria-label="Pattern lenses"
-            className="flex flex-wrap gap-2.5"
+            className="landing-snap-row flex-nowrap gap-2.5 max-[620px]:gap-2"
             role="tablist"
           >
             {lensStoryOrder.map((lens) => {
@@ -566,7 +536,7 @@ export function MapAnalysisSection({ onStart }: MapAnalysisSectionProps) {
                 <button
                   aria-selected={isActive}
                   className={cn(
-                    'group relative inline-flex min-h-[50px] items-center justify-center overflow-hidden rounded-lg px-5 py-2.5 text-left text-[1rem] font-medium transition-[background,color,transform,box-shadow] duration-200 ease-out focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground active:scale-[0.98]',
+                    'landing-snap-item group relative inline-flex min-h-[44px] items-center justify-center overflow-hidden rounded-lg px-4 py-2 text-left text-[0.92rem] font-medium transition-[background,color,transform,box-shadow] duration-200 ease-out focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground active:scale-[0.98] max-[620px]:min-h-[38px] max-[620px]:px-3 max-[620px]:text-[0.78rem]',
                     isActive
                       ? activeLensButtonClassName
                       : 'bg-card text-muted-foreground hover:-translate-y-0.5 hover:bg-muted hover:text-foreground',
@@ -592,52 +562,65 @@ export function MapAnalysisSection({ onStart }: MapAnalysisSectionProps) {
           </div>
         </div>
 
-        <div className="grid grid-cols-[minmax(0,1.18fr)_minmax(320px,0.82fr)] items-stretch gap-6 max-[980px]:grid-cols-1">
+        <div className="grid grid-cols-[minmax(0,1.12fr)_minmax(300px,0.88fr)] items-stretch gap-4 max-[980px]:grid-cols-1 max-[620px]:gap-3">
           <Surface className="overflow-hidden p-0" aria-live="polite">
             <RadarLensScene activeLens={activeLens} />
           </Surface>
 
-          <Surface asChild className="grid content-start gap-5 p-[clamp(22px,3vw,32px)]" aria-live="polite">
+          <Surface asChild className="grid content-start gap-4 p-[clamp(18px,2.4vw,24px)] max-[620px]:gap-3 max-[620px]:p-4" aria-live="polite">
             <aside>
-              <div className="map-insight-enter grid content-start gap-5" key={activeLens}>
-                <Pill className="w-fit border-border-strong bg-card text-foreground">{activeContent.label}</Pill>
-                <h3 className="mb-0 text-[clamp(1.5rem,3vw,2.35rem)] leading-[1.08] text-foreground">
+              <div className="map-insight-enter grid content-start gap-4 max-[620px]:gap-3" key={activeLens}>
+                <h3 className="mb-0 text-[clamp(1.35rem,2.4vw,1.9rem)] leading-[1.08] text-foreground max-[620px]:text-[1.15rem]">
                   {activeContent.title}
                 </h3>
-                <div className="grid gap-3">
-                  {activeContent.body.map((paragraph) => (
-                    <p className="mb-0" key={paragraph}>
-                      {paragraph}
-                    </p>
-                  ))}
-                </div>
 
-                {activeContent.cueLabels && (
-                  <div className="grid gap-2" aria-label="Pattern cues">
-                    {activeContent.cueLabels.map((label) => (
-                      <span
-                        className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-[0.92rem] font-medium leading-[1.35] text-[#6f4a00]"
-                        key={label}
-                      >
-                        {label}
-                      </span>
+                <div
+                  className="mobile-snap-row grid gap-2.5 max-[620px]:grid-cols-none"
+                  aria-label="Map analysis details"
+                  tabIndex={0}
+                >
+                  <ul className="mobile-snap-item m-0 grid list-none gap-1.5 rounded-md bg-card p-3 text-[0.9rem] leading-[1.38] text-muted-foreground shadow-none max-[620px]:min-h-[116px]">
+                    {activeContent.body.map((paragraph) => (
+                      <li className="grid grid-cols-[auto_1fr] gap-2" key={paragraph}>
+                        <span aria-hidden="true">-</span>
+                        <span>{paragraph}</span>
+                      </li>
                     ))}
-                  </div>
-                )}
+                  </ul>
 
-                {activeContent.action && (
-                  <div className="grid gap-2 border-l-2 border-foreground bg-muted px-4 py-3">
-                    <span className="text-[0.84rem] font-medium uppercase text-subtle-foreground">Try this</span>
-                    <p className="mb-0 font-medium text-foreground">{activeContent.action}</p>
-                  </div>
-                )}
+                  {activeContent.cueLabels && (
+                    <div className="mobile-snap-item grid gap-2.5 rounded-md bg-red-50 px-3 py-3 text-red-950 shadow-none max-[620px]:min-h-[116px]">
+                      <FlagTriangleRight className="text-red-500" size={20} aria-hidden="true" />
+                      <ul className="m-0 grid list-none gap-1.5 p-0 text-[0.88rem] font-medium leading-[1.32]">
+                        {activeContent.cueLabels.map((label) => (
+                          <li className="grid grid-cols-[auto_1fr] gap-2" key={label}>
+                            <span aria-hidden="true">-</span>
+                            <span>{label}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
 
-                {activeContent.cta && (
-                  <Button className="mt-1 w-fit max-[620px]:w-full" onClick={onStart}>
-                    {activeContent.cta}
-                    <ArrowRight size={18} />
-                  </Button>
-                )}
+                  {activeContent.action && (
+                    <div className="mobile-snap-item grid gap-2 rounded-md bg-amber-50 px-3 py-3 text-[#6f4a00] shadow-none max-[620px]:min-h-[116px]">
+                      <span className="inline-flex items-center gap-2 text-[0.8rem] font-medium uppercase">
+                        <Lightbulb className="shrink-0 text-amber-500" size={17} aria-hidden="true" />
+                        Tip
+                      </span>
+                      <p className="mb-0 text-[0.9rem] font-medium leading-[1.4] text-[#6f4a00]">{activeContent.action}</p>
+                    </div>
+                  )}
+
+                  {activeContent.cta && (
+                    <div className="mobile-snap-item grid content-center max-[620px]:min-h-[116px]">
+                      <Button className="w-fit max-[620px]:w-full" onClick={onStart}>
+                        {activeContent.cta}
+                        <ArrowRight size={18} />
+                      </Button>
+                    </div>
+                  )}
+                </div>
               </div>
             </aside>
           </Surface>

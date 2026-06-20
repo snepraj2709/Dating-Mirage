@@ -271,7 +271,7 @@ function MiniPatternRadar() {
 
   return (
     <div className="journey-pattern-radar" aria-hidden="true">
-      <svg className="mx-auto h-auto w-1/2" viewBox="0 0 420 390" role="img">
+      <svg className="mx-auto h-auto w-[min(52%,220px)] max-[620px]:w-[min(54%,180px)]" viewBox="0 0 420 390" role="img">
         <g className="journey-radar-grid">
           {ringPoints.map((points) => (
             <polygon fill="none" key={points} points={points} />
@@ -354,7 +354,7 @@ function MiniVectorMap({ step }: { step: JourneyStep }) {
 
   return (
     <div className="vector-mini-map" aria-hidden="true">
-      <svg className="h-[188px] w-full" viewBox="0 0 360 180" role="img">
+      <svg className="h-[clamp(112px,18svh,168px)] w-full max-[620px]:h-[92px]" viewBox="0 0 360 180" role="img">
         <defs>
           <linearGradient id="journey-gap-gradient" x1="0" x2="1" y1="0" y2="1">
             <stop offset="0%" stopColor="#e83e8c" stopOpacity="0.18" />
@@ -424,30 +424,27 @@ export function MirrorStepper() {
   return (
     <section
       aria-labelledby="how-it-works-title"
-      className="scroll-mt-[72px] bg-[#fffaf6] px-[clamp(16px,5vw,64px)] py-[clamp(64px,9vw,112px)] max-[620px]:scroll-mt-16 max-[620px]:px-3 max-[620px]:py-12"
+      className="landing-section bg-[#fffaf6] py-[clamp(32px,5svh,48px)] max-[620px]:py-4"
       id="how-it-works"
     >
-      <div className="mx-auto grid w-full max-w-[1480px] gap-[clamp(28px,4vw,44px)]">
-        <header className="mx-auto grid max-w-[760px] justify-items-center gap-4 text-center">
-          <p className="m-0 text-[0.82rem] font-medium uppercase tracking-normal text-subtle-foreground">
-            How your mirror gets formed
-          </p>
-          <h2
-            className="mb-0 text-[clamp(1.25rem,5vw,2.5rem)] leading-[0.98] tracking-normal text-foreground"
+      <div className="landing-container grid h-full content-center gap-4 max-[620px]:gap-2.5">
+        <header className="mx-auto grid max-w-[760px] justify-items-center text-center">
+          <p
+            className="m-0 text-[0.82rem] font-medium uppercase tracking-normal text-subtle-foreground max-[620px]:text-[0.72rem]"
             id="how-it-works-title"
           >
             How it works
-          </h2>
+          </p>
         </header>
 
-        <div className="guided-journey journey-shell grid overflow-hidden rounded-[28px] border border-border bg-white shadow-[0_24px_80px_rgba(17,17,17,0.08)] min-[1021px]:grid-cols-[minmax(260px,320px)_minmax(0,1fr)_minmax(340px,0.92fr)] max-[1020px]:rounded-[22px]">
-          <aside className="journey-sidebar grid content-start gap-4 border-border bg-[#fff4f9] p-5 min-[1021px]:border-r max-[1020px]:border-b max-[1020px]:p-4">
-            <p className="m-0 px-2 text-[0.76rem] font-medium uppercase tracking-normal text-subtle-foreground">
+        <div className="guided-journey journey-shell grid h-[min(660px,calc(100svh-126px))] overflow-hidden rounded-lg border border-border bg-white shadow-none min-[1021px]:grid-cols-[minmax(230px,280px)_minmax(0,1fr)_minmax(300px,0.84fr)] max-[1020px]:h-[calc(100svh-106px)] max-[1020px]:grid-rows-[auto_minmax(0,0.9fr)_minmax(0,1fr)] max-[1020px]:rounded-lg max-[620px]:h-[calc(100svh-62px)]">
+          <aside className="journey-sidebar grid content-start gap-3 border-border bg-[#fff4f9] p-4 min-[1021px]:border-r max-[1020px]:border-b max-[620px]:gap-2 max-[620px]:p-3">
+            <p className="m-0 px-1 text-[0.72rem] font-medium uppercase tracking-normal text-subtle-foreground max-[620px]:hidden">
               Build the mirror
             </p>
             <div
               aria-label="How your mirror gets formed steps"
-              className="grid gap-3 max-[1020px]:flex max-[1020px]:overflow-x-auto max-[1020px]:pb-1"
+              className="tablet-snap-row grid gap-2.5 max-[1020px]:pb-1"
               role="tablist"
             >
               {JOURNEY_STEPS.map((step, index) => {
@@ -458,9 +455,9 @@ export function MirrorStepper() {
                     aria-controls="journey-step-panel"
                     aria-selected={isActive}
                     className={cn(
-                      'journey-step group grid min-h-[118px] w-full grid-cols-[40px_minmax(0,1fr)] items-start gap-3 rounded-lg border bg-white/62 p-4 text-left transition-[background,border-color,box-shadow,transform] duration-200 ease-out focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-foreground max-[1020px]:min-h-[86px] max-[1020px]:min-w-[232px] max-[1020px]:items-center max-[1020px]:rounded-full max-[1020px]:p-3 max-[620px]:grid-cols-[40px_minmax(0,1fr)]',
+                      'tablet-snap-item journey-step group grid min-h-[92px] w-full grid-cols-[36px_minmax(0,1fr)] items-start gap-3 rounded-lg border bg-white/62 p-3 text-left transition-[background,border-color,box-shadow,transform] duration-200 ease-out focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-foreground max-[1020px]:min-h-[68px] max-[1020px]:w-[222px] max-[1020px]:items-center max-[1020px]:rounded-full max-[1020px]:p-3 max-[620px]:w-[210px] max-[620px]:grid-cols-[34px_minmax(0,1fr)]',
                       isActive
-                        ? 'active border-primary bg-white shadow-[0_14px_36px_rgba(232,62,140,0.16)]'
+                        ? 'active border-primary bg-white'
                         : 'border-border text-muted-foreground hover:border-border-strong hover:bg-white',
                     )}
                     id={`journey-step-${step.id}`}
@@ -471,7 +468,7 @@ export function MirrorStepper() {
                   >
                     <span
                       className={cn(
-                        'grid size-10 place-items-center rounded-full text-[0.86rem] leading-none transition-colors',
+                        'grid size-9 place-items-center rounded-full text-[0.82rem] leading-none transition-colors max-[620px]:size-[34px]',
                         isActive ? 'bg-primary text-white' : 'bg-muted text-subtle-foreground group-hover:text-foreground',
                       )}
                       aria-hidden="true"
@@ -479,10 +476,10 @@ export function MirrorStepper() {
                       {String(index + 1).padStart(2, '0')}
                     </span>
                     <span className="grid gap-1.5">
-                      <span className={cn('text-[1rem] leading-tight text-foreground', !isActive && 'text-foreground/78')}>
+                      <span className={cn('text-[0.95rem] leading-tight text-foreground max-[620px]:text-[0.88rem]', !isActive && 'text-foreground/78')}>
                         {step.title}
                       </span>
-                      <span className="text-[0.9rem] leading-[1.4] text-muted-foreground">{step.navDescription}</span>
+                      <span className="text-[0.8rem] leading-[1.3] text-muted-foreground max-[620px]:text-[0.72rem]">{step.navDescription}</span>
                     </span>
                   </button>
                 );
@@ -492,39 +489,39 @@ export function MirrorStepper() {
 
           <div
             aria-labelledby={`journey-step-${selectedStep.id}`}
-            className="journey-main grid content-center border-border p-[clamp(28px,5vw,64px)] min-[1021px]:border-r"
+            className="journey-main grid min-h-0 content-center border-border p-[clamp(20px,4vw,40px)] min-[1021px]:border-r max-[620px]:p-4"
             id="journey-step-panel"
             role="tabpanel"
             tabIndex={0}
           >
-            <div className="journey-content-enter grid max-w-[620px] gap-5" key={selectedStep.id}>
-              <h3 className="mb-0 text-[clamp(2.35rem,4.8vw,5.25rem)] leading-[0.96] tracking-normal text-foreground">
+            <div className="journey-content-enter grid max-w-[560px] gap-4 max-[620px]:gap-2.5" key={selectedStep.id}>
+              <h3 className="mb-0 text-[clamp(2rem,4vw,3.65rem)] leading-[0.98] tracking-normal text-foreground max-[620px]:text-[clamp(1.55rem,7vw,2rem)]">
                 {selectedStep.headline}
               </h3>
-              <p className="mb-0 text-[clamp(1rem,1.35vw,1.2rem)] leading-[1.7] text-muted-foreground">
+              <p className="mb-0 text-[clamp(0.95rem,1.15vw,1.05rem)] leading-[1.55] text-muted-foreground max-[620px]:text-[0.84rem] max-[620px]:leading-[1.4]">
                 {selectedStep.body}
               </p>
             </div>
           </div>
 
-          <aside className="journey-visual-enter journey-visual-card grid content-center">
-            <div className="grid h-full content-center gap-5 bg-white p-[clamp(28px,3.8vw,56px)]">
-              <div className="grid gap-2">
+          <aside className="journey-visual-enter journey-visual-card grid min-h-0 content-center overflow-hidden">
+            <div className="grid h-full min-h-0 content-center gap-3 overflow-hidden bg-white p-[clamp(18px,2.5vw,28px)] max-[620px]:gap-2 max-[620px]:p-3">
+              <div className="grid gap-1.5">
                 <p className="m-0 text-[0.76rem] font-medium uppercase tracking-normal text-subtle-foreground">
                   What changes on the map
                 </p>
-                <h3 className="mb-0 text-[clamp(1.35rem,2vw,1.85rem)] leading-tight text-foreground">
+                <h3 className="mb-0 text-[clamp(1.18rem,1.7vw,1.5rem)] leading-tight text-foreground max-[620px]:text-[1.05rem]">
                   {selectedStep.visualTitle}
                 </h3>
               </div>
 
               <MiniVectorMap step={selectedStep} />
 
-              <div className="insight-grid grid grid-cols-2 gap-3 max-[560px]:grid-cols-1">
+              <div className="mobile-snap-row insight-grid grid grid-cols-2 gap-2.5 max-[620px]:grid-cols-none">
                 {selectedStep.insights.map((insight) => (
-                  <div className="insight-tile grid gap-1.5 rounded-lg border border-border bg-white p-4" key={insight.title}>
-                    <h4 className="mb-0 text-[0.95rem] leading-tight text-foreground">{insight.title}</h4>
-                    <p className="mb-0 text-[0.83rem] leading-[1.45] text-muted-foreground">{insight.body}</p>
+                  <div className="mobile-snap-item insight-tile grid gap-1 rounded-lg border border-border bg-white p-3 max-[620px]:min-h-[96px]" key={insight.title}>
+                    <h4 className="mb-0 text-[0.88rem] leading-tight text-foreground">{insight.title}</h4>
+                    <p className="mb-0 text-[0.76rem] leading-[1.35] text-muted-foreground">{insight.body}</p>
                   </div>
                 ))}
               </div>

@@ -7,7 +7,7 @@ function ContentBand({ className, ...props }: React.ComponentProps<'section'>) {
     <section
       data-slot="content-band"
       className={cn(
-        'mx-auto w-[min(1120px,calc(100%_-_32px))] py-16 max-[620px]:w-[min(100%_-_24px,520px)]',
+        'landing-container landing-section py-[clamp(40px,7svh,72px)] max-[620px]:py-5',
         className,
       )}
       {...props}
