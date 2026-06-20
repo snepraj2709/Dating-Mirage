@@ -22,11 +22,16 @@ const trustItems = [
 
 export function PrivacyStrip() {
   return (
-    <ContentBand className="pt-[72px]" id="privacy">
+    <ContentBand
+      className="grid min-h-[calc(100svh-72px)] content-center pt-[72px] pb-16 max-[620px]:min-h-[calc(100svh-64px)] max-[620px]:content-start max-[620px]:pt-16 max-[620px]:pb-10"
+      id="privacy"
+    >
       <SectionHeading
         centered
+        className="max-w-none [&_h2]:text-[clamp(1.75rem,3vw,2.35rem)] lg:[&_h2]:whitespace-nowrap"
         eyebrow="Privacy and boundaries"
         title="The mirror stays behavioral, scoped, and removable."
+        description={<>Built for trust. Your data is yours &mdash; always.</>}
       />
 
       <div className="grid grid-cols-3 gap-3.5 max-[960px]:grid-cols-1">

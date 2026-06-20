@@ -417,13 +417,35 @@ export default function App() {
       <LandingJohariMatrix />
       <MapAnalysisSection onStart={startMirror} />
       <PrivacyStrip />
-      <footer className="flex min-h-[84px] items-center justify-between gap-[18px] border-t border-border px-[clamp(16px,5vw,64px)] text-[0.9rem] text-muted-foreground max-[620px]:flex-col max-[620px]:items-start max-[620px]:justify-center max-[620px]:py-5">
-        <span>Dating Mirror</span>
-        <nav className="flex flex-wrap gap-[18px] [&_a]:no-underline [&_a:hover]:text-foreground" aria-label="Footer">
-          <a href="#how-it-works">Method</a>
-          <a href="#matrix-breakdown">Matrix</a>
-          <a href="#privacy">Privacy</a>
-        </nav>
+      <footer className="grid min-h-[calc(100svh-72px)] grid-rows-[1fr_auto] bg-[#050505] text-white max-[620px]:min-h-[calc(100svh-64px)]">
+        <div className="grid place-items-center px-[clamp(18px,5vw,64px)] py-[clamp(64px,12vh,132px)] text-center">
+          <div className="grid justify-items-center gap-[clamp(24px,4vh,42px)]">
+            <div className="grid gap-5">
+              <h2 className="mb-0 max-w-[860px] text-[clamp(2.5rem,5.3vw,4.6rem)] font-medium leading-[0.98] tracking-normal text-white max-[620px]:text-[clamp(2.25rem,12vw,3.35rem)]">
+                Your pattern is already there.
+                <br />
+                This just names it.
+              </h2>
+              <p className="mb-0 text-[clamp(1rem,1.8vw,1.42rem)] font-medium leading-[1.4] text-white/48">
+                Takes about 10 minutes. Private by default. No account needed to start.
+              </p>
+            </div>
+            <Button
+              className="min-h-[62px] rounded-full border-[#d94f81] bg-[#d94f81] px-10 text-[1.06rem] text-white hover:border-[#e65d90] hover:bg-[#e65d90] max-[620px]:min-h-[56px] max-[620px]:w-full max-[620px]:max-w-[320px]"
+              onClick={startMirror}
+            >
+              Build my mirror <span aria-hidden="true">&rarr;</span>
+            </Button>
+          </div>
+        </div>
+        <div className="flex min-h-[108px] items-center justify-between gap-[18px] border-t border-white/10 px-[clamp(16px,5vw,64px)] text-[1rem] font-medium text-white/36 max-[620px]:min-h-[120px] max-[620px]:flex-col max-[620px]:items-center max-[620px]:justify-center max-[620px]:py-6">
+          <span>Dating Mirror</span>
+          <nav className="flex flex-wrap justify-center gap-[clamp(18px,3vw,34px)] [&_a]:no-underline [&_a:hover]:text-white" aria-label="Footer">
+            <a href="#how-it-works">Method</a>
+            <a href="#matrix-breakdown">Matrix</a>
+            <a href="#privacy">Privacy</a>
+          </nav>
+        </div>
       </footer>
     </main>
   );
