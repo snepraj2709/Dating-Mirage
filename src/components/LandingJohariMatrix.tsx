@@ -71,23 +71,7 @@ export function LandingJohariMatrix() {
         centered
         eyebrow="Dating Johari Matrix"
         title="The report separates what you know from what others can see."
-        description="The framework maps romantic choices through self-awareness, friend-observed behavior, and the gap between the two."
       />
-
-      <div className="mb-6 flex flex-wrap justify-center gap-2.5" aria-label="Awareness legend">
-        <Pill className="bg-card">
-          <i className="size-2.5 rounded-full bg-positive" />
-          Self-aware
-        </Pill>
-        <Pill className="bg-card">
-          <i className="size-2.5 rounded-full bg-warning" />
-          Friend-revealed
-        </Pill>
-        <Pill className="bg-card">
-          <i className="size-2.5 rounded-full bg-subtle-foreground" />
-          Unscored
-        </Pill>
-      </div>
 
       <div className="grid grid-cols-[minmax(0,1.2fr)_minmax(280px,0.8fr)] items-stretch gap-6 max-[960px]:grid-cols-1">
         <div className="grid grid-cols-2 gap-3.5 max-[620px]:grid-cols-1" role="list">
