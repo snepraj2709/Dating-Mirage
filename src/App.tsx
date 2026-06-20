@@ -415,7 +415,7 @@ export default function App() {
       <Hero onStart={startMirror} />
       <MirrorStepper />
       <LandingJohariMatrix />
-      <MapAnalysisSection />
+      <MapAnalysisSection onStart={startMirror} />
       <PrivacyStrip />
       <footer className="flex min-h-[84px] items-center justify-between gap-[18px] border-t border-border px-[clamp(16px,5vw,64px)] text-[0.9rem] text-muted-foreground max-[620px]:flex-col max-[620px]:items-start max-[620px]:justify-center max-[620px]:py-5">
         <span>Dating Mirror</span>

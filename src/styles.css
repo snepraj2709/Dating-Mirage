@@ -158,9 +158,178 @@
   animation-delay: calc(var(--tag-index, 0) * 18ms);
 }
 
+.map-radar-shell {
+  color: var(--foreground);
+}
+
+.map-radar-series {
+  opacity: var(--series-opacity, 1);
+  transition:
+    opacity 220ms ease-out,
+    filter 220ms ease-out;
+}
+
+.map-radar-fill {
+  opacity: 0;
+  animation: map-radar-fill 520ms ease-out var(--draw-delay, 0ms) forwards;
+}
+
+.map-radar-stroke {
+  opacity: var(--series-opacity, 1);
+}
+
+.map-radar-stroke--draw,
+.map-radar-mask-path {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: map-radar-draw 900ms cubic-bezier(0.19, 1, 0.22, 1) var(--draw-delay, 0ms) forwards;
+}
+
+.map-radar-stroke--dashed {
+  opacity: 0;
+  animation: map-radar-stroke-fade 520ms ease-out var(--draw-delay, 0ms) forwards;
+}
+
+.map-radar-point {
+  opacity: 0;
+  animation: map-radar-stroke-fade 420ms ease-out calc(var(--draw-delay, 0ms) + 260ms) forwards;
+}
+
+.map-gap-line {
+  opacity: 0;
+  animation: map-gap-rise 680ms ease-out var(--gap-delay, 900ms) forwards;
+}
+
+.map-gap-line--pulse {
+  animation:
+    map-gap-rise 680ms ease-out var(--gap-delay, 900ms) forwards,
+    map-gap-pulse 1700ms ease-in-out calc(var(--gap-delay, 900ms) + 680ms) infinite;
+}
+
+.map-gap-line--hidden {
+  stroke-dasharray: 10 8;
+}
+
+.map-outside-pulse {
+  opacity: 0;
+  stroke-dasharray: 7 10;
+  animation: map-outside-pulse 1500ms ease-out var(--gap-delay, 1100ms) infinite;
+}
+
+.map-facade-reveal {
+  clip-path: inset(0 100% 0 0);
+  animation: map-facade-reveal 880ms ease-out 520ms forwards;
+}
+
+@keyframes map-radar-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes map-radar-fill {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: var(--series-fill-opacity, var(--series-opacity, 1));
+  }
+}
+
+@keyframes map-radar-stroke-fade {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: var(--series-opacity, 1);
+  }
+}
+
+@keyframes map-gap-rise {
+  from {
+    opacity: 0;
+    stroke-width: 1;
+  }
+
+  to {
+    opacity: 0.42;
+  }
+}
+
+@keyframes map-gap-pulse {
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+
+  50% {
+    opacity: 0.72;
+  }
+}
+
+@keyframes map-outside-pulse {
+  0% {
+    opacity: 0;
+    stroke-dashoffset: 28;
+  }
+
+  25% {
+    opacity: 0.55;
+  }
+
+  100% {
+    opacity: 0;
+    stroke-dashoffset: -18;
+  }
+}
+
+@keyframes map-facade-reveal {
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .mirror-arena-enter,
-  .mirror-dimension-tag {
+  .mirror-dimension-tag,
+  .map-radar-fill,
+  .map-radar-stroke--draw,
+  .map-radar-mask-path,
+  .map-radar-stroke--dashed,
+  .map-radar-point,
+  .map-gap-line,
+  .map-gap-line--pulse,
+  .map-outside-pulse,
+  .map-facade-reveal {
     animation: none;
+  }
+
+  .map-radar-fill {
+    opacity: var(--series-fill-opacity, 0.1);
+  }
+
+  .map-radar-stroke--draw,
+  .map-radar-mask-path {
+    stroke-dashoffset: 0;
+  }
+
+  .map-radar-stroke--dashed,
+  .map-radar-point {
+    opacity: var(--series-opacity, 1);
+  }
+
+  .map-gap-line,
+  .map-gap-line--pulse {
+    opacity: 0.42;
+  }
+
+  .map-outside-pulse {
+    opacity: 0.35;
+  }
+
+  .map-facade-reveal {
+    clip-path: inset(0 0 0 0);
   }
 }
