@@ -1,5 +1,5 @@
 import { ArrowRight } from 'lucide-react';
-import { useMemo, useState, type CSSProperties } from 'react';
+import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { dimensions } from '@/data/datingMirrorContent';
 import { cn } from '@/lib/utils';
 import type { DimensionKey, VectorProfile } from '@/types/dating-mirror';
@@ -33,8 +33,10 @@ const centerX = chartWidth / 2;
 const centerY = 250;
 const radius = 148;
 const labelRadius = 207;
+const autoplayDelayMs = 4500;
 
 const vectorKeys: VectorKey[] = ['ideal', 'actual', 'social'];
+const lensStoryOrder: PatternLensKey[] = ['all', 'facade', 'blindSpot', 'guilty'];
 
 const demoVectors: Record<VectorKey, VectorProfile> = {
   ideal: {
@@ -149,8 +151,7 @@ const lensContent: Record<
     title: 'The choice you know is not aligned',
     body: [
       'You say you want calm, consistency, and emotional safety.',
-      'But your dating pattern shows that intensity pulls your attention more than calm.',
-      'This means your nervous system confuses excitement with connection.',
+      'But your dating pattern shows that intensity pulls your attention more than calm.'
     ],
     action:
       'Before the next date, write down 3 signals of emotional safety and look for them before chemistry.',
@@ -167,7 +168,7 @@ const lensContent: Record<
     body: [
       'You believe your choices match your standards.',
       'But your social circle notice a different emotional pattern.',
-      'This is the most useful mirror because attraction feels private from the inside, but the patterns are obvious to a person outside the whirlwind of your relationship.',
+      'Attraction feels private from the inside, but the patterns are obvious to a person outside the whirlwind of your emotional rollercoaster.',
     ],
     action:
       'Ask one trusted friend: "When I like someone, what do I start tolerating that I normally wouldn\'t?"',
@@ -178,13 +179,15 @@ const lensContent: Record<
     title: 'The version you live vs. the version people see',
     body: [
       'Your actual dating choices show one pattern.',
-      'But your friends may not see the full emotional breadth.',
-      'This happens when someone looks composed from the outside, while privately they are over-accommodating, waiting, explaining, or self-doubting.',
+      'But your friends see a different pattern.',
+      'You may look composed from the outside, while privately you are over-accommodating, waiting, explaining, or self-doubting.',
     ],
     action:
       'Before you hide a dating problem from your friends, pause. The urge to hide itself is a signal.',
   },
 };
+
+const activeLensButtonClassName = 'bg-[#fff1fb] text-[#95179b] shadow-[0_10px_28px_rgba(149,23,155,0.1)]';
 
 function angleFor(index: number) {
   return -Math.PI / 2 + (index / dimensions.length) * Math.PI * 2;
@@ -502,7 +505,48 @@ function RadarLensScene({ activeLens }: { activeLens: PatternLensKey }) {
 
 export function MapAnalysisSection({ onStart }: MapAnalysisSectionProps) {
   const [activeLens, setActiveLens] = useState<PatternLensKey>('all');
+  const [isAutoplaying, setIsAutoplaying] = useState(true);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const activeContent = lensContent[activeLens];
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const updateMotionPreference = () => {
+      setPrefersReducedMotion(mediaQuery.matches);
+      if (mediaQuery.matches) {
+        setIsAutoplaying(false);
+      }
+    };
+
+    updateMotionPreference();
+    mediaQuery.addEventListener('change', updateMotionPreference);
+
+    return () => {
+      mediaQuery.removeEventListener('change', updateMotionPreference);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isAutoplaying || prefersReducedMotion) {
+      return;
+    }
+
+    const timer = window.setInterval(() => {
+      setActiveLens((currentLens) => {
+        const currentIndex = lensStoryOrder.indexOf(currentLens);
+        return lensStoryOrder[(currentIndex + 1) % lensStoryOrder.length];
+      });
+    }, autoplayDelayMs);
+
+    return () => {
+      window.clearInterval(timer);
+    };
+  }, [isAutoplaying, prefersReducedMotion]);
+
+  const handleLensSelect = (lens: PatternLensKey) => {
+    setActiveLens(lens);
+    setIsAutoplaying(false);
+  };
 
   return (
     <ContentBand className="grid min-h-screen content-start gap-6 pt-[72px] pb-20" id="map-analysis">
@@ -513,26 +557,35 @@ export function MapAnalysisSection({ onStart }: MapAnalysisSectionProps) {
           </h2>
           <div
             aria-label="Pattern lenses"
-            className="flex flex-wrap gap-2"
+            className="flex flex-wrap gap-2.5"
             role="tablist"
           >
-            {(Object.keys(lensContent) as PatternLensKey[]).map((lens) => {
+            {lensStoryOrder.map((lens) => {
               const isActive = activeLens === lens;
               return (
                 <button
                   aria-selected={isActive}
                   className={cn(
-                    'min-h-10 rounded-full border px-4 text-[0.9rem] font-medium transition-[background,border-color,color,transform] duration-150 ease-out focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground active:scale-[0.98]',
+                    'group relative inline-flex min-h-[50px] items-center justify-center overflow-hidden rounded-lg px-5 py-2.5 text-left text-[1rem] font-medium transition-[background,color,transform,box-shadow] duration-200 ease-out focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground active:scale-[0.98]',
                     isActive
-                      ? 'border-foreground bg-foreground text-background'
-                      : 'border-border bg-card text-muted-foreground hover:border-foreground hover:text-foreground',
+                      ? activeLensButtonClassName
+                      : 'bg-card text-muted-foreground hover:-translate-y-0.5 hover:bg-muted hover:text-foreground',
                   )}
                   key={lens}
-                  onClick={() => setActiveLens(lens)}
+                  onClick={() => handleLensSelect(lens)}
                   role="tab"
                   type="button"
                 >
-                  {lensContent[lens].tab}
+                  <span className="leading-[1.1]">{lensContent[lens].tab}</span>
+                  {isActive && isAutoplaying && !prefersReducedMotion && (
+                    <span
+                      className={cn(
+                        'map-lens-progress absolute inset-x-3 bottom-1 h-1 origin-left rounded-full',
+                        'bg-[#e83e8c]',
+                      )}
+                      aria-hidden="true"
+                    />
+                  )}
                 </button>
               );
             })}
@@ -546,44 +599,46 @@ export function MapAnalysisSection({ onStart }: MapAnalysisSectionProps) {
 
           <Surface asChild className="grid content-start gap-5 p-[clamp(22px,3vw,32px)]" aria-live="polite">
             <aside>
-              <Pill className="w-fit border-border-strong bg-card text-foreground">{activeContent.label}</Pill>
-              <h3 className="mb-0 text-[clamp(1.5rem,3vw,2.35rem)] leading-[1.08] text-foreground">
-                {activeContent.title}
-              </h3>
-              <div className="grid gap-3">
-                {activeContent.body.map((paragraph) => (
-                  <p className="mb-0" key={paragraph}>
-                    {paragraph}
-                  </p>
-                ))}
-              </div>
-
-              {activeContent.cueLabels && (
-                <div className="grid gap-2" aria-label="Pattern cues">
-                  {activeContent.cueLabels.map((label) => (
-                    <span
-                      className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-[0.92rem] font-medium leading-[1.35] text-[#6f4a00]"
-                      key={label}
-                    >
-                      {label}
-                    </span>
+              <div className="map-insight-enter grid content-start gap-5" key={activeLens}>
+                <Pill className="w-fit border-border-strong bg-card text-foreground">{activeContent.label}</Pill>
+                <h3 className="mb-0 text-[clamp(1.5rem,3vw,2.35rem)] leading-[1.08] text-foreground">
+                  {activeContent.title}
+                </h3>
+                <div className="grid gap-3">
+                  {activeContent.body.map((paragraph) => (
+                    <p className="mb-0" key={paragraph}>
+                      {paragraph}
+                    </p>
                   ))}
                 </div>
-              )}
 
-              {activeContent.action && (
-                <div className="grid gap-2 border-l-2 border-foreground bg-muted px-4 py-3">
-                  <span className="text-[0.84rem] font-medium uppercase text-subtle-foreground">Try this</span>
-                  <p className="mb-0 font-medium text-foreground">{activeContent.action}</p>
-                </div>
-              )}
+                {activeContent.cueLabels && (
+                  <div className="grid gap-2" aria-label="Pattern cues">
+                    {activeContent.cueLabels.map((label) => (
+                      <span
+                        className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-[0.92rem] font-medium leading-[1.35] text-[#6f4a00]"
+                        key={label}
+                      >
+                        {label}
+                      </span>
+                    ))}
+                  </div>
+                )}
 
-              {activeContent.cta && (
-                <Button className="mt-1 w-fit max-[620px]:w-full" onClick={onStart}>
-                  {activeContent.cta}
-                  <ArrowRight size={18} />
-                </Button>
-              )}
+                {activeContent.action && (
+                  <div className="grid gap-2 border-l-2 border-foreground bg-muted px-4 py-3">
+                    <span className="text-[0.84rem] font-medium uppercase text-subtle-foreground">Try this</span>
+                    <p className="mb-0 font-medium text-foreground">{activeContent.action}</p>
+                  </div>
+                )}
+
+                {activeContent.cta && (
+                  <Button className="mt-1 w-fit max-[620px]:w-full" onClick={onStart}>
+                    {activeContent.cta}
+                    <ArrowRight size={18} />
+                  </Button>
+                )}
+              </div>
             </aside>
           </Surface>
         </div>

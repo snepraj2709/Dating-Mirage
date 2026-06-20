@@ -221,6 +221,14 @@
   animation: map-facade-reveal 880ms ease-out 520ms forwards;
 }
 
+.map-insight-enter {
+  animation: map-insight-enter 340ms ease-out both;
+}
+
+.map-lens-progress {
+  animation: map-lens-progress 4500ms linear both;
+}
+
 @keyframes map-radar-draw {
   to {
     stroke-dashoffset: 0;
@@ -291,6 +299,28 @@
   }
 }
 
+@keyframes map-insight-enter {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes map-lens-progress {
+  from {
+    transform: scaleX(0);
+  }
+
+  to {
+    transform: scaleX(1);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .mirror-arena-enter,
   .mirror-dimension-tag,
@@ -302,7 +332,9 @@
   .map-gap-line,
   .map-gap-line--pulse,
   .map-outside-pulse,
-  .map-facade-reveal {
+  .map-facade-reveal,
+  .map-insight-enter,
+  .map-lens-progress {
     animation: none;
   }
 
