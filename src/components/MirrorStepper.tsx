@@ -1,118 +1,277 @@
-import { History, MessageCircle, Target } from 'lucide-react';
-import { Pill } from '@/components/ui/pill';
-import { ProgressRail } from '@/components/ui/progress-rail';
-import { ContentBand, SectionHeading } from '@/components/ui/section';
-import { Surface } from '@/components/ui/surface';
+import { useState, type CSSProperties } from 'react';
+import {
+  FlaskConical,
+  HeartCrack,
+  MessageSquareText,
+  Shield,
+  ShipWheel,
+  SmilePlus,
+  TrendingUpDown,
+  Trophy,
+  Waves,
+  Zap,
+  type LucideIcon,
+} from 'lucide-react';
+import { dimensions } from '../data/datingMirrorContent';
+import { cn } from '../lib/utils';
+import type { DimensionKey } from '../types/dating-mirror';
 
-const steps = [
+type MirrorSourceId = 'ideal' | 'actual' | 'friends';
+
+interface MirrorSource {
+  id: MirrorSourceId;
+  title: string;
+  description: string;
+  measurement: string;
+}
+
+interface DimensionVisual {
+  Icon: LucideIcon;
+  SecondaryIcon?: LucideIcon;
+  color: string;
+  background: string;
+  border: string;
+  cue: string;
+}
+
+const mirrorSources: MirrorSource[] = [
   {
-    icon: Target,
-    title: 'Name the partner you say you want.',
-    label: 'Ideal signal',
-    header: 'Launch my mirror: Step 1',
-    dimension: 'Dimension 1 of 3',
-    progress: '33%',
-    lowLabel: 'Unclear preferences',
-    highLabel: 'Defined priorities',
-    detail:
-      'Eight dimensions capture your stated ideal: consistency, autonomy, communication, values, vulnerability, and repair.',
-    footer: 'Your aspiration becomes the first vector.',
+    id: 'ideal',
+    title: 'Ideal',
+    description: 'What type of partner do you dream to spend your life with?',
+    measurement:
+      'Measured as the I vector: your stated partner standard scores all eight dimensions from 1.0 to 10.0.',
   },
   {
-    icon: History,
-    title: 'Map who you actually keep choosing.',
-    label: 'Actual pattern',
-    header: 'Launch my mirror: Step 2',
-    dimension: 'Dimension 2 of 3',
-    progress: '66%',
-    lowLabel: 'Claimed taste',
-    highLabel: 'Repeated behavior',
-    detail:
-      'A rapid history round turns recent choices into a behavioral vector without asking you to over-explain every date.',
-    footer: 'Your choices become the second vector.',
+    id: 'actual',
+    title: 'Actual',
+    description: 'What type of person have you been attracting so far?',
+    measurement:
+      'Measured as the A vector: your dating-history response pattern shifts each dimension toward repeated behavior.',
   },
   {
-    icon: MessageCircle,
-    title: 'Add what trusted observers notice.',
-    label: 'Friend feedback',
-    header: 'Launch my mirror: Step 3',
-    dimension: 'Dimension 3 of 3',
-    progress: '100%',
-    lowLabel: 'Private self-view',
-    highLabel: 'Outside signal',
-    detail:
-      'Close observers add anonymous signal about what they see you tolerate, repeat, excuse, and chase.',
-    footer: 'Friend feedback completes the mirror.',
+    id: 'friends',
+    title: 'Observation',
+    description: 'What outside outlook do your friends have on your dating life?',
+    measurement:
+      'Measured as the S vector: anonymous friend feedback is averaged into the outside-observed profile.',
   },
 ];
 
-export function MirrorStepper() {
+const dimensionVisuals: Record<DimensionKey, DimensionVisual> = {
+  CON: {
+    Icon: Waves,
+    color: '#0284c7',
+    background: '#f0f9ff',
+    border: '#bae6fd',
+    cue: 'calm water',
+  },
+  INT: {
+    Icon: Zap,
+    color: '#ca8a04',
+    background: '#fefce8',
+    border: '#fde68a',
+    cue: 'bolt charge',
+  },
+  AUT: {
+    Icon: ShipWheel,
+    color: '#15803d',
+    background: '#f0fdf4',
+    border: '#bbf7d0',
+    cue: 'hands on wheel',
+  },
+  VAL: {
+    Icon: SmilePlus,
+    SecondaryIcon: Trophy,
+    color: '#9333ea',
+    background: '#faf5ff',
+    border: '#e9d5ff',
+    cue: 'praise pull',
+  },
+  GOC: {
+    Icon: MessageSquareText,
+    color: '#0f766e',
+    background: '#f0fdfa',
+    border: '#99f6e4',
+    cue: 'repair dialogue',
+  },
+  VUL: {
+    Icon: HeartCrack,
+    SecondaryIcon: Shield,
+    color: '#dc2626',
+    background: '#fef2f2',
+    border: '#fecaca',
+    cue: 'shown weakness',
+  },
+  REA: {
+    Icon: FlaskConical,
+    color: '#ea580c',
+    background: '#fff7ed',
+    border: '#fed7aa',
+    cue: 'chemical reaction',
+  },
+  RWO: {
+    Icon: TrendingUpDown,
+    color: '#4338ca',
+    background: '#eef2ff',
+    border: '#c7d2fe',
+    cue: 'worth signal',
+  },
+};
+
+const sourceById = mirrorSources.reduce(
+  (sources, source) => ({ ...sources, [source.id]: source }),
+  {} as Record<MirrorSourceId, MirrorSource>,
+);
+
+function SourceQuadrant({
+  className,
+  isActive,
+  onActivate,
+  source,
+}: {
+  className?: string;
+  isActive: boolean;
+  onActivate: () => void;
+  source: MirrorSource;
+}) {
   return (
-    <ContentBand id="how-it-works">
-      <SectionHeading
-        centered
-        eyebrow="How your mirror gets formed"
-        title="Three inputs become one pattern map."
-        description="The product compares who you want, who you choose, and what your trusted observers notice."
-      />
+    <button
+      aria-label={`${source.title} input: ${source.description}`}
+      aria-pressed={isActive}
+      className={cn(
+        'group relative grid min-h-0 w-full place-items-center overflow-hidden bg-card p-[clamp(22px,3vw,44px)] text-center transition-[background,border-color,color,transform] duration-150 ease-out focus-visible:z-10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-foreground max-[760px]:min-h-[180px] max-[760px]:p-6',
+        isActive ? 'border-primary bg-[#fff7fb]' : 'border-border hover:border-border-strong',
+        className,
+      )}
+      onClick={onActivate}
+      onFocus={onActivate}
+      onMouseMove={onActivate}
+      type="button"
+    >
+      <span className="grid max-w-[620px] justify-items-center gap-3">
+        <span
+          className="block text-[clamp(2rem,4.8vw,4.65rem)] leading-none text-foreground max-[1080px]:text-[clamp(1.9rem,4.5vw,3.5rem)]"
+        >
+          {source.title}
+        </span>
+        <span className="block text-[clamp(0.95rem,1.45vw,1.24rem)] leading-[1.55] text-muted-foreground max-[1080px]:text-[0.95rem]">
+          {source.description}
+        </span>
+      </span>
+    </button>
+  );
+}
 
-      <div className="grid gap-[18px] overflow-visible" role="list">
-        {steps.map((step) => {
-          const Icon = step.icon;
-          return (
-            <Surface
-              asChild
-              className="grid gap-7 overflow-visible max-[620px]:gap-[22px] max-[620px]:p-[22px]"
-              key={step.header}
-              padding="roomy"
-            >
-              <article role="listitem">
-              <header className="flex items-center justify-between gap-4 text-[0.9rem] font-medium uppercase tracking-normal text-subtle-foreground max-[620px]:flex-col max-[620px]:items-start max-[620px]:gap-2">
-                <span>{step.header}</span>
-                <span>{step.dimension}</span>
-              </header>
+export function MirrorStepper() {
+  const [activeSource, setActiveSource] = useState<MirrorSourceId>('ideal');
+  const selectedSource = sourceById[activeSource];
 
-              <ProgressRail value={parseFloat(step.progress)} aria-label={step.dimension} />
+  return (
+    <section
+      aria-labelledby="how-it-works-title"
+      className="scroll-mt-[72px] border-y border-border bg-background min-[761px]:h-[calc(100svh-72px)] min-[761px]:overflow-hidden max-[620px]:scroll-mt-16"
+      id="how-it-works"
+    >
+      <div className="mx-auto grid w-full max-w-[1440px] grid-rows-[auto_minmax(0,1fr)] min-[761px]:h-full max-[760px]:w-[min(100%_-_24px,520px)]">
+        <header className="mx-auto grid max-w-[820px] justify-items-center gap-2.5 px-4 py-[clamp(18px,3vh,30px)] text-center max-[760px]:py-7">
+          <p className="m-0 mb-3 text-[0.88rem] font-medium uppercase tracking-normal text-muted-foreground">
+            How your mirror gets formed
+          </p>
+          <h2
+            className="mb-0 text-[clamp(1.75rem,4vw,3rem)] leading-[1.05] tracking-normal text-foreground"
+            id="how-it-works-title"
+          >
+            How it works
+          </h2>
+        </header>
 
-              <div className="grid max-w-[820px] gap-[22px] max-[620px]:gap-[18px]">
-                <Pill className="w-fit border-border-strong bg-card text-foreground">
-                  <Icon size={16} />
-                  {step.label}
-                </Pill>
-                <h3 className="mb-0 max-w-[820px] text-[clamp(1.65rem,3.6vw,3rem)] leading-[1.08] text-foreground">
-                  {step.title}
-                </h3>
+        <div className="grid w-full grid-cols-2 grid-rows-2 border-x border-border min-[761px]:min-h-0 max-[760px]:grid-cols-1 max-[760px]:grid-rows-none max-[760px]:border-t">
+        <SourceQuadrant
+          className="border-b border-r max-[760px]:border-r-0"
+          isActive={activeSource === 'ideal'}
+          onActivate={() => setActiveSource('ideal')}
+          source={sourceById.ideal}
+        />
+
+        <aside className="relative min-h-0 overflow-hidden border-b border-border bg-[#fbfbfb] p-[clamp(18px,2.8vw,36px)] max-[1080px]:p-[18px] max-[760px]:min-h-[420px] max-[760px]:p-5">
+          <div
+            className="mirror-arena-enter flex h-full min-h-0 flex-col justify-between gap-4"
+            key={activeSource}
+          >
+            <div className="grid gap-3 max-[1080px]:gap-2">
+              <div className="flex flex-wrap items-center justify-between gap-3 text-[0.78rem] font-medium uppercase tracking-normal text-subtle-foreground">
+                <span className="text-primary">{selectedSource.title}</span>
               </div>
+              <div className="grid gap-2">
+                <p className="mb-0 max-w-[700px] text-[clamp(0.9rem,1.2vw,1rem)] leading-[1.5] text-muted-foreground max-[1080px]:text-[0.84rem] max-[1080px]:leading-[1.35]">
+                  {selectedSource.measurement}
+                </p>
+              </div>
+            </div>
 
-              <Surface className="grid gap-5" padding="panel" variant="muted">
-                <div className="flex items-center justify-between gap-4 text-[0.84rem] font-medium uppercase tracking-normal text-subtle-foreground max-[620px]:flex-col max-[620px]:items-start max-[620px]:gap-2">
-                  <span>{step.lowLabel}</span>
-                  <span>{step.highLabel}</span>
-                </div>
-                <div
-                  className="relative h-2 overflow-hidden rounded-full bg-muted after:absolute after:left-1/2 after:top-1/2 after:size-4 after:-translate-x-1/2 after:-translate-y-1/2 after:rounded-full after:border-[3px] after:border-muted after:bg-foreground after:content-['']"
-                  aria-hidden="true"
-                >
-                  <span className="block size-full rounded-[inherit] bg-border-strong" />
-                </div>
-                <div className="grid gap-3 border-t border-border pt-5 text-center max-[620px]:text-left">
-                  <span className="text-[0.84rem] font-medium uppercase tracking-normal text-subtle-foreground">
-                    Selected direction detail
-                  </span>
-                  <strong className="mx-auto max-w-[780px] text-[clamp(1rem,1.8vw,1.18rem)] leading-[1.55] text-foreground max-[620px]:mx-0">
-                    {step.detail}
-                  </strong>
-                </div>
-              </Surface>
+            <div className="grid grid-cols-4 gap-2 max-[1080px]:gap-1.5 max-[760px]:grid-cols-2 max-[760px]:gap-2.5">
+              {dimensions.map((dimension, index) => {
+                const visual = dimensionVisuals[dimension.key];
+                const Icon = visual.Icon;
+                const SecondaryIcon = visual.SecondaryIcon;
 
-              <footer className="flex items-center justify-between gap-4 border-t border-border pt-[22px] text-[0.84rem] font-medium text-subtle-foreground max-[620px]:flex-col max-[620px]:items-start max-[620px]:gap-2">
-                <span>{step.footer}</span>
-              </footer>
-              </article>
-            </Surface>
-          );
-        })}
+                return (
+                  <div
+                    className="mirror-dimension-tag grid min-h-[clamp(66px,9vh,92px)] content-between gap-2 rounded-md border p-2.5 max-[1080px]:min-h-[52px] max-[1080px]:gap-1.5 max-[1080px]:p-2 max-[760px]:min-h-[96px] max-[760px]:gap-2 max-[760px]:p-3"
+                    key={dimension.key}
+                    style={
+                      {
+                        '--tag-index': index,
+                        backgroundColor: visual.background,
+                        borderColor: visual.border,
+                      } as CSSProperties
+                    }
+                  >
+                    <span className="flex items-start justify-between gap-2">
+                      <span
+                        className="relative grid size-8 shrink-0 place-items-center rounded-full bg-white max-[1080px]:size-6 max-[760px]:size-8"
+                        style={{ color: visual.color }}
+                        aria-hidden="true"
+                      >
+                        <Icon size={17} />
+                        {SecondaryIcon && (
+                          <SecondaryIcon
+                            className="absolute -right-1 -top-1 rounded-full bg-white"
+                            size={12}
+                            strokeWidth={2.4}
+                          />
+                        )}
+                      </span>
+                      <span className="text-right text-[0.64rem] font-medium uppercase leading-tight text-muted-foreground max-[1080px]:hidden">
+                        {visual.cue}
+                      </span>
+                    </span>
+                    <strong className="text-[clamp(0.78rem,0.95vw,0.92rem)] leading-tight text-foreground max-[1080px]:text-[0.72rem] max-[760px]:text-[clamp(0.78rem,0.95vw,0.92rem)]">
+                      {dimension.name}
+                    </strong>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </aside>
+
+        <SourceQuadrant
+          className="border-r max-[760px]:border-b max-[760px]:border-r-0"
+          isActive={activeSource === 'actual'}
+          onActivate={() => setActiveSource('actual')}
+          source={sourceById.actual}
+        />
+
+        <SourceQuadrant
+          className="max-[760px]:border-b"
+          isActive={activeSource === 'friends'}
+          onActivate={() => setActiveSource('friends')}
+          source={sourceById.friends}
+        />
+        </div>
       </div>
-    </ContentBand>
+    </section>
   );
 }
