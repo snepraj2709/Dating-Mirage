@@ -77,6 +77,7 @@ export function Navigation({ onStart }: NavigationProps) {
           aria-label="Home sections"
         >
           <a href="#how-it-works">How it works</a>
+          <a href="#sample-report">Mirror</a>
           <a href="#matrix-breakdown">Matrix</a>
           <a href="#map-analysis">Map Analysis</a>
         </nav>

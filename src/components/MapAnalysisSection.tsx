@@ -741,11 +741,18 @@ export function MapAnalysisSection({ onStart }: MapAnalysisSectionProps) {
         </div>
 
         <div className="grid grid-cols-[minmax(0,1.12fr)_minmax(300px,0.88fr)] items-stretch gap-4 max-[980px]:grid-cols-1 max-[620px]:gap-3">
-          <Surface className="overflow-hidden p-0" aria-live="polite">
+          <Surface
+            className="overflow-hidden border-0 p-0 shadow-[inset_0_1px_1px_rgba(255,255,255,0.95),0_18px_60px_rgba(17,17,17,0.08),0_4px_18px_rgba(232,62,140,0.08)]"
+            aria-live="polite"
+          >
             <RadarLensScene activeLens={activeLens} onDimensionSelect={() => setIsAutoplaying(false)} />
           </Surface>
 
-          <Surface asChild className="grid content-start gap-4 p-[clamp(18px,2.4vw,24px)] max-[620px]:gap-3 max-[620px]:p-4" aria-live="polite">
+          <Surface
+            asChild
+            className="grid content-start gap-4 border-0 p-[clamp(18px,2.4vw,24px)] shadow-[inset_0_1px_1px_rgba(255,255,255,0.95),0_18px_60px_rgba(17,17,17,0.08),0_4px_18px_rgba(232,62,140,0.08)] max-[620px]:gap-3 max-[620px]:p-4"
+            aria-live="polite"
+          >
             <aside>
               <div className="map-insight-enter grid content-start gap-4 max-[620px]:gap-3" key={activeLens}>
                 <h3 className="mb-0 text-[clamp(1.35rem,2.4vw,1.9rem)] leading-[1.08] text-foreground max-[620px]:text-[1.15rem]">

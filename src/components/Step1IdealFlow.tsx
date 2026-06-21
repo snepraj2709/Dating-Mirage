@@ -153,7 +153,7 @@ export function Step1IdealFlow({ isSaving, initialProfile, saveError, onBack, on
   return (
     <FlowCard
       aria-labelledby="ideal-title"
-      headerLabel={`Your ideal - question ${progress} of ${idealQuestions.length}`}
+      headerLabel={`Step 1 - Your ideal ${progress} of ${idealQuestions.length}`}
       headerMeta={`${Math.round(progressPercent)}%`}
       headerClassName="normal-case text-[clamp(0.95rem,1.6vw,1.08rem)] text-muted-foreground"
       progressValue={progressPercent}

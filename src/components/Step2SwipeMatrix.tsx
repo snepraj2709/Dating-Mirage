@@ -155,7 +155,7 @@ export function Step2SwipeMatrix({ isSaving, saveError, onBack, onComplete }: St
   return (
     <FlowCard
       aria-labelledby="swipe-title"
-      headerLabel={`Step 2 - your history - swipe ${progress} of ${swipeStatements.length}`}
+      headerLabel={`Step 2 - Your Actuals ${progress} of ${swipeStatements.length}`}
       headerMeta={`${Math.round(progressPercent)}%`}
       headerClassName="normal-case text-[clamp(0.95rem,1.6vw,1.08rem)] text-muted-foreground"
       progressValue={progressPercent}

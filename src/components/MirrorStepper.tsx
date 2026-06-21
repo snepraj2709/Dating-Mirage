@@ -448,11 +448,8 @@ export function MirrorStepper() {
           </p>
         </header>
 
-        <div className="guided-journey journey-shell grid h-[min(660px,calc(100svh-126px))] overflow-hidden rounded-lg border border-border bg-white shadow-none min-[1021px]:grid-cols-[minmax(230px,280px)_minmax(0,1fr)_minmax(300px,0.84fr)] max-[1020px]:h-[calc(100svh-106px)] max-[1020px]:grid-rows-[auto_minmax(0,0.9fr)_minmax(0,1fr)] max-[1020px]:rounded-lg max-[620px]:h-[calc(100svh-62px)]">
+        <div className="guided-journey journey-shell grid h-[min(660px,calc(100svh-126px))] overflow-hidden rounded-lg bg-white shadow-[inset_0_1px_1px_rgba(255,255,255,0.95),0_18px_60px_rgba(17,17,17,0.08),0_4px_18px_rgba(232,62,140,0.08)] min-[1021px]:grid-cols-[minmax(230px,280px)_minmax(0,1fr)_minmax(300px,0.84fr)] max-[1020px]:h-[calc(100svh-106px)] max-[1020px]:grid-rows-[auto_minmax(0,0.9fr)_minmax(0,1fr)] max-[1020px]:rounded-lg max-[620px]:h-[calc(100svh-62px)]">
           <aside className="journey-sidebar grid content-start gap-3 border-border bg-[#fff4f9] p-4 min-[1021px]:border-r max-[1020px]:border-b max-[620px]:gap-2 max-[620px]:p-3">
-            <p className="m-0 px-1 text-[0.72rem] font-medium uppercase tracking-normal text-subtle-foreground max-[620px]:hidden">
-              Build the mirror
-            </p>
             <div
               aria-label="How your mirror gets formed steps"
               className="tablet-snap-row grid gap-2.5 max-[1020px]:pb-1"

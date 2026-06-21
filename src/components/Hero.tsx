@@ -33,8 +33,8 @@ export function Hero({ onStart }: HeroProps) {
               variant="secondaryPill"
               className="border-white/50 bg-white/90 max-[620px]:w-full"
             >
-              <a href="#how-it-works">
-                How it works
+              <a href="#sample-report">
+                Dating Mirror
               </a>
             </Button>
           </div>

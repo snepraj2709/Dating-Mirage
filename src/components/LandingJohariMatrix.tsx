@@ -28,7 +28,7 @@ const matrixItems = [
   {
     key: 'true-blindspot',
     title: 'The True Blind Spot',
-    copy: 'You believe your choices are aligned with your standards, but your social mirror reports a different pattern.',
+    copy: 'You believe your choices are aligned with your standards, but your social Dating Mirrors a different pattern.',
     placement:
       'right-[7%] bottom-[12%] max-w-[min(36%,350px)] max-[720px]:right-[5%] max-[720px]:bottom-[10%] max-[720px]:max-w-[39%] max-[520px]:right-[4%] max-[520px]:bottom-[8%] max-[520px]:max-w-[41%]',
   },
@@ -41,7 +41,7 @@ const matrixItems = [
 
 export function LandingJohariMatrix() {
   return (
-    <ContentBand className="grid content-center gap-5 py-[clamp(30px,5svh,52px)] max-[620px]:gap-3 max-[620px]:py-4" id="matrix-breakdown">
+    <ContentBand className="grid content-center gap-5 bg-[#fffaf6] py-[clamp(30px,5svh,52px)] max-[620px]:gap-3 max-[620px]:py-4" id="matrix-breakdown">
       <div className="mx-auto grid max-w-[760px] justify-items-center gap-2 text-center">
         <Eyebrow>Dating Matrix</Eyebrow>
         <h2 className="mb-0 text-[clamp(1.65rem,3.2vw,2.5rem)] leading-[1.08] tracking-normal text-foreground max-[620px]:text-[clamp(1.35rem,7vw,1.8rem)]">
@@ -54,7 +54,7 @@ export function LandingJohariMatrix() {
       </div>
 
       <div
-        className="relative mx-auto h-[min(56svh,560px)] min-h-[420px] w-full max-w-[1120px] overflow-hidden rounded-lg border border-border bg-card max-[720px]:min-h-[500px] max-[620px]:h-[calc(100svh-270px)] max-[620px]:min-h-[430px]"
+        className="relative mx-auto h-[min(56svh,560px)] min-h-[420px] w-full max-w-[1120px] overflow-hidden rounded-lg bg-card shadow-[inset_0_1px_1px_rgba(255,255,255,0.95),0_18px_60px_rgba(17,17,17,0.08),0_4px_18px_rgba(232,62,140,0.08)] max-[720px]:min-h-[500px] max-[620px]:h-[calc(100svh-270px)] max-[620px]:min-h-[430px]"
         aria-label="Dating matrix showing visibility to you and visibility to friends"
       >
         <div className="absolute left-[7%] right-[7%] top-1/2 h-px -translate-y-1/2 bg-foreground max-[520px]:left-[5%] max-[520px]:right-[5%]" aria-hidden="true" />
