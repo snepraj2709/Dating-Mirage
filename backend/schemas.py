@@ -5,6 +5,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 DimensionKey = Literal["CON", "INT", "AUT", "VAL", "GOC", "VUL", "REA", "RWO"]
 RelationshipType = Literal["best_friend", "roommate", "cousin", "work_friend", "others"]
+DominantGap = Literal["conscious", "blind_spot", "mixed"]
 
 
 class StrictSchema(BaseModel):
@@ -97,10 +98,46 @@ class FrictionMapSchema(StrictSchema):
     armor_axis: FrictionAxisSchema
 
 
-class JohariReportResponse(StrictSchema):
+class LLMNarrativeReportResponse(StrictSchema):
     shareable_card: ShareableCardSchema
     diagnostic_matrix: DiagnosticMatrixSchema
     friction_map: FrictionMapSchema
+
+
+class RadarScaleSchema(StrictSchema):
+    min: int = Field(..., ge=1, le=10)
+    max: int = Field(..., ge=1, le=10)
+
+
+class RadarSeriesSchema(StrictSchema):
+    ideal: VectorProfileSchema
+    actual: VectorProfileSchema
+    friend_feedback: VectorProfileSchema
+
+
+class RadarDimensionSchema(StrictSchema):
+    key: DimensionKey
+    name: str
+    ideal_score: float = Field(..., ge=1.0, le=10.0)
+    actual_score: float = Field(..., ge=1.0, le=10.0)
+    friend_feedback_score: float = Field(..., ge=1.0, le=10.0)
+    conscious_gap: float = Field(..., ge=0.0)
+    blind_spot_gap: float = Field(..., ge=0.0)
+    total_gap: float = Field(..., ge=0.0)
+    severity_percentage: float = Field(..., ge=0.0, le=100.0)
+    dominant_gap: DominantGap
+    highlight_rank: Optional[int] = Field(default=None, ge=1, le=3)
+
+
+class RadarChartSchema(StrictSchema):
+    scale: RadarScaleSchema
+    series: RadarSeriesSchema
+    dimensions: List[RadarDimensionSchema]
+    highlights: List[RadarDimensionSchema]
+
+
+class JohariReportResponse(LLMNarrativeReportResponse):
+    radar_chart: RadarChartSchema
 
 
 class DeleteSessionResponse(BaseModel):

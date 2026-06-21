@@ -48,5 +48,190 @@
       "score": 7,
       "analysis": "Your need for autonomy and firm boundaries clashes with a pattern of enmeshment, leading to defensive behaviors and relational tension."
     }
+  },
+  "radar_chart": {
+    "scale": {
+      "min": 1,
+      "max": 10
+    },
+    "series": {
+      "ideal": {
+        "CON": 7.0,
+        "INT": 10.0,
+        "AUT": 4.0,
+        "VAL": 7.0,
+        "GOC": 7.0,
+        "VUL": 4.0,
+        "REA": 4.0,
+        "RWO": 10.0
+      },
+      "actual": {
+        "CON": 1.0,
+        "INT": 10.0,
+        "AUT": 1.0,
+        "VAL": 10.0,
+        "GOC": 1.0,
+        "VUL": 10.0,
+        "REA": 10.0,
+        "RWO": 1.0
+      },
+      "friend_feedback": {
+        "CON": 1.0,
+        "INT": 10.0,
+        "AUT": 1.0,
+        "VAL": 10.0,
+        "GOC": 5.5,
+        "VUL": 5.5,
+        "REA": 10.0,
+        "RWO": 1.0
+      }
+    },
+    "dimensions": [
+      {
+        "key": "CON",
+        "name": "Consistency",
+        "ideal_score": 7.0,
+        "actual_score": 1.0,
+        "friend_feedback_score": 1.0,
+        "conscious_gap": 6.0,
+        "blind_spot_gap": 0.0,
+        "total_gap": 6.0,
+        "severity_percentage": 47.1,
+        "dominant_gap": "conscious",
+        "highlight_rank": null
+      },
+      {
+        "key": "INT",
+        "name": "Intensity",
+        "ideal_score": 10.0,
+        "actual_score": 10.0,
+        "friend_feedback_score": 10.0,
+        "conscious_gap": 0.0,
+        "blind_spot_gap": 0.0,
+        "total_gap": 0.0,
+        "severity_percentage": 0.0,
+        "dominant_gap": "mixed",
+        "highlight_rank": null
+      },
+      {
+        "key": "AUT",
+        "name": "Autonomy",
+        "ideal_score": 4.0,
+        "actual_score": 1.0,
+        "friend_feedback_score": 1.0,
+        "conscious_gap": 3.0,
+        "blind_spot_gap": 0.0,
+        "total_gap": 3.0,
+        "severity_percentage": 23.6,
+        "dominant_gap": "conscious",
+        "highlight_rank": null
+      },
+      {
+        "key": "VAL",
+        "name": "Validation-Seeking",
+        "ideal_score": 7.0,
+        "actual_score": 10.0,
+        "friend_feedback_score": 10.0,
+        "conscious_gap": 3.0,
+        "blind_spot_gap": 0.0,
+        "total_gap": 3.0,
+        "severity_percentage": 23.6,
+        "dominant_gap": "conscious",
+        "highlight_rank": null
+      },
+      {
+        "key": "GOC",
+        "name": "Communication",
+        "ideal_score": 7.0,
+        "actual_score": 1.0,
+        "friend_feedback_score": 5.5,
+        "conscious_gap": 6.0,
+        "blind_spot_gap": 4.5,
+        "total_gap": 7.5,
+        "severity_percentage": 58.9,
+        "dominant_gap": "conscious",
+        "highlight_rank": 2
+      },
+      {
+        "key": "VUL",
+        "name": "Vulnerability",
+        "ideal_score": 4.0,
+        "actual_score": 10.0,
+        "friend_feedback_score": 5.5,
+        "conscious_gap": 6.0,
+        "blind_spot_gap": 4.5,
+        "total_gap": 7.5,
+        "severity_percentage": 58.9,
+        "dominant_gap": "conscious",
+        "highlight_rank": 3
+      },
+      {
+        "key": "REA",
+        "name": "Reactivity",
+        "ideal_score": 4.0,
+        "actual_score": 10.0,
+        "friend_feedback_score": 10.0,
+        "conscious_gap": 6.0,
+        "blind_spot_gap": 0.0,
+        "total_gap": 6.0,
+        "severity_percentage": 47.1,
+        "dominant_gap": "conscious",
+        "highlight_rank": null
+      },
+      {
+        "key": "RWO",
+        "name": "Relational Worth",
+        "ideal_score": 10.0,
+        "actual_score": 1.0,
+        "friend_feedback_score": 1.0,
+        "conscious_gap": 9.0,
+        "blind_spot_gap": 0.0,
+        "total_gap": 9.0,
+        "severity_percentage": 70.7,
+        "dominant_gap": "conscious",
+        "highlight_rank": 1
+      }
+    ],
+    "highlights": [
+      {
+        "key": "RWO",
+        "name": "Relational Worth",
+        "ideal_score": 10.0,
+        "actual_score": 1.0,
+        "friend_feedback_score": 1.0,
+        "conscious_gap": 9.0,
+        "blind_spot_gap": 0.0,
+        "total_gap": 9.0,
+        "severity_percentage": 70.7,
+        "dominant_gap": "conscious",
+        "highlight_rank": 1
+      },
+      {
+        "key": "GOC",
+        "name": "Communication",
+        "ideal_score": 7.0,
+        "actual_score": 1.0,
+        "friend_feedback_score": 5.5,
+        "conscious_gap": 6.0,
+        "blind_spot_gap": 4.5,
+        "total_gap": 7.5,
+        "severity_percentage": 58.9,
+        "dominant_gap": "conscious",
+        "highlight_rank": 2
+      },
+      {
+        "key": "VUL",
+        "name": "Vulnerability",
+        "ideal_score": 4.0,
+        "actual_score": 10.0,
+        "friend_feedback_score": 5.5,
+        "conscious_gap": 6.0,
+        "blind_spot_gap": 4.5,
+        "total_gap": 7.5,
+        "severity_percentage": 58.9,
+        "dominant_gap": "conscious",
+        "highlight_rank": 3
+      }
+    ]
   }
 }

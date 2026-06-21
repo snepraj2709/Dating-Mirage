@@ -17,7 +17,8 @@ from backend.llm_report import (
     generate_llm_report,
 )
 from backend.main import app
-from backend.schemas import JohariReportResponse, UserSessionResponse, VectorProfileSchema
+from backend.schemas import LLMNarrativeReportResponse, JohariReportResponse, UserSessionResponse, VectorProfileSchema
+from backend.scoring import build_radar_chart
 
 
 VALID_REPORT = {
@@ -61,6 +62,25 @@ VALID_REPORT = {
 }
 
 
+def public_report_payload(report_session: UserSessionResponse | None = None) -> dict[str, Any]:
+    resolved_session = report_session or session()
+    if (
+        resolved_session.ideal_profile is None
+        or resolved_session.actual_profile is None
+        or resolved_session.social_profile is None
+    ):
+        raise ValueError("Test session vectors are incomplete.")
+
+    return {
+        **VALID_REPORT,
+        "radar_chart": build_radar_chart(
+            resolved_session.ideal_profile,
+            resolved_session.actual_profile,
+            resolved_session.social_profile,
+        ).model_dump(),
+    }
+
+
 def vector(value: float) -> VectorProfileSchema:
     return VectorProfileSchema(
         CON=value,
@@ -100,19 +120,30 @@ class FakeOpenAIClient:
 
 
 class LLMReportTests(unittest.TestCase):
-    def test_report_schema_rejects_extra_fields(self) -> None:
+    def test_llm_schema_rejects_extra_fields(self) -> None:
         payload = dict(VALID_REPORT)
         payload["unexpected"] = True
 
         with self.assertRaises(ValidationError):
+            LLMNarrativeReportResponse.model_validate(payload)
+
+    def test_public_report_schema_requires_radar_chart(self) -> None:
+        with self.assertRaises(ValidationError):
+            JohariReportResponse.model_validate(VALID_REPORT)
+
+    def test_public_report_schema_rejects_invalid_radar_chart(self) -> None:
+        payload = public_report_payload()
+        payload["radar_chart"] = {"scale": {"min": 1, "max": 10}}
+
+        with self.assertRaises(ValidationError):
             JohariReportResponse.model_validate(payload)
 
-    def test_report_schema_rejects_missing_fields(self) -> None:
+    def test_llm_schema_rejects_missing_fields(self) -> None:
         payload = dict(VALID_REPORT)
         payload.pop("friction_map")
 
         with self.assertRaises(ValidationError):
-            JohariReportResponse.model_validate(payload)
+            LLMNarrativeReportResponse.model_validate(payload)
 
     def test_social_vector_passes_mean_and_conflict_metadata(self) -> None:
         friend_profiles = [vector(1), vector(1), vector(10), vector(10)]
@@ -149,6 +180,21 @@ class LLMReportTests(unittest.TestCase):
             {"key", "conscious_gap", "blind_spot_gap", "raw_severity", "severity_percentage"},
         )
 
+    def test_radar_chart_highlights_match_gap_ranking_and_dominant_gap(self) -> None:
+        ideal = VectorProfileSchema(CON=10, INT=10, AUT=1, VAL=5, GOC=5, VUL=5, REA=9, RWO=5)
+        actual = VectorProfileSchema(CON=1, INT=8, AUT=9, VAL=5, GOC=5, VUL=5, REA=5, RWO=5)
+        social = VectorProfileSchema(CON=1, INT=1, AUT=9, VAL=10, GOC=5, VUL=5, REA=1, RWO=5)
+
+        radar_chart = build_radar_chart(ideal, actual, social)
+        dimensions_by_key = {dimension.key: dimension for dimension in radar_chart.dimensions}
+
+        self.assertEqual([highlight.key for highlight in radar_chart.highlights], ["CON", "AUT", "INT"])
+        self.assertEqual([highlight.highlight_rank for highlight in radar_chart.highlights], [1, 2, 3])
+        self.assertEqual(dimensions_by_key["CON"].dominant_gap, "conscious")
+        self.assertEqual(dimensions_by_key["INT"].dominant_gap, "blind_spot")
+        self.assertEqual(dimensions_by_key["REA"].dominant_gap, "mixed")
+        self.assertEqual(radar_chart.series.friend_feedback.INT, 1)
+
     def test_generate_llm_report_uses_mocked_structured_output_call(self) -> None:
         fake_client = FakeOpenAIClient()
 
@@ -168,24 +214,36 @@ class LLMReportTests(unittest.TestCase):
         self.assertFalse(call["store"])
         self.assertEqual(call["text"]["format"]["type"], "json_schema")
         self.assertTrue(call["text"]["format"]["strict"])
+        self.assertNotIn("radar_chart", json.dumps(call["text"]["format"]["schema"]))
         self.assertIn("social_vector", call["input"])
         self.assertIn("gap_metrics", call["input"])
         self.assertNotIn("deterministic_johari", call["input"])
 
-    def test_report_endpoint_returns_llm_schema_only(self) -> None:
+    def test_report_endpoint_returns_public_report_with_radar_chart(self) -> None:
         client = TestClient(app)
 
         with (
             patch("backend.main.get_session", return_value=session()),
             patch("backend.main.get_friend_profiles", return_value=[vector(1), vector(10)]),
-            patch("backend.main.generate_llm_report", return_value=JohariReportResponse.model_validate(VALID_REPORT)),
+            patch("backend.main.generate_llm_report", return_value=LLMNarrativeReportResponse.model_validate(VALID_REPORT)),
         ):
             response = client.get("/sessions/session-1/report")
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(set(response.json().keys()), {"shareable_card", "diagnostic_matrix", "friction_map"})
-        self.assertNotIn("user_id", response.json())
-        self.assertNotIn("featured_dimensions", response.json())
+        response_payload = response.json()
+        self.assertEqual(
+            set(response_payload.keys()),
+            {"shareable_card", "diagnostic_matrix", "friction_map", "radar_chart"},
+        )
+        self.assertNotIn("user_id", response_payload)
+        self.assertNotIn("featured_dimensions", response_payload)
+
+        radar_chart = response_payload["radar_chart"]
+        self.assertEqual(radar_chart["scale"], {"min": 1, "max": 10})
+        self.assertEqual(set(radar_chart["series"].keys()), {"ideal", "actual", "friend_feedback"})
+        self.assertEqual(len(radar_chart["dimensions"]), 8)
+        self.assertEqual(len(radar_chart["highlights"]), 3)
+        self.assertEqual([highlight["highlight_rank"] for highlight in radar_chart["highlights"]], [1, 2, 3])
 
     def test_report_endpoint_returns_503_when_key_missing(self) -> None:
         client = TestClient(app)
@@ -316,7 +374,7 @@ class LLMReportTests(unittest.TestCase):
     def test_live_openai_dummy_fixture_returns_strict_schema(self) -> None:
         report = generate_llm_report(dummy_session(), dummy_friend_profiles())
 
-        self.assertIsInstance(report, JohariReportResponse)
+        self.assertIsInstance(report, LLMNarrativeReportResponse)
         self.assertGreaterEqual(report.friction_map.burnout_axis.score, 1)
         self.assertLessEqual(report.friction_map.burnout_axis.score, 10)
 

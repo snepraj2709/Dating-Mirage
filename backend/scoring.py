@@ -1,12 +1,14 @@
 import math
-from typing import Dict, Iterable, Optional, TypedDict
+from typing import Dict, Iterable, Optional, TypedDict, cast
 
-from .schemas import VectorProfileSchema
+from .assessment_references import DIMENSION_REFERENCE
+from .schemas import DominantGap, RadarChartSchema, RadarDimensionSchema, VectorProfileSchema
 
 
 DIMENSION_KEYS = ["CON", "INT", "AUT", "VAL", "GOC", "VUL", "REA", "RWO"]
 HIGH_GAP_THRESHOLD = 3.0
 MAX_DISTANCE = math.sqrt(9**2 + 9**2)
+MIXED_GAP_DELTA = 0.5
 
 
 class DimensionGapMetric(TypedDict):
@@ -106,3 +108,63 @@ def calculate_vector_gap_metrics(
         "dimensions": dimensions,
         "top_tension_dimensions": top_tension_dimensions,
     }
+
+
+def _dominant_gap(conscious_gap: float, blind_spot_gap: float) -> DominantGap:
+    if abs(conscious_gap - blind_spot_gap) <= MIXED_GAP_DELTA:
+        return "mixed"
+
+    return "conscious" if conscious_gap > blind_spot_gap else "blind_spot"
+
+
+def _plain_vector(vector: VectorProfileSchema) -> dict[str, float]:
+    return {key: round(_vector_value(vector, key), 2) for key in DIMENSION_KEYS}
+
+
+def build_radar_chart(
+    ideal: VectorProfileSchema,
+    actual: VectorProfileSchema,
+    social: VectorProfileSchema,
+) -> RadarChartSchema:
+    gap_metrics = calculate_vector_gap_metrics(ideal=ideal, actual=actual, social=social)
+    dimension_metrics = cast(Dict[str, DimensionGapMetric], gap_metrics["dimensions"])
+    top_metrics = cast(list[DimensionGapMetric], gap_metrics["top_tension_dimensions"])
+    highlight_rank_by_key = {metric["key"]: index + 1 for index, metric in enumerate(top_metrics)}
+    reference_by_key = {dimension["key"]: dimension for dimension in DIMENSION_REFERENCE}
+
+    dimensions = []
+    for key in DIMENSION_KEYS:
+        metric = dimension_metrics[key]
+        conscious_gap = metric["conscious_gap"]
+        blind_spot_gap = metric["blind_spot_gap"]
+        dimensions.append(
+            RadarDimensionSchema(
+                key=key,
+                name=str(reference_by_key[key]["name"]),
+                ideal_score=round(_vector_value(ideal, key), 2),
+                actual_score=round(_vector_value(actual, key), 2),
+                friend_feedback_score=round(_vector_value(social, key), 2),
+                conscious_gap=conscious_gap,
+                blind_spot_gap=blind_spot_gap,
+                total_gap=metric["raw_severity"],
+                severity_percentage=metric["severity_percentage"],
+                dominant_gap=_dominant_gap(conscious_gap, blind_spot_gap),
+                highlight_rank=highlight_rank_by_key.get(key),
+            )
+        )
+
+    highlights = sorted(
+        (dimension for dimension in dimensions if dimension.highlight_rank is not None),
+        key=lambda dimension: dimension.highlight_rank or 0,
+    )
+
+    return RadarChartSchema(
+        scale={"min": 1, "max": 10},
+        series={
+            "ideal": _plain_vector(ideal),
+            "actual": _plain_vector(actual),
+            "friend_feedback": _plain_vector(social),
+        },
+        dimensions=dimensions,
+        highlights=highlights,
+    )

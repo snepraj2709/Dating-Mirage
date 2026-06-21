@@ -16,6 +16,7 @@ from .schemas import (
     SubmitFriendRapidFireRequest,
     UserSessionResponse,
 )
+from .scoring import build_radar_chart
 from .store import (
     create_or_update_session,
     delete_session,
@@ -122,11 +123,20 @@ def read_report(session_id: str) -> JohariReportResponse:
         raise HTTPException(status_code=423, detail="Minimum 2 friend responses required")
 
     try:
-        return generate_llm_report(session, get_friend_profiles(session.id))
+        narrative_report = generate_llm_report(session, get_friend_profiles(session.id))
     except MissingOpenAIAPIKeyError as error:
         raise HTTPException(status_code=503, detail=str(error)) from error
     except LLMReportGenerationError as error:
         raise HTTPException(status_code=502, detail=str(error)) from error
+
+    return JohariReportResponse(
+        **narrative_report.model_dump(),
+        radar_chart=build_radar_chart(
+            session.ideal_profile,
+            session.actual_profile,
+            session.social_profile,
+        ),
+    )
 
 
 @app.delete("/sessions/{session_id}", response_model=DeleteSessionResponse)

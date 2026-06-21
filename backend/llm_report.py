@@ -10,7 +10,7 @@ from .assessment_references import (
     SOCIAL_OBSERVATION_REFERENCE,
 )
 from .config import get_openai_settings
-from .schemas import JohariReportResponse, UserSessionResponse, VectorProfileSchema
+from .schemas import LLMNarrativeReportResponse, UserSessionResponse, VectorProfileSchema
 from .scoring import (
     DIMENSION_KEYS,
     calculate_vector_gap_metrics,
@@ -90,7 +90,7 @@ def _json_schema_format() -> dict[str, Any]:
         "type": "json_schema",
         "name": SCHEMA_NAME,
         "strict": True,
-        "schema": JohariReportResponse.model_json_schema(),
+        "schema": LLMNarrativeReportResponse.model_json_schema(),
     }
 
 
@@ -186,7 +186,7 @@ def generate_llm_report(
     api_key: Optional[str] = None,
     model: Optional[str] = None,
     max_output_tokens: Optional[int] = None,
-) -> JohariReportResponse:
+) -> LLMNarrativeReportResponse:
     settings = get_openai_settings()
     resolved_api_key = settings.api_key if api_key is None else api_key.strip()
     resolved_model = model or settings.model
@@ -227,6 +227,6 @@ def generate_llm_report(
         raise LLMReportGenerationError("OpenAI returned an empty report.")
 
     try:
-        return JohariReportResponse.model_validate_json(output_text)
+        return LLMNarrativeReportResponse.model_validate_json(output_text)
     except (ValidationError, ValueError) as error:
         raise LLMReportGenerationError("OpenAI report output did not match the schema.") from error
