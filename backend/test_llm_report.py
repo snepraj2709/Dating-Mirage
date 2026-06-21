@@ -1,5 +1,6 @@
 import json
 import os
+import tempfile
 import unittest
 from pathlib import Path
 from typing import Any
@@ -8,6 +9,7 @@ from unittest.mock import patch
 from fastapi.testclient import TestClient
 from pydantic import ValidationError
 
+from backend import store
 from backend.dummy_report_fixture import dummy_friend_profiles, dummy_session
 from backend.llm_report import (
     MissingOpenAIAPIKeyError,
@@ -199,6 +201,100 @@ class LLMReportTests(unittest.TestCase):
             response = client.get("/sessions/session-1/report")
 
         self.assertEqual(response.status_code, 503)
+
+    def test_friend_feedback_endpoint_accepts_metadata_and_social_vector(self) -> None:
+        client = TestClient(app)
+        payload = {
+            "friend_name": " Jordan ",
+            "relationship_type": "best_friend",
+            "relationship_label": " Best Friend ",
+            "social_vector": vector(7).model_dump(),
+        }
+
+        with (
+            patch("backend.main.save_friend_feedback", return_value=1) as save_friend_feedback,
+            patch("backend.main.get_session", return_value=None),
+        ):
+            response = client.post("/sessions/session-1/friend-feedback", json=payload)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.json(),
+            {"session_id": "session-1", "friend_count": 1, "report_unlocked": False},
+        )
+        save_friend_feedback.assert_called_once()
+        call_args = save_friend_feedback.call_args.args
+        self.assertEqual(call_args[0], "session-1")
+        self.assertEqual(call_args[1], "Jordan")
+        self.assertEqual(call_args[2], "best_friend")
+        self.assertEqual(call_args[3], "Best Friend")
+        self.assertEqual(call_args[4].CON, 7)
+
+    def test_friend_feedback_endpoint_rejects_old_payload_shape(self) -> None:
+        client = TestClient(app)
+        payload = {
+            "relationship_type": "best_friend",
+            "feedback_profile": vector(7).model_dump(),
+        }
+
+        response = client.post("/sessions/session-1/friend-feedback", json=payload)
+
+        self.assertEqual(response.status_code, 422)
+
+    def test_friend_feedback_store_persists_metadata_and_unlocks_at_two(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            with patch("backend.store.DATABASE_PATH", Path(temp_dir) / "dating_mirror.db"):
+                store.create_or_update_session(vector(6), "session-1")
+
+                first_count = store.save_friend_feedback(
+                    "session-1",
+                    "Jordan",
+                    "best_friend",
+                    "Best Friend",
+                    vector(7),
+                )
+                second_count = store.save_friend_feedback(
+                    "session-1",
+                    "Mia",
+                    "roommate",
+                    "Roommate",
+                    vector(9),
+                )
+
+                session_response = store.get_session("session-1")
+                with store.get_connection() as connection:
+                    rows = connection.execute(
+                        """
+                        SELECT friend_name, relationship_type, relationship_label
+                        FROM friend_feedback
+                        WHERE session_id = ?
+                        ORDER BY created_at ASC, rowid ASC
+                        """,
+                        ("session-1",),
+                    ).fetchall()
+
+        self.assertEqual(first_count, 1)
+        self.assertEqual(second_count, 2)
+        self.assertIsNotNone(session_response)
+        assert session_response is not None
+        self.assertEqual(session_response.friend_count, 2)
+        self.assertTrue(session_response.report_unlocked)
+        self.assertEqual(session_response.social_profile, vector(8))
+        self.assertEqual(
+            [dict(row) for row in rows],
+            [
+                {
+                    "friend_name": "Jordan",
+                    "relationship_type": "best_friend",
+                    "relationship_label": "Best Friend",
+                },
+                {
+                    "friend_name": "Mia",
+                    "relationship_type": "roommate",
+                    "relationship_label": "Roommate",
+                },
+            ],
+        )
 
     def test_dummy_landing_page_fixture_has_social_mean_conflict_and_cached_report_schema(self) -> None:
         payload = build_llm_report_input(dummy_session(), dummy_friend_profiles())

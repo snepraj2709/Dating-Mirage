@@ -44,13 +44,22 @@ def init_db() -> None:
             CREATE TABLE IF NOT EXISTS friend_feedback (
               id TEXT PRIMARY KEY,
               session_id TEXT NOT NULL,
+              friend_name TEXT,
               relationship_type TEXT NOT NULL,
+              relationship_label TEXT,
               feedback_profile TEXT NOT NULL,
               created_at TEXT DEFAULT CURRENT_TIMESTAMP,
               FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE CASCADE
             )
             """
         )
+        existing_friend_columns = {
+            row["name"] for row in connection.execute("PRAGMA table_info(friend_feedback)").fetchall()
+        }
+        if "friend_name" not in existing_friend_columns:
+            connection.execute("ALTER TABLE friend_feedback ADD COLUMN friend_name TEXT")
+        if "relationship_label" not in existing_friend_columns:
+            connection.execute("ALTER TABLE friend_feedback ADD COLUMN relationship_label TEXT")
 
 
 def _profile_to_json(profile: VectorProfileSchema) -> str:
@@ -129,7 +138,13 @@ def save_result_email(session_id: str, result_email: str) -> Optional[UserSessio
     return get_session(session_id)
 
 
-def save_friend_feedback(session_id: str, relationship_type: str, feedback_profile: VectorProfileSchema) -> Optional[int]:
+def save_friend_feedback(
+    session_id: str,
+    friend_name: str,
+    relationship_type: str,
+    relationship_label: str,
+    social_vector: VectorProfileSchema,
+) -> Optional[int]:
     init_db()
     with get_connection() as connection:
         session = connection.execute("SELECT id FROM sessions WHERE id = ?", (session_id,)).fetchone()
@@ -138,10 +153,24 @@ def save_friend_feedback(session_id: str, relationship_type: str, feedback_profi
 
         connection.execute(
             """
-            INSERT INTO friend_feedback (id, session_id, relationship_type, feedback_profile)
-            VALUES (?, ?, ?, ?)
+            INSERT INTO friend_feedback (
+              id,
+              session_id,
+              friend_name,
+              relationship_type,
+              relationship_label,
+              feedback_profile
+            )
+            VALUES (?, ?, ?, ?, ?, ?)
             """,
-            (str(uuid4()), session_id, relationship_type, _profile_to_json(feedback_profile)),
+            (
+                str(uuid4()),
+                session_id,
+                friend_name.strip(),
+                relationship_type,
+                relationship_label.strip(),
+                _profile_to_json(social_vector),
+            ),
         )
         count = connection.execute(
             "SELECT COUNT(*) AS friend_count FROM friend_feedback WHERE session_id = ?", (session_id,)

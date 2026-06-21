@@ -31,6 +31,7 @@ import {
   clearIdealDraft,
   clearLocalFriendProfiles,
   clearStoredSession,
+  loadLocalFriendFeedback,
   loadLocalFriendProfiles,
   loadStoredSession,
   saveStoredSession,
@@ -148,12 +149,12 @@ export default function App() {
       throw new Error('Finish your ideal and actual profiles before opening the report.');
     }
 
-    const localFriendProfiles = loadLocalFriendProfiles(localSession.id);
+    const localFriendFeedback = loadLocalFriendFeedback(localSession.id);
     const createdSession = await createOrUpdateSession(localSession.idealProfile);
     await submitActualProfile(createdSession.id, localSession.actualProfile);
 
-    for (const friendProfile of localFriendProfiles) {
-      await submitFriendFeedback(createdSession.id, 'others', friendProfile);
+    for (const friendFeedback of localFriendFeedback) {
+      await submitFriendFeedback(createdSession.id, friendFeedback);
     }
 
     clearLocalFriendProfiles(localSession.id);

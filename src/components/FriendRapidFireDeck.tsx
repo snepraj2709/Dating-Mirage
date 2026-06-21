@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { ArrowLeft, ArrowRight, RotateCcw, Send } from 'lucide-react';
-import { InlineError } from '@/components/ui/flow';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   QuestionnaireCard,
   QuestionnaireFooterButton,
@@ -12,9 +13,9 @@ import {
   relationshipContext,
   relationshipLabels,
 } from '../data/datingMirrorContent';
-import { appendLocalFriendProfile } from '../lib/localState';
+import { appendLocalFriendFeedback } from '../lib/localState';
 import { buildFriendProfile } from '../lib/scoring';
-import type { DimensionKey, RelationshipType } from '../types/dating-mirror';
+import type { DimensionKey, FriendFeedbackSubmission, RelationshipType } from '../types/dating-mirror';
 
 interface FriendRapidFireDeckProps {
   sessionId: string;
@@ -29,7 +30,9 @@ const QUESTION_ENTER_START_MS = 20;
 const relationshipOptions = Object.entries(relationshipLabels) as Array<[RelationshipType, string]>;
 
 export function FriendRapidFireDeck({ sessionId, displayName }: FriendRapidFireDeckProps) {
-  const [relationshipType, setRelationshipType] = useState<RelationshipType | null>(null);
+  const [friendName, setFriendName] = useState('');
+  const [relationshipType, setRelationshipType] = useState<RelationshipType | ''>('');
+  const [hasStartedQuestions, setHasStartedQuestions] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
   const [answers, setAnswers] = useState<Partial<Record<DimensionKey, 1 | 10>>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -42,6 +45,8 @@ export function FriendRapidFireDeck({ sessionId, displayName }: FriendRapidFireD
   const userLabel = displayName || 'your friend';
   const current = friendRapidFireQuestions[activeIndex];
   const context = relationshipType ? relationshipContext[relationshipType] : 'from up close';
+  const trimmedFriendName = friendName.trim();
+  const canStartQuestions = trimmedFriendName.length > 0 && relationshipType !== '';
   const selectedScore = current ? answers[current.key] : undefined;
   const progressPercent = ((activeIndex + 1) / friendRapidFireQuestions.length) * 100;
   const isLast = activeIndex === friendRapidFireQuestions.length - 1;
@@ -74,20 +79,25 @@ export function FriendRapidFireDeck({ sessionId, displayName }: FriendRapidFireD
   };
 
   const submitAnswers = async (nextAnswers: Partial<Record<DimensionKey, 1 | 10>>) => {
-    if (!relationshipType || isSubmitting) {
+    if (!relationshipType || !trimmedFriendName || isSubmitting) {
       return;
     }
 
     setIsSubmitting(true);
     setSubmitMessage(null);
 
+    const feedback: FriendFeedbackSubmission = {
+      friendName: trimmedFriendName,
+      relationshipType,
+      relationshipLabel: relationshipLabels[relationshipType],
+      socialVector: buildFriendProfile(nextAnswers),
+    };
+
     try {
-      const profile = buildFriendProfile(nextAnswers);
-      await submitFriendFeedback(sessionId, relationshipType, profile);
+      await submitFriendFeedback(sessionId, feedback);
       setIsComplete(true);
     } catch {
-      const profile = buildFriendProfile(nextAnswers);
-      const friendCount = appendLocalFriendProfile(sessionId, profile);
+      const friendCount = appendLocalFriendFeedback(sessionId, feedback);
       setSubmitMessage(`Saved locally as friend response ${friendCount}.`);
       setIsComplete(true);
     } finally {
@@ -95,18 +105,23 @@ export function FriendRapidFireDeck({ sessionId, displayName }: FriendRapidFireD
     }
   };
 
-  const chooseRelationship = (value: RelationshipType) => {
+  const startQuestions = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
     if (isSubmitting || isTransitioning) {
       return;
     }
 
-    setRelationshipType(value);
+    if (!canStartQuestions) {
+      return;
+    }
+
+    setHasStartedQuestions(true);
     setActiveIndex(0);
     setAnswers({});
   };
 
   const chooseAnswer = (score: 1 | 10) => {
-    if (!relationshipType || isSubmitting || isTransitioning) {
+    if (!hasStartedQuestions || !relationshipType || isSubmitting || isTransitioning) {
       return;
     }
 
@@ -127,7 +142,7 @@ export function FriendRapidFireDeck({ sessionId, displayName }: FriendRapidFireD
     }
 
     if (activeIndex === 0) {
-      setRelationshipType(null);
+      setHasStartedQuestions(false);
       setAnswers({});
       return;
     }
@@ -140,7 +155,9 @@ export function FriendRapidFireDeck({ sessionId, displayName }: FriendRapidFireD
       return;
     }
 
-    setRelationshipType(null);
+    setFriendName('');
+    setRelationshipType('');
+    setHasStartedQuestions(false);
     setActiveIndex(0);
     setAnswers({});
     setSubmitMessage(null);
@@ -166,31 +183,78 @@ export function FriendRapidFireDeck({ sessionId, displayName }: FriendRapidFireD
         stepLabel="Step 3- Friends feedback"
         progressValue={100}
         progressLabel="Feedback sent"
+        contentClassName="min-h-[620px] grid-rows-[auto_1fr] max-[620px]:min-h-[calc(100svh_-_60px)]"
         prompt="You did the brave friend thing."
-        helper={`Your individual answers stay private and only blend into ${userLabel}'s aggregate Dating Mirror.`}
-      >
-        {submitMessage && <InlineError className="mx-auto mb-0 max-w-[680px] text-center">{submitMessage}</InlineError>}
-      </QuestionnaireCard>
+        promptClassName="self-center"
+        helper={
+          <>
+            <span>
+              Your individual answers stay private and only blend into {userLabel}'s aggregate Dating Mirror.
+            </span>
+            {submitMessage && (
+              <span className="mt-12 block text-[clamp(1.05rem,1.55vw,1.2rem)] font-medium not-italic text-primary max-[620px]:mt-8 max-[620px]:text-[1rem]">
+                {submitMessage}
+              </span>
+            )}
+          </>
+        }
+      />
     );
   }
 
-  if (!relationshipType) {
+  if (!hasStartedQuestions) {
     return (
       <QuestionnaireCard
         titleId="friend-relationship-title"
         stepLabel="Step 3- Friends feedback"
         progressValue={0}
-        progressLabel="Choose your relationship"
+        progressLabel="Friend intake"
         prompt="Be as honest as a true friend should be."
-        helper="Your answers are anonymized and aggregated."
+        footerRight={
+          <QuestionnaireFooterButton
+            className="max-[620px]:min-h-12 max-[620px]:max-w-[220px] max-[620px]:px-4 max-[620px]:text-[0.86rem] max-[620px]:leading-[1.15]"
+            disabled={!canStartQuestions || isSubmitting || isTransitioning}
+            form="friend-intake-form"
+            tone="primary"
+            type="submit"
+          >
+            Let's see how well you know your friend
+          </QuestionnaireFooterButton>
+        }
       >
-        <div className="mx-auto grid w-full max-w-[680px] grid-cols-2 gap-3 max-[620px]:grid-cols-1">
-          {relationshipOptions.map(([value, label]) => (
-            <QuestionnaireOptionButton key={value} onClick={() => chooseRelationship(value)}>
-              {label}
-            </QuestionnaireOptionButton>
-          ))}
-        </div>
+        <form
+          id="friend-intake-form"
+          className="mx-auto grid w-full max-w-[680px] gap-5 text-left"
+          onSubmit={startQuestions}
+        >
+          <Label className="gap-2 text-[0.95rem] text-muted-foreground">
+            Your name
+            <Input
+              autoComplete="name"
+              className="border-border bg-card text-[1rem] text-foreground focus:border-primary focus:outline-primary"
+              onChange={(event) => setFriendName(event.target.value)}
+              placeholder="Your name"
+              value={friendName}
+            />
+          </Label>
+          <Label className="gap-2 text-[0.95rem] text-muted-foreground">
+            How are you two related
+            <select
+              className="min-h-[50px] rounded-lg border border-border bg-card px-4 text-[1rem] font-medium text-foreground outline-none transition-colors focus:border-primary focus:outline-2 focus:outline-offset-2 focus:outline-primary"
+              onChange={(event) => setRelationshipType(event.target.value as RelationshipType)}
+              value={relationshipType}
+            >
+              <option disabled value="">
+                Select relationship
+              </option>
+              {relationshipOptions.map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </Label>
+        </form>
       </QuestionnaireCard>
     );
   }

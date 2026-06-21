@@ -53,6 +53,13 @@ export type ActualFrequencyValue = 'never' | 'sometimes' | 'often' | 'always';
 
 export type ActualAnswerMap = Partial<Record<string, ActualFrequencyValue>>;
 
+export interface FriendFeedbackSubmission {
+  friendName: string;
+  relationshipType: RelationshipType;
+  relationshipLabel: string;
+  socialVector: VectorProfile;
+}
+
 export interface FriendRapidFireQuestion {
   id: string;
   key: DimensionKey;

@@ -1,6 +1,6 @@
 from typing import List, Literal, Optional
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 DimensionKey = Literal["CON", "INT", "AUT", "VAL", "GOC", "VUL", "REA", "RWO"]
@@ -32,9 +32,18 @@ class SubmitActualProfileRequest(BaseModel):
 
 
 class SubmitFriendRapidFireRequest(BaseModel):
+    friend_name: str = Field(..., min_length=1, max_length=120)
     relationship_type: RelationshipType
-    is_anonymous: bool = True
-    feedback_profile: VectorProfileSchema
+    relationship_label: str = Field(..., min_length=1, max_length=80)
+    social_vector: VectorProfileSchema
+
+    @field_validator("friend_name", "relationship_label")
+    @classmethod
+    def strip_required_text(cls, value: str) -> str:
+        stripped = value.strip()
+        if not stripped:
+            raise ValueError("Field cannot be blank")
+        return stripped
 
 
 class UserSessionResponse(BaseModel):

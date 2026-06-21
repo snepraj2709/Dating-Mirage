@@ -1,4 +1,11 @@
-import type { ActualAnswerMap, ActualFrequencyValue, UserSession, VectorProfile } from '../types/dating-mirror';
+import type {
+  ActualAnswerMap,
+  ActualFrequencyValue,
+  FriendFeedbackSubmission,
+  RelationshipType,
+  UserSession,
+  VectorProfile,
+} from '../types/dating-mirror';
 
 const IDEAL_DRAFT_KEY = 'dating-mirror:ideal-draft';
 const ACTUAL_SWIPES_KEY = 'dating-mirror:actual-swipes';
@@ -90,19 +97,99 @@ export function clearStoredSession() {
   window.localStorage.removeItem(SESSION_KEY);
 }
 
-export function loadLocalFriendProfiles(sessionId: string): VectorProfile[] {
+function isVectorProfile(value: unknown): value is VectorProfile {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+
+  const profile = value as Partial<Record<keyof VectorProfile, unknown>>;
+  return ['CON', 'INT', 'AUT', 'VAL', 'GOC', 'VUL', 'REA', 'RWO'].every(
+    (key) => typeof profile[key as keyof VectorProfile] === 'number',
+  );
+}
+
+function normalizeRelationshipType(value: unknown): RelationshipType {
+  return value === 'best_friend' ||
+    value === 'roommate' ||
+    value === 'cousin' ||
+    value === 'work_friend' ||
+    value === 'others'
+    ? value
+    : 'others';
+}
+
+function normalizeLocalFriendFeedback(value: unknown): FriendFeedbackSubmission | null {
+  if (isVectorProfile(value)) {
+    return {
+      friendName: 'Friend',
+      relationshipType: 'others',
+      relationshipLabel: 'Other',
+      socialVector: value,
+    };
+  }
+
+  if (!value || typeof value !== 'object') {
+    return null;
+  }
+
+  const record = value as Partial<FriendFeedbackSubmission>;
+  if (!isVectorProfile(record.socialVector)) {
+    return null;
+  }
+
+  const friendName = typeof record.friendName === 'string' && record.friendName.trim()
+    ? record.friendName.trim()
+    : 'Friend';
+  const relationshipType = normalizeRelationshipType(record.relationshipType);
+  const relationshipLabel = typeof record.relationshipLabel === 'string' && record.relationshipLabel.trim()
+    ? record.relationshipLabel.trim()
+    : 'Other';
+
+  return {
+    friendName,
+    relationshipType,
+    relationshipLabel,
+    socialVector: record.socialVector,
+  };
+}
+
+export function loadLocalFriendFeedback(sessionId: string): FriendFeedbackSubmission[] {
   try {
     const raw = window.localStorage.getItem(`${LOCAL_FRIEND_PREFIX}${sessionId}`);
-    return raw ? JSON.parse(raw) : [];
+    const parsed = raw ? JSON.parse(raw) : [];
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+
+    return parsed.reduce<FriendFeedbackSubmission[]>((feedback, item) => {
+      const normalized = normalizeLocalFriendFeedback(item);
+      if (normalized) {
+        feedback.push(normalized);
+      }
+      return feedback;
+    }, []);
   } catch {
     return [];
   }
 }
 
-export function appendLocalFriendProfile(sessionId: string, profile: VectorProfile): number {
-  const profiles = [...loadLocalFriendProfiles(sessionId), profile];
+export function loadLocalFriendProfiles(sessionId: string): VectorProfile[] {
+  return loadLocalFriendFeedback(sessionId).map((feedback) => feedback.socialVector);
+}
+
+export function appendLocalFriendFeedback(sessionId: string, feedback: FriendFeedbackSubmission): number {
+  const profiles = [...loadLocalFriendFeedback(sessionId), feedback];
   window.localStorage.setItem(`${LOCAL_FRIEND_PREFIX}${sessionId}`, JSON.stringify(profiles));
   return profiles.length;
+}
+
+export function appendLocalFriendProfile(sessionId: string, profile: VectorProfile): number {
+  return appendLocalFriendFeedback(sessionId, {
+    friendName: 'Friend',
+    relationshipType: 'others',
+    relationshipLabel: 'Other',
+    socialVector: profile,
+  });
 }
 
 export function clearLocalFriendProfiles(sessionId: string) {

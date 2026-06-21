@@ -88,7 +88,13 @@ def save_report_email(session_id: str, payload: SaveResultEmailRequest) -> UserS
 
 @app.post("/sessions/{session_id}/friend-feedback", response_model=FriendFeedbackResponse)
 def submit_friend_feedback(session_id: str, payload: SubmitFriendRapidFireRequest) -> FriendFeedbackResponse:
-    friend_count = save_friend_feedback(session_id, payload.relationship_type, payload.feedback_profile)
+    friend_count = save_friend_feedback(
+        session_id,
+        payload.friend_name,
+        payload.relationship_type,
+        payload.relationship_label,
+        payload.social_vector,
+    )
     if friend_count is None:
         raise HTTPException(status_code=404, detail="Session not found")
 

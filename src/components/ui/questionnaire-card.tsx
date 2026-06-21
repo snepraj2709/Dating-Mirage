@@ -48,6 +48,7 @@ function QuestionnaireCard({
   promptClassName,
 }: QuestionnaireCardProps) {
   const hasFooter = footerLeft || footerCenter || footerRight;
+  const hasThreePartFooter = footerLeft || footerCenter;
 
   return (
     <FlowShell className="grid min-h-svh w-[min(760px,calc(100%_-_32px))] content-center py-[clamp(18px,4vh,48px)] max-[620px]:w-[min(100%_-_20px,520px)] max-[620px]:content-start max-[620px]:py-2.5">
@@ -102,10 +103,23 @@ function QuestionnaireCard({
         </div>
 
         {hasFooter && (
-          <footer className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 border-t border-border pt-[clamp(18px,2.8vh,26px)] max-[620px]:gap-2 max-[620px]:pt-4">
-            <div className="justify-self-start">{footerLeft}</div>
-            <div className="justify-self-center">{footerCenter}</div>
-            <div className="justify-self-end">{footerRight}</div>
+          <footer
+            className={cn(
+              'border-t border-border pt-[clamp(18px,2.8vh,26px)] max-[620px]:pt-4',
+              hasThreePartFooter
+                ? 'grid grid-cols-[1fr_auto_1fr] items-center gap-3 max-[620px]:gap-2'
+                : 'flex items-center justify-end',
+            )}
+          >
+            {hasThreePartFooter ? (
+              <>
+                <div className="justify-self-start">{footerLeft}</div>
+                <div className="justify-self-center">{footerCenter}</div>
+                <div className="justify-self-end">{footerRight}</div>
+              </>
+            ) : (
+              footerRight
+            )}
           </footer>
         )}
       </section>

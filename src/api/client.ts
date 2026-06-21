@@ -1,4 +1,4 @@
-import type { MirrorReport, RelationshipType, UserSession, VectorProfile } from '../types/dating-mirror';
+import type { FriendFeedbackSubmission, MirrorReport, UserSession, VectorProfile } from '../types/dating-mirror';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000';
 
@@ -91,15 +91,15 @@ export async function saveResultEmail(sessionId: string, resultEmail: string): P
 
 export async function submitFriendFeedback(
   sessionId: string,
-  relationshipType: RelationshipType,
-  feedbackProfile: VectorProfile,
+  feedback: FriendFeedbackSubmission,
 ): Promise<{ sessionId: string; friendCount: number; reportUnlocked: boolean }> {
   return request(`/sessions/${sessionId}/friend-feedback`, {
     method: 'POST',
     body: JSON.stringify({
-      relationship_type: relationshipType,
-      is_anonymous: true,
-      feedback_profile: feedbackProfile,
+      friend_name: feedback.friendName,
+      relationship_type: feedback.relationshipType,
+      relationship_label: feedback.relationshipLabel,
+      social_vector: feedback.socialVector,
     }),
   });
 }
