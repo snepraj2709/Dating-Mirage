@@ -16,6 +16,7 @@ import { Eyebrow, Pill } from '@/components/ui/pill';
 import { Surface } from '@/components/ui/surface';
 import { dimensions } from '@/data/datingMirrorContent';
 import type { DiagnosticReportSection, DimensionKey, MirrorReport, UserSession } from '@/types/dating-mirror';
+import { RadarChart } from './RadarChart';
 
 interface FinalReportProps {
   report: MirrorReport;
@@ -415,6 +416,18 @@ export function FinalReport({ report, session, onBack, onBurnData }: FinalReport
               </p>
             </div>
           </article>
+
+          <section className="grid gap-4 rounded-lg bg-card/90 p-[clamp(18px,3vw,28px)] shadow-[0_20px_60px_rgba(17,17,17,0.06)]">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h2 className="mb-0 text-[clamp(1.5rem,2.5vw,2.1rem)] leading-[1.08] text-foreground">
+                Where the mirror splits
+              </h2>
+              <Pill className="border-primary/20 bg-white px-4 text-[0.86rem] tracking-normal text-primary shadow-[inset_0_1px_1px_rgba(255,255,255,0.95),0_10px_24px_rgba(17,17,17,0.08)]">
+                Top 3 gaps
+              </Pill>
+            </div>
+            <RadarChart radarChart={report.radar_chart} />
+          </section>
 
           <div className="grid grid-cols-[1.05fr_0.95fr] gap-5 max-[900px]:grid-cols-1">
             <section className="grid content-start gap-4">

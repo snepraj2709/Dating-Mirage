@@ -97,10 +97,45 @@ export interface FrictionMapReport {
   armor_axis: FrictionReportAxis;
 }
 
+export type DominantGap = 'conscious' | 'blind_spot' | 'mixed';
+
+export interface RadarScaleReport {
+  min: number;
+  max: number;
+}
+
+export interface RadarSeriesReport {
+  ideal: VectorProfile;
+  actual: VectorProfile;
+  friend_feedback: VectorProfile;
+}
+
+export interface RadarDimensionReport {
+  key: DimensionKey;
+  name: string;
+  ideal_score: number;
+  actual_score: number;
+  friend_feedback_score: number;
+  conscious_gap: number;
+  blind_spot_gap: number;
+  total_gap: number;
+  severity_percentage: number;
+  dominant_gap: DominantGap;
+  highlight_rank?: number | null;
+}
+
+export interface RadarChartReport {
+  scale: RadarScaleReport;
+  series: RadarSeriesReport;
+  dimensions: RadarDimensionReport[];
+  highlights: RadarDimensionReport[];
+}
+
 export interface MirrorReport {
   shareable_card: ShareableCardReport;
   diagnostic_matrix: DiagnosticMatrixReport;
   friction_map: FrictionMapReport;
+  radar_chart: RadarChartReport;
 }
 
 export interface UserSession {
