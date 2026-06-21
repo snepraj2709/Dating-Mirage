@@ -386,19 +386,30 @@ function MiniVectorMap({ step }: { step: JourneyStep }) {
         {vectorOrder.map((vector) => {
           const isActive = activeVectorSet.has(vector);
           const isDrawing = step.drawVector === vector || step.drawVector === 'all';
+          const showMotionCue = isDrawing && vector !== 'social';
           const config = vectorConfig[vector];
 
           return (
-            <polyline
-              className={cn(
-                'journey-vector-line',
-                config.className,
-                isActive ? 'journey-vector-line--active' : 'journey-vector-line--muted',
-                isDrawing && 'journey-vector-line--draw',
+            <g key={`${step.id}-${vector}`}>
+              <polyline
+                className={cn(
+                  'journey-vector-line',
+                  config.className,
+                  isActive ? 'journey-vector-line--active' : 'journey-vector-line--muted',
+                  isDrawing && 'journey-vector-line--draw',
+                )}
+                points={config.points}
+              />
+              {showMotionCue && (
+                <polyline
+                  className={cn(
+                    'journey-vector-line journey-vector-line--motion',
+                    config.className,
+                  )}
+                  points={config.points}
+                />
               )}
-              key={`${step.id}-${vector}`}
-              points={config.points}
-            />
+            </g>
           );
         })}
       </svg>

@@ -1,5 +1,18 @@
-import { ArrowRight, FlagTriangleRight, Lightbulb } from 'lucide-react';
-import { useEffect, useMemo, useState, type CSSProperties } from 'react';
+import {
+  Activity,
+  ArrowRight,
+  CalendarCheck,
+  Compass,
+  FlagTriangleRight,
+  Heart,
+  Lightbulb,
+  MessageCircle,
+  ShieldCheck,
+  Trophy,
+  Zap,
+  type LucideIcon,
+} from 'lucide-react';
+import { useEffect, useMemo, useState, type CSSProperties, type KeyboardEvent } from 'react';
 import { dimensions } from '@/data/datingMirrorContent';
 import { cn } from '@/lib/utils';
 import type { DimensionKey, VectorProfile } from '@/types/dating-mirror';
@@ -26,16 +39,28 @@ interface GapHighlight {
   delay: number;
 }
 
-const chartWidth = 560;
-const chartHeight = 500;
+const chartWidth = 720;
+const chartHeight = 590;
 const centerX = chartWidth / 2;
-const centerY = 250;
-const radius = 148;
-const labelRadius = 207;
+const centerY = chartHeight / 2;
+const radius = 150;
+const orbitRadius = 218;
+const orbitLabelOffset = 34;
 const autoplayDelayMs = 4500;
 
 const vectorKeys: VectorKey[] = ['ideal', 'actual', 'social'];
 const lensStoryOrder: PatternLensKey[] = ['all', 'facade', 'blindSpot', 'guilty'];
+
+const dimensionIconMap: Record<DimensionKey, LucideIcon> = {
+  CON: CalendarCheck,
+  INT: Zap,
+  AUT: Compass,
+  VAL: Trophy,
+  GOC: MessageCircle,
+  VUL: Heart,
+  REA: Activity,
+  RWO: ShieldCheck,
+};
 
 const demoVectors: Record<VectorKey, VectorProfile> = {
   ideal: {
@@ -79,18 +104,18 @@ const seriesConfig: Record<
   }
 > = {
   ideal: {
-    stroke: '#d6a63f',
-    fill: 'rgba(214, 166, 63, 0.16)',
+    stroke: '#2f9e44',
+    fill: 'rgba(47, 158, 68, 0.16)',
     delay: 120,
   },
   actual: {
-    stroke: '#2563eb',
-    fill: 'rgba(37, 99, 235, 0.13)',
+    stroke: '#d94841',
+    fill: 'rgba(217, 72, 65, 0.14)',
     delay: 520,
   },
   social: {
-    stroke: '#4a2815',
-    fill: 'rgba(74, 40, 21, 0.1)',
+    stroke: '#f59e0b',
+    fill: 'rgba(245, 158, 11, 0.12)',
     delay: 920,
   },
 };
@@ -113,7 +138,7 @@ const radarLegend: Array<{
   },
   {
     key: 'social',
-    label: 'Social',
+    label: 'Friend Feedback',
     strokeWidth: 3.5,
     dashed: true,
   },
@@ -192,6 +217,16 @@ function pointAt(index: number, pointRadius: number): RadarPoint {
   };
 }
 
+function labelPointAt(index: number): RadarPoint {
+  const angle = angleFor(index);
+  const nodePoint = pointAt(index, orbitRadius);
+
+  return {
+    x: nodePoint.x + Math.cos(angle) * orbitLabelOffset,
+    y: nodePoint.y + Math.sin(angle) * (orbitLabelOffset - 4),
+  };
+}
+
 function pointsForProfile(profile: VectorProfile) {
   return dimensions.map((dimension, index) => {
     const valueRadius = ((profile[dimension.key] - 1) / 9) * radius;
@@ -226,6 +261,16 @@ function labelAnchor(index: number) {
   return 'middle';
 }
 
+function orbitHitRect(index: number, nodePoint: RadarPoint, labelPoint: RadarPoint) {
+  const anchor = labelAnchor(index);
+  const width = anchor === 'middle' ? 190 : 210;
+  const x = anchor === 'start' ? nodePoint.x - 34 : anchor === 'end' ? nodePoint.x - width + 34 : nodePoint.x - width / 2;
+  const y = Math.min(nodePoint.y, labelPoint.y) - 28;
+  const height = Math.abs(nodePoint.y - labelPoint.y) + 56;
+
+  return { height, width, x, y };
+}
+
 function pairForLens(lens: PatternLensKey): [VectorKey, VectorKey] {
   if (lens === 'blindSpot') {
     return ['ideal', 'social'];
@@ -258,25 +303,34 @@ function getFillOpacity(lens: PatternLensKey, series: VectorKey) {
 
 function getGapColor(lens: PatternLensKey) {
   if (lens === 'blindSpot') {
-    return '#d946ef';
+    return seriesConfig.social.stroke;
   }
 
   if (lens === 'facade') {
-    return '#6b7280';
+    return '#111111';
   }
 
-  return '#f59e0b';
+  return seriesConfig.actual.stroke;
+}
+
+function dimensionGapRankings(first: VectorKey, second: VectorKey) {
+  return dimensions
+    .map((dimension, index) => ({
+      key: dimension.key,
+      name: dimension.name,
+      index,
+      gap: Math.abs(demoVectors[first][dimension.key] - demoVectors[second][dimension.key]),
+    }))
+    .sort((a, b) => b.gap - a.gap);
 }
 
 function strongestDimensions(first: VectorKey, second: VectorKey, count: number) {
-  return dimensions
-    .map((dimension) => ({
-      key: dimension.key,
-      name: dimension.name,
-      gap: Math.abs(demoVectors[first][dimension.key] - demoVectors[second][dimension.key]),
-    }))
-    .sort((a, b) => b.gap - a.gap)
-    .slice(0, count);
+  return dimensionGapRankings(first, second).slice(0, count);
+}
+
+function defaultDimensionForLens(lens: PatternLensKey): DimensionKey {
+  const pair = pairForLens(lens);
+  return strongestDimensions(pair[0], pair[1], 1)[0]?.key ?? dimensions[0].key;
 }
 
 function getHighlights(lens: PatternLensKey, pointsBySeries: Record<VectorKey, RadarPoint[]>): GapHighlight[] {
@@ -293,7 +347,30 @@ function getHighlights(lens: PatternLensKey, pointsBySeries: Record<VectorKey, R
   });
 }
 
-function RadarLensScene({ activeLens }: { activeLens: PatternLensKey }) {
+function getHighlightForDimension(
+  lens: PatternLensKey,
+  dimensionKey: DimensionKey,
+  pointsBySeries: Record<VectorKey, RadarPoint[]>,
+  delay: number,
+): GapHighlight {
+  const pair = pairForLens(lens);
+  const dimensionIndex = dimensions.findIndex((dimension) => dimension.key === dimensionKey);
+
+  return {
+    key: dimensionKey,
+    from: pointsBySeries[pair[0]][dimensionIndex],
+    to: pointsBySeries[pair[1]][dimensionIndex],
+    delay,
+  };
+}
+
+interface RadarLensSceneProps {
+  activeLens: PatternLensKey;
+  onDimensionSelect: () => void;
+}
+
+function RadarLensScene({ activeLens, onDimensionSelect }: RadarLensSceneProps) {
+  const [selectedDimension, setSelectedDimension] = useState<DimensionKey>(() => defaultDimensionForLens(activeLens));
   const gridRings = useMemo(() => [0.25, 0.5, 0.75, 1], []);
   const pointsBySeries = useMemo<Record<VectorKey, RadarPoint[]>>(
     () => ({
@@ -303,30 +380,52 @@ function RadarLensScene({ activeLens }: { activeLens: PatternLensKey }) {
     }),
     [],
   );
+  const activePair = pairForLens(activeLens);
+  const gapRankings = useMemo(() => dimensionGapRankings(activePair[0], activePair[1]), [activeLens]);
   const highlights = useMemo(() => getHighlights(activeLens, pointsBySeries), [activeLens, pointsBySeries]);
+  const selectedHighlight = useMemo(
+    () => getHighlightForDimension(activeLens, selectedDimension, pointsBySeries, 940),
+    [activeLens, pointsBySeries, selectedDimension],
+  );
+  const visibleGapLines = useMemo(
+    () => [selectedHighlight, ...highlights.filter((highlight) => highlight.key !== selectedDimension)],
+    [highlights, selectedDimension, selectedHighlight],
+  );
   const gapColor = getGapColor(activeLens);
+  const gapByDimension = new Map(gapRankings.map((dimension) => [dimension.key, dimension.gap]));
   const socialPath = pathForPoints(pointsBySeries.social);
   const facadeRevealPath = bridgePath(pointsBySeries.actual, pointsBySeries.social);
 
+  useEffect(() => {
+    setSelectedDimension(defaultDimensionForLens(activeLens));
+  }, [activeLens]);
+
+  const handleDimensionSelect = (dimensionKey: DimensionKey) => {
+    setSelectedDimension(dimensionKey);
+    onDimensionSelect();
+  };
+
+  const handleDimensionKeyDown = (event: KeyboardEvent<SVGGElement>, dimensionKey: DimensionKey) => {
+    if (event.key !== 'Enter' && event.key !== ' ') {
+      return;
+    }
+
+    event.preventDefault();
+    handleDimensionSelect(dimensionKey);
+  };
+
   return (
     <figure
-      className="map-radar-shell m-0 grid min-h-[460px] content-center justify-items-center overflow-hidden rounded-lg bg-[#fbfbfb] px-4 py-5 max-[620px]:min-h-[238px] max-[620px]:px-2 max-[620px]:py-2"
-      aria-label="Animated radar map comparing stated preference, actual choices, and friend-observed patterns"
+      className="map-radar-shell m-0 grid min-h-[500px] content-center justify-items-center overflow-hidden rounded-lg bg-[#fbfbfb] px-4 py-5 max-[620px]:min-h-[326px] max-[620px]:px-2 max-[620px]:py-3"
+      aria-label="Interactive orbital radar map comparing stated preference, actual choices, and friend-observed patterns"
     >
       <svg
-        className="h-[min(42svh,420px)] w-auto max-w-full overflow-visible max-[620px]:h-[210px]"
+        className="h-auto w-full max-w-[680px] overflow-visible"
         viewBox={`0 0 ${chartWidth} ${chartHeight}`}
         role="img"
       >
-        <title>Pattern lens radar comparing ideal, actual, and social dating signals</title>
+        <title>Pattern lens orbital radar comparing ideal, actual, and friend feedback dating signals</title>
         <defs>
-          <filter id="map-analysis-glow" x="-40%" y="-40%" width="180%" height="180%">
-            <feGaussianBlur stdDeviation="7" result="blur" />
-            <feMerge>
-              <feMergeNode in="blur" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
           <mask id="map-analysis-social-mask">
             <path
               key={`social-mask-${activeLens}`}
@@ -343,19 +442,22 @@ function RadarLensScene({ activeLens }: { activeLens: PatternLensKey }) {
           </mask>
         </defs>
 
+        <circle className="map-orbit-ring" cx={centerX} cy={centerY} r={orbitRadius} />
+        <circle className="map-orbit-ring map-orbit-ring--inner" cx={centerX} cy={centerY} r={orbitRadius - 42} />
+
         {gridRings.map((ring) => (
           <polygon
             key={ring}
             points={polygonPoints(dimensions.map((_, index) => pointAt(index, radius * ring)))}
             fill="none"
-            stroke="#e8e4dc"
+            stroke="#e6e6e6"
             strokeWidth="1"
           />
         ))}
 
         {dimensions.map((dimension, index) => {
           const axisPoint = pointAt(index, radius);
-          const labelPoint = pointAt(index, labelRadius);
+          const orbitPoint = pointAt(index, orbitRadius);
           return (
             <g key={dimension.key}>
               <line
@@ -363,35 +465,47 @@ function RadarLensScene({ activeLens }: { activeLens: PatternLensKey }) {
                 y1={centerY}
                 x2={axisPoint.x}
                 y2={axisPoint.y}
-                stroke="#e8e4dc"
+                stroke="#e6e6e6"
                 strokeWidth="1"
               />
-              <text
-                className="fill-muted-foreground text-[0.8rem] font-medium max-[620px]:text-[0.68rem]"
-                x={labelPoint.x}
-                y={labelPoint.y}
-                textAnchor={labelAnchor(index)}
-                dominantBaseline="middle"
-              >
-                {dimension.name}
-              </text>
+              <line className="map-orbit-spoke" x1={axisPoint.x} y1={axisPoint.y} x2={orbitPoint.x} y2={orbitPoint.y} />
             </g>
           );
         })}
 
         {activeLens === 'facade' && (
-          <g className="map-facade-reveal" filter="url(#map-analysis-glow)">
+          <g className="map-facade-reveal">
             <path d={facadeRevealPath} fill="rgba(17, 17, 17, 0.08)" stroke="none" />
           </g>
         )}
 
-        {highlights.map((highlight) => {
+        {visibleGapLines.map((highlight) => {
+          const dimensionIndex = dimensions.findIndex((dimension) => dimension.key === highlight.key);
+          const nodePoint = pointAt(dimensionIndex, orbitRadius);
+          const midpoint = {
+            x: (highlight.from.x + highlight.to.x) / 2,
+            y: (highlight.from.y + highlight.to.y) / 2,
+          };
+          const isSelectedGap = highlight.key === selectedDimension;
+
           return (
-            <g key={`${activeLens}-${highlight.key}`}>
+            <g key={`${activeLens}-${highlight.key}-${isSelectedGap ? 'selected' : 'top'}`}>
+              <line
+                className={cn('map-orbit-connector', isSelectedGap && 'map-orbit-connector--active')}
+                x1={nodePoint.x}
+                y1={nodePoint.y}
+                x2={midpoint.x}
+                y2={midpoint.y}
+                stroke={gapColor}
+                strokeLinecap="round"
+                strokeWidth={isSelectedGap ? 2.8 : 1.6}
+                style={{ '--connector-delay': `${Math.max(highlight.delay - 280, 160)}ms` } as CSSProperties}
+              />
               <line
                 className={cn(
                   'map-gap-line',
-                  activeLens === 'blindSpot' && 'map-gap-line--pulse',
+                  isSelectedGap && 'map-gap-line--selected',
+                  activeLens === 'blindSpot' && !isSelectedGap && 'map-gap-line--pulse',
                   activeLens === 'facade' && 'map-gap-line--hidden',
                 )}
                 x1={highlight.from.x}
@@ -400,8 +514,7 @@ function RadarLensScene({ activeLens }: { activeLens: PatternLensKey }) {
                 y2={highlight.to.y}
                 stroke={gapColor}
                 strokeLinecap="round"
-                strokeWidth={activeLens === 'blindSpot' || activeLens === 'all' ? 10 : 8}
-                filter="url(#map-analysis-glow)"
+                strokeWidth={isSelectedGap ? 11 : activeLens === 'blindSpot' || activeLens === 'all' ? 8 : 6}
                 style={{ '--gap-delay': `${highlight.delay}ms` } as CSSProperties}
               />
             </g>
@@ -441,15 +554,80 @@ function RadarLensScene({ activeLens }: { activeLens: PatternLensKey }) {
                 />
                 {pointsBySeries[series].map((point, index) => (
                   <circle
-                    className="map-radar-point"
+                    className={cn('map-radar-point', dimensions[index].key === selectedDimension && 'map-radar-point--active')}
                     key={`${series}-${dimensions[index].key}`}
                     cx={point.x}
                     cy={point.y}
-                    r={activeLens === 'all' ? 4.5 : 5.5}
+                    r={dimensions[index].key === selectedDimension ? 7 : activeLens === 'all' ? 4.5 : 5.5}
                     fill={config.stroke}
                   />
                 ))}
               </g>
+            </g>
+          );
+        })}
+
+        {dimensions.map((dimension, index) => {
+          const nodePoint = pointAt(index, orbitRadius);
+          const labelPoint = labelPointAt(index);
+          const hitRect = orbitHitRect(index, nodePoint, labelPoint);
+          const gap = gapByDimension.get(dimension.key) ?? 0;
+          const isSelected = selectedDimension === dimension.key;
+          const nodeColor = '#111111';
+          const nodeRadius = 15;
+          const nodeStrokeWidth = 1.6;
+          const DimensionIcon = dimensionIconMap[dimension.key];
+
+          return (
+            <g
+              aria-label={`${dimension.name}. Gap ${gap.toFixed(1)}. Select to highlight this dimension.`}
+              aria-pressed={isSelected}
+              className={cn(
+                'map-orbit-node',
+                isSelected && 'map-orbit-node--active',
+              )}
+              focusable="true"
+              key={dimension.key}
+              onClick={() => handleDimensionSelect(dimension.key)}
+              onKeyDown={(event) => handleDimensionKeyDown(event, dimension.key)}
+              role="button"
+              style={{ '--node-color': nodeColor } as CSSProperties}
+              tabIndex={0}
+            >
+              <rect
+                className="map-orbit-node-hit"
+                height={hitRect.height}
+                rx="24"
+                width={hitRect.width}
+                x={hitRect.x}
+                y={hitRect.y}
+              />
+              <circle
+                className="map-orbit-node-core"
+                cx={nodePoint.x}
+                cy={nodePoint.y}
+                r={nodeRadius}
+                strokeWidth={nodeStrokeWidth}
+              />
+              <DimensionIcon
+                aria-hidden="true"
+                className="map-orbit-icon"
+                focusable="false"
+                height={16}
+                strokeWidth={2}
+                width={16}
+                x={nodePoint.x - 8}
+                y={nodePoint.y - 8}
+              />
+              <text
+                className="map-orbit-label"
+                x={labelPoint.x}
+                y={labelPoint.y}
+                textAnchor={labelAnchor(index)}
+                dominantBaseline="middle"
+              >
+                {dimension.name}
+              </text>
             </g>
           );
         })}
@@ -564,7 +742,7 @@ export function MapAnalysisSection({ onStart }: MapAnalysisSectionProps) {
 
         <div className="grid grid-cols-[minmax(0,1.12fr)_minmax(300px,0.88fr)] items-stretch gap-4 max-[980px]:grid-cols-1 max-[620px]:gap-3">
           <Surface className="overflow-hidden p-0" aria-live="polite">
-            <RadarLensScene activeLens={activeLens} />
+            <RadarLensScene activeLens={activeLens} onDimensionSelect={() => setIsAutoplaying(false)} />
           </Surface>
 
           <Surface asChild className="grid content-start gap-4 p-[clamp(18px,2.4vw,24px)] max-[620px]:gap-3 max-[620px]:p-4" aria-live="polite">
@@ -575,7 +753,7 @@ export function MapAnalysisSection({ onStart }: MapAnalysisSectionProps) {
                 </h3>
 
                 <div
-                  className="mobile-snap-row grid gap-2.5 max-[620px]:grid-cols-none"
+                  className="grid gap-2.5 max-[620px]:grid-cols-none"
                   aria-label="Map analysis details"
                   tabIndex={0}
                 >

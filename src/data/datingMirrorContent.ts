@@ -29,7 +29,7 @@ export const dimensions: Dimension[] = [
   { key: 'INT', name: 'Intensity', leftLabel: 'Slow-Burn', rightLabel: 'High-Speed Whirlwind' },
   { key: 'AUT', name: 'Autonomy', leftLabel: 'Enmeshed/Codependent', rightLabel: 'Fiercely Independent' },
   { key: 'VAL', name: 'Validation-Seeking', leftLabel: 'Character-Driven', rightLabel: 'Status/Trophy-Driven' },
-  { key: 'GOC', name: 'Growth/Comm', leftLabel: 'Avoidant/Silent', rightLabel: 'Confronts/Processes' },
+  { key: 'GOC', name: 'Growth/Communication', leftLabel: 'Avoidant/Silent', rightLabel: 'Confronts/Processes' },
   { key: 'VUL', name: 'Vulnerability', leftLabel: 'Guarded/Mysterious', rightLabel: 'Open/Raw' },
   { key: 'REA', name: 'Reactivity', leftLabel: 'Emotionally Sovereign', rightLabel: "Absorbs Partner's Mood" },
   { key: 'RWO', name: 'Relational Worth', leftLabel: 'Accommodates/Settles', rightLabel: 'Firm Boundaries' },

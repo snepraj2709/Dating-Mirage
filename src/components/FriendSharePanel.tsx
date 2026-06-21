@@ -2,12 +2,10 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   ArrowLeft,
   Check,
-  Clock3,
   Copy,
   ExternalLink,
   Link as LinkIcon,
   Mail,
-  Plus,
   RefreshCw,
   Send,
   ShieldCheck,
@@ -46,34 +44,6 @@ function ResponseDots({ count, target = 2 }: { count: number; target?: number })
   );
 }
 
-function InviteRow({
-  initials,
-  name,
-  note,
-  status,
-}: {
-  initials: string;
-  name: string;
-  note: string;
-  status: 'sent' | 'waiting';
-}) {
-  return (
-    <div className="grid min-h-[66px] grid-cols-[auto_1fr_auto] items-center gap-3 rounded-lg border border-border bg-muted/70 px-4 py-3 max-[520px]:grid-cols-[auto_1fr]">
-      <span className="inline-flex size-10 items-center justify-center rounded-full bg-card text-sm font-medium text-foreground">
-        {initials}
-      </span>
-      <span className="min-w-0">
-        <span className="block truncate text-[0.98rem] font-medium text-foreground">{name}</span>
-        <span className="block truncate text-[0.88rem] text-muted-foreground">{note}</span>
-      </span>
-      <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground max-[520px]:col-span-2 max-[520px]:ml-[52px]">
-        {status === 'sent' ? <Check size={15} className="text-positive" /> : <Clock3 size={15} />}
-        {status === 'sent' ? 'Sent' : 'Waiting'}
-      </span>
-    </div>
-  );
-}
-
 export function FriendSharePanel({
   session,
   statusMessage,
@@ -98,6 +68,7 @@ export function FriendSharePanel({
   const resultEmail = session?.resultEmail ?? null;
   const resultEmailSent = Boolean(session?.resultEmailSentAt);
   const progressValue = Math.min((friendCount / 2) * 100, 100);
+  const responseCountLabel = `${friendCount} ${friendCount === 1 ? 'response' : 'responses'} received`;
 
   const shareUrl = useMemo(() => {
     if (!session?.id) {
@@ -144,13 +115,6 @@ export function FriendSharePanel({
     }
   };
 
-  const footerRight = (
-    <Button variant="ghostPill" size="compact" onClick={onRefresh} className="max-[620px]:w-full">
-      <RefreshCw size={17} />
-      Refresh
-    </Button>
-  );
-
   return (
     <FlowCard
       aria-labelledby="share-title"
@@ -169,7 +133,6 @@ export function FriendSharePanel({
           Back
         </Button>
       }
-      footerRight={footerRight}
     >
       {!resultEmail && (
         <div className="grid w-full gap-[clamp(18px,3vh,30px)]">
@@ -219,19 +182,17 @@ export function FriendSharePanel({
               <ShieldCheck size={16} />
               One link, multiple friends. They can choose to stay anonymous.
             </p>
-          </div>
-
-          <div className="grid gap-2.5">
-            <InviteRow initials="F1" name="Friend one" note="Send the link when ready" status={friendCount >= 1 ? 'sent' : 'waiting'} />
-            <InviteRow initials="F2" name="Friend two" note="Second response unlocks your report" status={friendCount >= 2 ? 'sent' : 'waiting'} />
-            <div className="grid min-h-[66px] grid-cols-[auto_1fr] items-center gap-3 rounded-lg border border-dashed border-border-strong bg-card px-4 py-3 text-muted-foreground">
-              <span className="inline-flex size-10 items-center justify-center rounded-full bg-muted text-foreground">
-                <Plus size={18} />
+            <div className="flex min-h-[54px] items-center justify-between gap-3 rounded-lg border border-border bg-muted px-4 py-3 max-[620px]:grid">
+              <span className="grid gap-1">
+                <span className="text-[0.78rem] font-medium uppercase tracking-normal text-subtle-foreground">
+                  Invite status
+                </span>
+                <span className="text-[0.98rem] font-medium text-foreground">{responseCountLabel}</span>
               </span>
-              <span>
-                <span className="block font-medium text-foreground">Add another</span>
-                <span className="block text-[0.88rem]">Optional; more people can sharpen the mirror.</span>
-              </span>
+              <Button variant="ghostPill" size="compact" onClick={onRefresh} className="shrink-0 max-[620px]:w-full">
+                <RefreshCw size={17} />
+                Refresh
+              </Button>
             </div>
           </div>
 

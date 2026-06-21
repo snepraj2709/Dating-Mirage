@@ -390,6 +390,16 @@
     journey-dash-move 1700ms linear 720ms infinite;
 }
 
+.journey-vector-line--motion {
+  opacity: 0;
+  stroke-dasharray: 8 10;
+  stroke-dashoffset: 72;
+  animation:
+    journey-dash-enter 720ms ease-out forwards,
+    journey-dash-move 1700ms linear 720ms infinite;
+  pointer-events: none;
+}
+
 .journey-gap-glow,
 .journey-social-pulse,
 .journey-map-complete {
@@ -542,6 +552,102 @@
   color: var(--foreground);
 }
 
+.map-orbit-ring {
+  fill: none;
+  stroke: #e6e6e6;
+  stroke-dasharray: 2 10;
+  stroke-linecap: round;
+  stroke-width: 1.25;
+}
+
+.map-orbit-ring--inner {
+  opacity: 0.64;
+  stroke-dasharray: 1 13;
+}
+
+.map-orbit-spoke {
+  stroke: #e6e6e6;
+  stroke-dasharray: 3 9;
+  stroke-linecap: round;
+  stroke-width: 1;
+}
+
+.map-orbit-connector {
+  opacity: 0;
+  stroke-dasharray: 4 8;
+  animation: map-orbit-connector-rise 520ms ease-out var(--connector-delay, 780ms) forwards;
+}
+
+.map-orbit-connector--active {
+  stroke-dasharray: none;
+}
+
+.map-orbit-node {
+  cursor: pointer;
+  outline: none;
+}
+
+.map-orbit-node-core,
+.map-orbit-icon,
+.map-orbit-label {
+  transition:
+    color 180ms ease-out,
+    opacity 180ms ease-out,
+    stroke 180ms ease-out,
+    stroke-opacity 180ms ease-out,
+    stroke-width 180ms ease-out,
+    transform 180ms ease-out;
+}
+
+.map-orbit-node-hit {
+  fill: transparent;
+  pointer-events: all;
+}
+
+.map-orbit-node-core {
+  fill: #ffffff;
+  stroke: var(--node-color, #111111);
+  stroke-opacity: 0.42;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.map-orbit-icon {
+  color: #111111;
+  opacity: 0.54;
+  pointer-events: none;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.map-orbit-label {
+  fill: #555555;
+  font-size: 0.72rem;
+  font-weight: 650;
+  letter-spacing: 0;
+  paint-order: stroke;
+  pointer-events: none;
+  stroke: #fbfbfb;
+  stroke-linejoin: round;
+  stroke-width: 5px;
+}
+
+.map-orbit-node:hover .map-orbit-node-core,
+.map-orbit-node:focus-visible .map-orbit-node-core {
+  fill: #ffffff;
+  stroke-opacity: 0.9;
+}
+
+.map-orbit-node:hover .map-orbit-label,
+.map-orbit-node:focus-visible .map-orbit-label {
+  fill: #111111;
+}
+
+.map-orbit-node:hover .map-orbit-icon,
+.map-orbit-node:focus-visible .map-orbit-icon {
+  opacity: 0.9;
+}
+
 .map-radar-series {
   opacity: var(--series-opacity, 1);
   transition:
@@ -575,9 +681,18 @@
   animation: map-radar-stroke-fade 420ms ease-out calc(var(--draw-delay, 0ms) + 260ms) forwards;
 }
 
+.map-radar-point--active {
+  stroke: #ffffff;
+  stroke-width: 3;
+}
+
 .map-gap-line {
   opacity: 0;
   animation: map-gap-rise 680ms ease-out var(--gap-delay, 900ms) forwards;
+}
+
+.map-gap-line--selected {
+  animation: map-gap-rise-selected 680ms ease-out var(--gap-delay, 900ms) forwards;
 }
 
 .map-gap-line--pulse {
@@ -629,6 +744,16 @@
   }
 }
 
+@keyframes map-orbit-connector-rise {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 0.34;
+  }
+}
+
 @keyframes map-gap-rise {
   from {
     opacity: 0;
@@ -637,6 +762,17 @@
 
   to {
     opacity: 0.42;
+  }
+}
+
+@keyframes map-gap-rise-selected {
+  from {
+    opacity: 0;
+    stroke-width: 1;
+  }
+
+  to {
+    opacity: 0.68;
   }
 }
 
@@ -687,6 +823,7 @@
   .journey-content-enter,
   .journey-visual-enter,
   .journey-vector-line--draw,
+  .journey-vector-line--motion,
   .journey-vector-line--social.journey-vector-line--draw,
   .journey-social-pulse--visible,
   .journey-map-complete--visible,
@@ -697,8 +834,10 @@
   .map-radar-stroke--draw,
   .map-radar-mask-path,
   .map-radar-stroke--dashed,
+  .map-orbit-connector,
   .map-radar-point,
   .map-gap-line,
+  .map-gap-line--selected,
   .map-gap-line--pulse,
   .map-facade-reveal,
   .map-insight-enter,
@@ -733,9 +872,17 @@
     opacity: var(--series-opacity, 1);
   }
 
+  .map-orbit-connector {
+    opacity: 0.34;
+  }
+
   .map-gap-line,
   .map-gap-line--pulse {
     opacity: 0.42;
+  }
+
+  .map-gap-line--selected {
+    opacity: 0.68;
   }
 
   .map-facade-reveal {

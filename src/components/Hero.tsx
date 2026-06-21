@@ -21,7 +21,7 @@ export function Hero({ onStart }: HeroProps) {
           </h1>
           <p className="mb-5 max-w-[620px] text-[clamp(1rem,1.6vw,1.16rem)] leading-[1.55] text-white/80 max-[620px]:mb-4 max-[620px]:text-[0.95rem] max-[620px]:leading-[1.45]">
             You know how your Ideal partner should be and who you actually date. 
-            The gap between the two that causes friction. Dating Mirage shows your blindspots and facade.
+            The gap between the two causes friction. Dating Mirage shows your blindspots and facade.
           </p>
           <div className="flex flex-wrap items-center justify-start gap-3 max-[620px]:flex-col max-[620px]:items-stretch">
             <Button className="min-w-[min(100%,280px)] max-[620px]:w-full" onClick={onStart}>
