@@ -211,7 +211,7 @@ class LLMReportTests(unittest.TestCase):
         self.assertTrue(social_vector["conflict_metadata"]["VUL"]["is_polarized"])
         self.assertFalse(social_vector["conflict_metadata"]["CON"]["is_polarized"])
 
-        cached_report_path = Path(__file__).resolve().parents[1] / "public" / "dummy-llm-report.json"
+        cached_report_path = Path(__file__).resolve().parents[1] / "src" / "data" / "dummy-llm-report.json"
         self.assertTrue(cached_report_path.exists())
         cached_report = json.loads(cached_report_path.read_text(encoding="utf-8"))
         JohariReportResponse.model_validate(cached_report)
