@@ -1,0 +1,55 @@
+{
+  "shareable_card": {
+    "archetype_title": "The Intense Dreamer",
+    "tagline": "Chasing the Spark, Guarding the Heart",
+    "core_conflict": "You seek whirlwind connections but often find yourself in emotionally erratic dynamics, struggling to assert your needs.",
+    "actionable_interventions": [
+      "Practice setting clear boundaries early in relationships to maintain your standards.",
+      "Focus on steady communication patterns to reduce anxiety.",
+      "Explore ways to express vulnerability gradually, ensuring emotional safety."
+    ]
+  },
+  "diagnostic_matrix": {
+    "facade": {
+      "insight": "Your desire for high-intensity connections leads to emotional reactivity, which you recognize but struggle to manage.",
+      "evidence_dimensions": [
+        "INT",
+        "REA"
+      ]
+    },
+    "guilty_pleasure": {
+      "insight": "You are drawn to validation from socially desirable partners, despite knowing it can lead to inconsistency and anxiety.",
+      "evidence_dimensions": [
+        "CON",
+        "VAL",
+        "REA",
+        "RWO"
+      ]
+    },
+    "blindspots": {
+      "insight": "Your friends see your growth and vulnerability as polarized, suggesting a disconnect between your self-perception and external observations.",
+      "evidence_dimensions": [
+        "GOC",
+        "VUL"
+      ]
+    },
+    "deep_void": {
+      "insight": "There may be an unmet need for emotional safety and consistency, as your patterns suggest a cycle of intense attachment followed by instability.",
+      "evidence_dimensions": [
+        "CON",
+        "GOC",
+        "VUL"
+      ]
+    }
+  },
+  "friction_map": {
+    "burnout_axis": {
+      "score": 8,
+      "analysis": "High intensity and emotional reactivity create a cycle of burnout, as you chase intense connections that often lead to emotional exhaustion."
+    },
+    "armor_axis": {
+      "score": 7,
+      "analysis": "Your need for autonomy and firm boundaries clashes with a pattern of enmeshment, leading to defensive behaviors and relational tension."
+    }
+  }
+}

@@ -1,7 +1,12 @@
 import math
 from typing import Dict, Iterable, List, Optional
 
-from .schemas import DimensionJohariResultSchema, JohariReportResponse, QuadrantKey, VectorProfileSchema
+from .schemas import (
+    DeterministicJohariReportResponse,
+    DimensionJohariResultSchema,
+    QuadrantKey,
+    VectorProfileSchema,
+)
 
 
 DIMENSION_KEYS = ["CON", "INT", "AUT", "VAL", "GOC", "VUL", "REA", "RWO"]
@@ -23,6 +28,40 @@ def aggregate_social_profile(friend_profiles: Iterable[VectorProfileSchema]) -> 
         values[key] = round(sum(_vector_value(profile, key) for profile in profiles) / len(profiles), 2)
 
     return VectorProfileSchema(**values)
+
+
+def calculate_social_conflict_metadata(friend_profiles: Iterable[VectorProfileSchema]) -> Dict[str, dict[str, float | int | bool]]:
+    profiles = list(friend_profiles)
+    metadata: Dict[str, dict[str, float | int | bool]] = {}
+
+    for key in DIMENSION_KEYS:
+        scores = [_vector_value(profile, key) for profile in profiles]
+        if not scores:
+            metadata[key] = {
+                "min": 0,
+                "max": 0,
+                "std_dev": 0,
+                "low_count": 0,
+                "high_count": 0,
+                "is_polarized": False,
+            }
+            continue
+
+        mean = sum(scores) / len(scores)
+        variance = sum((score - mean) ** 2 for score in scores) / len(scores)
+        low_count = sum(1 for score in scores if score <= 4.0)
+        high_count = sum(1 for score in scores if score >= 7.0)
+
+        metadata[key] = {
+            "min": round(min(scores), 2),
+            "max": round(max(scores), 2),
+            "std_dev": round(math.sqrt(variance), 2),
+            "low_count": low_count,
+            "high_count": high_count,
+            "is_polarized": low_count > 0 and high_count > 0 and (max(scores) - min(scores)) >= 6.0,
+        }
+
+    return metadata
 
 
 def calculate_dimension_johari(
@@ -60,7 +99,7 @@ def calculate_johari_report(
     actual: VectorProfileSchema,
     social: VectorProfileSchema,
     friend_count: int,
-) -> JohariReportResponse:
+) -> DeterministicJohariReportResponse:
     dimensions: Dict[str, DimensionJohariResultSchema] = {
         key: calculate_dimension_johari(key, ideal, actual, social) for key in DIMENSION_KEYS
     }
@@ -68,7 +107,7 @@ def calculate_johari_report(
         dimensions.values(), key=lambda result: result.raw_severity, reverse=True
     )[:2]
 
-    return JohariReportResponse(
+    return DeterministicJohariReportResponse(
         user_id=user_id,
         friend_count=friend_count,
         report_unlocked=friend_count >= 2,

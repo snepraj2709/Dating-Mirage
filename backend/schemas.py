@@ -1,11 +1,15 @@
 from typing import Dict, List, Literal, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 DimensionKey = Literal["CON", "INT", "AUT", "VAL", "GOC", "VUL", "REA", "RWO"]
 QuadrantKey = Literal["guilty-pleasure", "total-disconnect", "true-blindspot", "aligned"]
 RelationshipType = Literal["best_friend", "roommate", "cousin", "work_friend", "others"]
+
+
+class StrictSchema(BaseModel):
+    model_config = ConfigDict(extra="forbid")
 
 
 class VectorProfileSchema(BaseModel):
@@ -65,13 +69,48 @@ class FriendFeedbackResponse(BaseModel):
     report_unlocked: bool
 
 
-class JohariReportResponse(BaseModel):
+class DeterministicJohariReportResponse(BaseModel):
     user_id: str
     friend_count: int
     report_unlocked: bool
     dimensions: Dict[DimensionKey, DimensionJohariResultSchema]
     featured_dimensions: List[DimensionJohariResultSchema]
     share_card_url: Optional[str] = None
+
+
+class ShareableCardSchema(StrictSchema):
+    archetype_title: str
+    tagline: str
+    core_conflict: str
+    actionable_interventions: List[str]
+
+
+class DiagnosticSectionSchema(StrictSchema):
+    insight: str
+    evidence_dimensions: List[DimensionKey]
+
+
+class DiagnosticMatrixSchema(StrictSchema):
+    facade: DiagnosticSectionSchema
+    guilty_pleasure: DiagnosticSectionSchema
+    blindspots: DiagnosticSectionSchema
+    deep_void: DiagnosticSectionSchema
+
+
+class FrictionAxisSchema(StrictSchema):
+    score: int = Field(..., ge=1, le=10)
+    analysis: str
+
+
+class FrictionMapSchema(StrictSchema):
+    burnout_axis: FrictionAxisSchema
+    armor_axis: FrictionAxisSchema
+
+
+class JohariReportResponse(StrictSchema):
+    shareable_card: ShareableCardSchema
+    diagnostic_matrix: DiagnosticMatrixSchema
+    friction_map: FrictionMapSchema
 
 
 class DeleteSessionResponse(BaseModel):

@@ -1,6 +1,11 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
+from .llm_report import (
+    LLMReportGenerationError,
+    MissingOpenAIAPIKeyError,
+    generate_llm_report,
+)
 from .schemas import (
     CreateOrUpdateSessionRequest,
     DeleteSessionResponse,
@@ -11,10 +16,10 @@ from .schemas import (
     SubmitFriendRapidFireRequest,
     UserSessionResponse,
 )
-from .scoring import calculate_johari_report
 from .store import (
     create_or_update_session,
     delete_session,
+    get_friend_profiles,
     get_session,
     mark_result_email_sent,
     save_actual_profile,
@@ -110,13 +115,12 @@ def read_report(session_id: str) -> JohariReportResponse:
     if session.social_profile is None or session.friend_count < 2:
         raise HTTPException(status_code=423, detail="Minimum 2 friend responses required")
 
-    return calculate_johari_report(
-        user_id=session.id,
-        ideal=session.ideal_profile,
-        actual=session.actual_profile,
-        social=session.social_profile,
-        friend_count=session.friend_count,
-    )
+    try:
+        return generate_llm_report(session, get_friend_profiles(session.id))
+    except MissingOpenAIAPIKeyError as error:
+        raise HTTPException(status_code=503, detail=str(error)) from error
+    except LLMReportGenerationError as error:
+        raise HTTPException(status_code=502, detail=str(error)) from error
 
 
 @app.delete("/sessions/{session_id}", response_model=DeleteSessionResponse)
