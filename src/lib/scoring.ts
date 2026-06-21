@@ -2,7 +2,7 @@ import { dimensionOrder } from '../data/datingMirrorContent';
 import type {
   ActualFrequencyValue,
   DimensionKey,
-  SwipeStatement,
+  IntrospectionCard,
   VectorProfile,
 } from '../types/dating-mirror';
 
@@ -28,7 +28,7 @@ export const clampScore = (value: number) => Math.min(10, Math.max(1, Number(val
 
 export function buildActualProfile(
   answers: Partial<Record<string, ActualFrequencyValue | 'left' | 'right'>>,
-  statements: SwipeStatement[],
+  statements: IntrospectionCard[],
 ): VectorProfile {
   const profile = baselineVector();
 

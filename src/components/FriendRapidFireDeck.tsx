@@ -1,10 +1,11 @@
-import { useState } from 'react';
-import { Check, HeartHandshake, LockKeyhole, Send } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { FlowShell, InlineError } from '@/components/ui/flow';
-import { Eyebrow, Pill } from '@/components/ui/pill';
-import { ProgressRail } from '@/components/ui/progress-rail';
-import { Surface } from '@/components/ui/surface';
+import { useEffect, useRef, useState } from 'react';
+import { ArrowLeft, ArrowRight, RotateCcw, Send } from 'lucide-react';
+import { InlineError } from '@/components/ui/flow';
+import {
+  QuestionnaireCard,
+  QuestionnaireFooterButton,
+  QuestionnaireOptionButton,
+} from '@/components/ui/questionnaire-card';
 import { submitFriendFeedback } from '../api/client';
 import {
   friendRapidFireQuestions,
@@ -14,13 +15,17 @@ import {
 import { appendLocalFriendProfile } from '../lib/localState';
 import { buildFriendProfile } from '../lib/scoring';
 import type { DimensionKey, RelationshipType } from '../types/dating-mirror';
-import { VerticalStoryCard } from './VerticalStoryCard';
 
 interface FriendRapidFireDeckProps {
   sessionId: string;
   displayName: string;
 }
 
+type QuestionMotionState = 'idle' | 'exiting' | 'entering' | 'settling';
+
+const QUESTION_EXIT_MS = 180;
+const QUESTION_ENTER_MS = 220;
+const QUESTION_ENTER_START_MS = 20;
 const relationshipOptions = Object.entries(relationshipLabels) as Array<[RelationshipType, string]>;
 
 export function FriendRapidFireDeck({ sessionId, displayName }: FriendRapidFireDeckProps) {
@@ -30,21 +35,46 @@ export function FriendRapidFireDeck({ sessionId, displayName }: FriendRapidFireD
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
   const [submitMessage, setSubmitMessage] = useState<string | null>(null);
+  const exitTimeoutRef = useRef<number | null>(null);
+  const enterTimeoutRef = useRef<number | null>(null);
+  const [motionState, setMotionState] = useState<QuestionMotionState>('idle');
 
   const userLabel = displayName || 'your friend';
   const current = friendRapidFireQuestions[activeIndex];
   const context = relationshipType ? relationshipContext[relationshipType] : 'from up close';
+  const selectedScore = current ? answers[current.key] : undefined;
+  const progressPercent = ((activeIndex + 1) / friendRapidFireQuestions.length) * 100;
+  const isLast = activeIndex === friendRapidFireQuestions.length - 1;
+  const isTransitioning = motionState !== 'idle';
 
-  const chooseAnswer = async (score: 1 | 10) => {
+  useEffect(() => {
+    return () => {
+      if (exitTimeoutRef.current !== null) {
+        window.clearTimeout(exitTimeoutRef.current);
+      }
+
+      if (enterTimeoutRef.current !== null) {
+        window.clearTimeout(enterTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const transitionToNextQuestion = (next: () => void) => {
+    setMotionState('exiting');
+    exitTimeoutRef.current = window.setTimeout(() => {
+      next();
+      setMotionState('entering');
+      enterTimeoutRef.current = window.setTimeout(() => {
+        setMotionState('idle');
+        enterTimeoutRef.current = null;
+      }, QUESTION_ENTER_MS);
+      window.setTimeout(() => setMotionState('settling'), QUESTION_ENTER_START_MS);
+      exitTimeoutRef.current = null;
+    }, QUESTION_EXIT_MS);
+  };
+
+  const submitAnswers = async (nextAnswers: Partial<Record<DimensionKey, 1 | 10>>) => {
     if (!relationshipType || isSubmitting) {
-      return;
-    }
-
-    const nextAnswers = { ...answers, [current.key]: score };
-    setAnswers(nextAnswers);
-
-    if (activeIndex < friendRapidFireQuestions.length - 1) {
-      setActiveIndex((index) => index + 1);
       return;
     }
 
@@ -65,95 +95,156 @@ export function FriendRapidFireDeck({ sessionId, displayName }: FriendRapidFireD
     }
   };
 
+  const chooseRelationship = (value: RelationshipType) => {
+    if (isSubmitting || isTransitioning) {
+      return;
+    }
+
+    setRelationshipType(value);
+    setActiveIndex(0);
+    setAnswers({});
+  };
+
+  const chooseAnswer = (score: 1 | 10) => {
+    if (!relationshipType || isSubmitting || isTransitioning) {
+      return;
+    }
+
+    const nextAnswers = { ...answers, [current.key]: score };
+    setAnswers(nextAnswers);
+
+    if (isLast) {
+      void submitAnswers(nextAnswers);
+      return;
+    }
+
+    transitionToNextQuestion(() => setActiveIndex((index) => index + 1));
+  };
+
+  const goPrevious = () => {
+    if (isSubmitting || isTransitioning) {
+      return;
+    }
+
+    if (activeIndex === 0) {
+      setRelationshipType(null);
+      setAnswers({});
+      return;
+    }
+
+    setActiveIndex((index) => index - 1);
+  };
+
+  const resetFeedback = () => {
+    if (isSubmitting || isTransitioning) {
+      return;
+    }
+
+    setRelationshipType(null);
+    setActiveIndex(0);
+    setAnswers({});
+    setSubmitMessage(null);
+  };
+
+  const goNext = () => {
+    if (selectedScore === undefined || isSubmitting || isTransitioning) {
+      return;
+    }
+
+    if (isLast) {
+      void submitAnswers(answers);
+      return;
+    }
+
+    transitionToNextQuestion(() => setActiveIndex((index) => index + 1));
+  };
+
   if (isComplete) {
     return (
-      <FlowShell className="grid w-[min(1040px,calc(100%_-_32px))] justify-items-center pb-14 max-[620px]:w-[min(100%_-_24px,520px)]">
-        <VerticalStoryCard
-          icon={<HeartHandshake size={38} />}
-          eyebrow="Feedback sent"
-          title="You did the brave friend thing."
-          body={
-            <p>
-              Your individual answers stay private and only blend into {userLabel}'s aggregate Dating Mirror.
-            </p>
-          }
-          meta={submitMessage ? <InlineError>{submitMessage}</InlineError> : undefined}
-        />
-      </FlowShell>
+      <QuestionnaireCard
+        titleId="friend-complete-title"
+        stepLabel="Step 3- Friends feedback"
+        progressValue={100}
+        progressLabel="Feedback sent"
+        prompt="You did the brave friend thing."
+        helper={`Your individual answers stay private and only blend into ${userLabel}'s aggregate Dating Mirror.`}
+      >
+        {submitMessage && <InlineError className="mx-auto mb-0 max-w-[680px] text-center">{submitMessage}</InlineError>}
+      </QuestionnaireCard>
+    );
+  }
+
+  if (!relationshipType) {
+    return (
+      <QuestionnaireCard
+        titleId="friend-relationship-title"
+        stepLabel="Step 3- Friends feedback"
+        progressValue={0}
+        progressLabel="Choose your relationship"
+        prompt="Be as honest as a true friend should be."
+        helper="Your answers are anonymized and aggregated."
+      >
+        <div className="mx-auto grid w-full max-w-[680px] grid-cols-2 gap-3 max-[620px]:grid-cols-1">
+          {relationshipOptions.map(([value, label]) => (
+            <QuestionnaireOptionButton key={value} onClick={() => chooseRelationship(value)}>
+              {label}
+            </QuestionnaireOptionButton>
+          ))}
+        </div>
+      </QuestionnaireCard>
     );
   }
 
   return (
-    <FlowShell className="w-[min(1040px,calc(100%_-_32px))] pb-14 max-[620px]:w-[min(100%_-_24px,520px)]">
-      <header className="sticky top-3.5 z-10 mx-auto mb-[22px] flex min-h-[46px] w-fit items-center gap-2 rounded-full border border-border bg-card px-[18px] font-medium text-foreground shadow-none max-[620px]:w-full max-[620px]:justify-center max-[620px]:text-center">
-        <LockKeyhole size={17} />
-        Your answers are anonymized and aggregated.
-      </header>
-
-      {!relationshipType ? (
-        <Surface asChild className="mx-auto mt-[clamp(32px,10vh,96px)] w-[min(760px,100%)]">
-          <section>
-          <Eyebrow>Social Mirror</Eyebrow>
-          <h2 className="text-[clamp(1.9rem,5.5vw,3.6rem)] leading-[1.05] text-foreground">
-            Be as honest as a true friend should be.
-          </h2>
-          <p>
-            Your individual responses are completely private and aggregated into a high-level report.
-          </p>
-
-          <div className="mt-[22px] grid grid-cols-2 gap-3 max-[620px]:grid-cols-1">
-            {relationshipOptions.map(([value, label]) => (
-              <Button key={value} variant="option" size="option" onClick={() => setRelationshipType(value)}>
-                <Check size={18} />
-                {label}
-              </Button>
-            ))}
-          </div>
-          </section>
-        </Surface>
-      ) : (
-        <section className="mx-auto w-[min(760px,100%)]">
-          <ProgressRail
-            value={((activeIndex + 1) / friendRapidFireQuestions.length) * 100}
-            aria-label={`Friend question ${activeIndex + 1} of 8`}
-          />
-          <Eyebrow className="mt-[18px]">
-            Quick-Fire Round - {activeIndex + 1}/{friendRapidFireQuestions.length}
-          </Eyebrow>
-          <Surface asChild>
-            <article>
-            <Pill>{context}</Pill>
-            <h2 className="text-[clamp(1.9rem,5.5vw,3.6rem)] leading-[1.05] text-foreground">
-              {current.prompt.replace(/\[User\]/g, userLabel)}
-            </h2>
-            <div className="mt-[22px] grid grid-cols-2 gap-3 max-[620px]:grid-cols-1">
-              <Button
-                variant="option"
-                size="friendChoice"
-                onClick={() => chooseAnswer(current.optionA.score)}
-                disabled={isSubmitting}
-              >
-                {current.optionA.label}
-              </Button>
-              <Button
-                variant="option"
-                size="friendChoice"
-                onClick={() => chooseAnswer(current.optionB.score)}
-                disabled={isSubmitting}
-              >
-                {current.optionB.label}
-              </Button>
-            </div>
-            {isSubmitting && (
-              <p className="mt-4 inline-flex items-center gap-2 font-medium">
-                <Send size={16} />
-                Sending the vibe check...
-              </p>
-            )}
-            </article>
-          </Surface>
-        </section>
-      )}
-    </FlowShell>
+    <QuestionnaireCard
+      titleId="friend-question-title"
+      stepLabel="Step 3- Friends feedback"
+      progressValue={progressPercent}
+      progressLabel={`Friend question ${activeIndex + 1} of ${friendRapidFireQuestions.length}`}
+      prompt={current.prompt.replace(/\[User\]/g, userLabel)}
+      helper={`Answer from what you notice ${context}. Your response stays private.`}
+      motionState={motionState}
+      footerLeft={
+        <QuestionnaireFooterButton onClick={goPrevious} disabled={isSubmitting || isTransitioning}>
+          <ArrowLeft size={18} />
+          Back
+        </QuestionnaireFooterButton>
+      }
+      footerCenter={
+        <QuestionnaireFooterButton onClick={resetFeedback} disabled={isSubmitting || isTransitioning}>
+          <RotateCcw size={16} />
+          Reset
+        </QuestionnaireFooterButton>
+      }
+      footerRight={
+        <QuestionnaireFooterButton
+          tone="primary"
+          onClick={goNext}
+          disabled={selectedScore === undefined || isSubmitting || isTransitioning}
+        >
+          {isSubmitting ? 'Sending...' : isLast ? 'Send' : 'Next'}
+          {isSubmitting ? <Send size={17} /> : <ArrowRight size={18} />}
+        </QuestionnaireFooterButton>
+      }
+    >
+      <div className="mx-auto grid w-full max-w-[680px] grid-cols-2 gap-3 max-[620px]:grid-cols-1" role="radiogroup" aria-labelledby="friend-question-title">
+        <QuestionnaireOptionButton
+          selected={selectedScore === current.optionA.score}
+          role="radio"
+          onClick={() => chooseAnswer(current.optionA.score)}
+          disabled={isSubmitting || isTransitioning}
+        >
+          {current.optionA.label}
+        </QuestionnaireOptionButton>
+        <QuestionnaireOptionButton
+          selected={selectedScore === current.optionB.score}
+          role="radio"
+          onClick={() => chooseAnswer(current.optionB.score)}
+          disabled={isSubmitting || isTransitioning}
+        >
+          {current.optionB.label}
+        </QuestionnaireOptionButton>
+      </div>
+    </QuestionnaireCard>
   );
 }

@@ -1,7 +1,6 @@
 import { ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { FlowCard } from '@/components/ui/flow-card';
-import { InlineError } from '@/components/ui/flow';
 
 interface Step2RealityIntroProps {
   statusMessage?: string | null;
@@ -9,7 +8,7 @@ interface Step2RealityIntroProps {
   onContinue: () => void;
 }
 
-export function Step2RealityIntro({ statusMessage, onBack, onContinue }: Step2RealityIntroProps) {
+export function Step2RealityIntro({ onBack, onContinue }: Step2RealityIntroProps) {
   return (
     <FlowCard
       aria-labelledby="actual-intro-title"
@@ -17,7 +16,8 @@ export function Step2RealityIntro({ statusMessage, onBack, onContinue }: Step2Re
       headerMeta="DIMENSION 8 OF 8"
       progressValue={100}
       progressLabel="Step 1 complete"
-      contentClassName="place-items-center text-center"
+      contentClassName="place-items-center self-stretch text-center"
+      hideHeader
       footerLeft={
         <Button variant="ghostPill" onClick={onBack} className="max-[620px]:w-full">
           Back
@@ -44,16 +44,11 @@ export function Step2RealityIntro({ statusMessage, onBack, onContinue }: Step2Re
             Time for a Reality Check.
           </h2>
           <p className="mx-auto mb-0 max-w-[660px] text-[clamp(1.04rem,2vw,1.35rem)] font-medium leading-[1.48] text-muted-foreground max-[620px]:text-[1rem]">
-            Stating what you want is easy. Facing who you actually swipe on and tolerate is where patterns hide.
-            Let's audit your last 3 relationships. Be brutally honest; no one is looking.
+            Having an Ideal standard is easy. Knowing who you actually right swipe on and tolerate is where the reality hide.
+            Think of your last 3 relationships while answering the next set of questions. Be brutally honest with yourself.
           </p>
         </div>
 
-        <p className="mb-0 text-[0.92rem] font-medium uppercase tracking-normal text-subtle-foreground">
-          Next: Swift Rapid-Fire Choice Matrix
-        </p>
-
-        {statusMessage && <InlineError className="mb-0 text-center">{statusMessage}</InlineError>}
       </div>
     </FlowCard>
   );

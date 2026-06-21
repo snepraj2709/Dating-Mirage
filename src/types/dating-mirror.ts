@@ -34,13 +34,19 @@ export interface IdealQuestion {
   options: IdealQuestionOption[];
 }
 
-export interface SwipeStatement {
+export interface IntrospectionOption {
+  weight: 0.0 | 0.33 | 0.66 | 1.0; // Scaled multiplier to preserve your backend math
+  label: string;                   // The raw, unfiltered internal monologue choice
+}
+
+export interface IntrospectionCard {
   id: string;
   key: DimensionKey;
-  statement: string;
   endpoint: 1 | 10;
   scoreEffect: -2.25 | 2.25;
-  swipeRightLabel: string;
+  situation: string;               // Shipped to the UI as the main bold quote/scenario
+  subtext: string;                 // Psychological grounder / honesty nudge
+  options: IntrospectionOption[];
 }
 
 export type ActualFrequencyValue = 'never' | 'sometimes' | 'often' | 'always';

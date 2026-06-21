@@ -17,6 +17,7 @@ interface FlowCardProps {
   contentClassName?: string;
   flowClassName?: string;
   headerClassName?: string;
+  hideHeader?: boolean;
   'aria-labelledby'?: string;
 }
 
@@ -33,6 +34,7 @@ function FlowCard({
   contentClassName,
   flowClassName,
   headerClassName,
+  hideHeader = false,
   'aria-labelledby': ariaLabelledby,
 }: FlowCardProps) {
   return (
@@ -46,24 +48,27 @@ function FlowCard({
         asChild
         className={cn(
           'relative grid min-h-[min(720px,calc(100svh_-_clamp(24px,6vh,56px)))] content-between gap-[clamp(16px,2.2vh,28px)] overflow-visible p-[clamp(20px,3vw,36px)] max-[620px]:min-h-[calc(100svh_-_16px)] max-[620px]:gap-3.5 max-[620px]:p-[18px]',
+          hideHeader && 'grid-rows-[minmax(0,1fr)_auto] content-stretch',
           className,
         )}
       >
         <section aria-labelledby={ariaLabelledby}>
-          <header className="grid gap-3 max-[620px]:gap-2.5">
-            <div
-              className={cn(
-                'flex items-center justify-between gap-4 text-[0.9rem] font-medium uppercase tracking-normal text-subtle-foreground max-[620px]:flex-col max-[620px]:items-start max-[620px]:gap-2.5',
-                headerClassName,
-              )}
-            >
-              <span>{headerLabel}</span>
-              <span>{headerMeta}</span>
-            </div>
-            <ProgressRail value={progressValue} variant={progressVariant} aria-label={progressLabel} />
-          </header>
+          {!hideHeader && (
+            <header className="grid gap-3 max-[620px]:gap-2.5">
+              <div
+                className={cn(
+                  'flex items-center justify-between gap-4 text-[0.9rem] font-medium uppercase tracking-normal text-subtle-foreground max-[620px]:flex-col max-[620px]:items-start max-[620px]:gap-2.5',
+                  headerClassName,
+                )}
+              >
+                <span>{headerLabel}</span>
+                <span>{headerMeta}</span>
+              </div>
+              <ProgressRail value={progressValue} variant={progressVariant} aria-label={progressLabel} />
+            </header>
+          )}
 
-          <div className={cn('grid gap-[clamp(18px,2.5vh,28px)]', contentClassName)}>
+          <div className={cn('grid gap-[clamp(18px,2.5vh,28px)]', hideHeader && 'min-h-0', contentClassName)}>
             {children}
           </div>
 

@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowLeft, ArrowRight } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { FlowCard } from '@/components/ui/flow-card';
+import { ArrowLeft, ArrowRight, RotateCcw } from 'lucide-react';
 import { InlineError } from '@/components/ui/flow';
-import { Pill } from '@/components/ui/pill';
+import {
+  QuestionnaireCard,
+  QuestionnaireFooterButton,
+  QuestionnaireOptionButton,
+} from '@/components/ui/questionnaire-card';
 import { idealQuestions } from '../data/datingMirrorContent';
 import { baselineVector, clampScore } from '../lib/scoring';
-import { loadIdealDraft, saveIdealDraft } from '../lib/localState';
-import { cn } from '../lib/utils';
+import { clearIdealDraft, loadIdealDraft, saveIdealDraft } from '../lib/localState';
 import type { DimensionKey, IdealQuestionScore, VectorProfile } from '../types/dating-mirror';
 
 interface Step1IdealFlowProps {
@@ -150,80 +151,66 @@ export function Step1IdealFlow({ isSaving, initialProfile, saveError, onBack, on
     setActiveIndex((index) => index - 1);
   };
 
+  const resetIdeal = () => {
+    if (isSaving || isTransitioning) {
+      return;
+    }
+
+    setAnswers({});
+    clearIdealDraft();
+    setActiveIndex(0);
+  };
+
   return (
-    <FlowCard
-      aria-labelledby="ideal-title"
-      headerLabel={`Step 1 - Your ideal ${progress} of ${idealQuestions.length}`}
-      headerMeta={`${Math.round(progressPercent)}%`}
-      headerClassName="normal-case text-[clamp(0.95rem,1.6vw,1.08rem)] text-muted-foreground"
+    <QuestionnaireCard
+      titleId="ideal-title"
+      stepLabel="Step 1- Ideal partner"
       progressValue={progressPercent}
       progressLabel={`Question ${progress} of ${idealQuestions.length}`}
+      prompt={question.scenario}
+      motionState={motionState}
       footerLeft={
-        <Button variant="ghostPill" onClick={goPrevious} className="max-[620px]:w-full">
+        <QuestionnaireFooterButton onClick={goPrevious}>
           <ArrowLeft size={18} />
-          {activeIndex === 0 ? 'Back' : 'Previous'}
-        </Button>
+          Back
+        </QuestionnaireFooterButton>
+      }
+      footerCenter={
+        <QuestionnaireFooterButton onClick={resetIdeal} disabled={isSaving || isTransitioning}>
+          <RotateCcw size={16} />
+          Reset
+        </QuestionnaireFooterButton>
       }
       footerRight={
-        <Button
-          variant="ghostPill"
-          className="min-w-[140px] max-[620px]:w-full"
+        <QuestionnaireFooterButton
+          tone="primary"
           onClick={goNext}
-          disabled={isSaving || !hasSelectedAnswer}
+          disabled={isSaving || !hasSelectedAnswer || isTransitioning}
         >
           {isSaving ? 'Saving your mirror...' : isLast ? 'Lock my ideal' : 'Next'}
           <ArrowRight size={18} />
-        </Button>
+        </QuestionnaireFooterButton>
       }
     >
-      <div
-        className={cn(
-          'grid gap-[clamp(18px,2.5vh,28px)] transition-[opacity,transform] duration-200 ease-out motion-reduce:transition-none',
-          motionState === 'exiting' && '-translate-x-[22px] scale-[0.985] opacity-0 motion-reduce:translate-x-0 motion-reduce:scale-100 motion-reduce:opacity-100',
-          motionState === 'entering' && 'translate-x-[22px] scale-[0.985] opacity-0 motion-reduce:translate-x-0 motion-reduce:scale-100 motion-reduce:opacity-100',
-        )}
-      >
-        <div className="grid max-w-[900px] gap-[clamp(16px,2.3vh,24px)] max-[620px]:gap-3">
-          <Pill className="min-h-[30px] w-fit justify-self-start border-border-strong bg-card px-3 text-[0.88rem] text-foreground">
-            {question.title}
-          </Pill>
-          <h2
-            className="mb-0 max-w-[860px] text-[clamp(1.55rem,3vw,2.4rem)] leading-[1.12] text-foreground max-[620px]:text-[clamp(1.45rem,7.5vw,2rem)] max-[620px]:leading-[1.08]"
-            id="ideal-title"
-          >
-            {question.scenario}
-          </h2>
-        </div>
+      <div className="mx-auto grid w-full max-w-[680px] gap-3" role="radiogroup" aria-labelledby="ideal-title">
+        {question.options.map((option) => {
+          const isSelected = selectedScore === option.score;
 
-        <div className="grid gap-3" role="radiogroup" aria-labelledby="ideal-title">
-          {question.options.map((option) => {
-            const isSelected = selectedScore === option.score;
-
-            return (
-              <Button
-                aria-checked={isSelected}
-                className={cn(
-                  'min-h-[68px] justify-start rounded-lg px-6 py-4 text-left text-[clamp(1rem,1.45vw,1.12rem)] leading-[1.45] transition-[background,border-color,color,transform] max-[620px]:min-h-[60px] max-[620px]:px-4 max-[620px]:py-3 max-[620px]:text-[0.98rem]',
-                  isSelected
-                    ? 'border-primary bg-[#fff2f8] text-foreground hover:border-primary hover:bg-[#fff2f8]'
-                    : 'border-input bg-card text-muted-foreground hover:border-border-strong hover:bg-muted hover:text-foreground',
-                )}
-                key={option.score}
-                role="radio"
-                size="option"
-                type="button"
-                variant="option"
-                onClick={() => chooseAnswer(option.score)}
-                disabled={isSaving || isTransitioning}
-              >
-                <span className={cn('block', isSelected && 'font-semibold')}>{option.label}</span>
-              </Button>
-            );
-          })}
-        </div>
+          return (
+            <QuestionnaireOptionButton
+              key={option.score}
+              selected={isSelected}
+              role="radio"
+              onClick={() => chooseAnswer(option.score)}
+              disabled={isSaving || isTransitioning}
+            >
+              {option.label}
+            </QuestionnaireOptionButton>
+          );
+        })}
       </div>
 
       {saveError && <InlineError>{saveError}</InlineError>}
-    </FlowCard>
+    </QuestionnaireCard>
   );
 }

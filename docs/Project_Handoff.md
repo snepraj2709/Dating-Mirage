@@ -133,7 +133,7 @@ export interface SliderQuestion {
   rightAnchor: string;
 }
 
-export interface SwipeStatement {
+export interface IntrospectionCard {
   id: string;
   key: DimensionKey;
   statement: string;
