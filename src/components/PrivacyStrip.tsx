@@ -1,4 +1,4 @@
-import { Info, LockKeyhole, ShieldCheck, Trash2 } from 'lucide-react';
+import { LockKeyhole, ShieldCheck, Trash2 } from 'lucide-react';
 import { ContentBand, SectionHeading } from '@/components/ui/section';
 import { Surface } from '@/components/ui/surface';
 
@@ -17,11 +17,6 @@ const privacyItems = [
     icon: Trash2,
     title: 'Burn My Data',
     copy: 'A one-tap delete clears your profile, feedback, reports, and assets.',
-  },
-  {
-    icon: Info,
-    title: 'Deep Void is not scored',
-    copy: 'The app avoids diagnosing what behavior and friend feedback cannot reliably measure.',
   },
   {
     icon: LockKeyhole,
