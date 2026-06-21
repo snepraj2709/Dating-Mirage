@@ -12,6 +12,7 @@ const ACTUAL_SWIPES_KEY = 'dating-mirror:actual-swipes';
 const SESSION_KEY = 'dating-mirror:session';
 const CURRENT_STAGE_KEY = 'dating-mirror:current-stage';
 const LOCAL_FRIEND_PREFIX = 'dating-mirror:friend-feedback:';
+const ANONYMOUS_FRIEND_NAME = 'anonymous';
 
 export type StoredAppStage = 'landing' | 'ideal' | 'actualIntro' | 'actual' | 'share' | 'reveal';
 
@@ -150,7 +151,7 @@ function normalizeRelationshipType(value: unknown): RelationshipType {
 function normalizeLocalFriendFeedback(value: unknown): FriendFeedbackSubmission | null {
   if (isVectorProfile(value)) {
     return {
-      friendName: 'Friend',
+      friendName: ANONYMOUS_FRIEND_NAME,
       relationshipType: 'others',
       relationshipLabel: 'Other',
       socialVector: value,
@@ -166,16 +167,13 @@ function normalizeLocalFriendFeedback(value: unknown): FriendFeedbackSubmission 
     return null;
   }
 
-  const friendName = typeof record.friendName === 'string' && record.friendName.trim()
-    ? record.friendName.trim()
-    : 'Friend';
   const relationshipType = normalizeRelationshipType(record.relationshipType);
   const relationshipLabel = typeof record.relationshipLabel === 'string' && record.relationshipLabel.trim()
     ? record.relationshipLabel.trim()
     : 'Other';
 
   return {
-    friendName,
+    friendName: ANONYMOUS_FRIEND_NAME,
     relationshipType,
     relationshipLabel,
     socialVector: record.socialVector,
@@ -214,7 +212,7 @@ export function appendLocalFriendFeedback(sessionId: string, feedback: FriendFee
 
 export function appendLocalFriendProfile(sessionId: string, profile: VectorProfile): number {
   return appendLocalFriendFeedback(sessionId, {
-    friendName: 'Friend',
+    friendName: ANONYMOUS_FRIEND_NAME,
     relationshipType: 'others',
     relationshipLabel: 'Other',
     socialVector: profile,

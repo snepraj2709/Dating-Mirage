@@ -1,6 +1,7 @@
 import type { FriendFeedbackSubmission, MirrorReport, UserSession, VectorProfile } from '../types/dating-mirror';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000';
+const ANONYMOUS_FRIEND_NAME = 'anonymous';
 
 type ApiVectorProfile = Record<keyof VectorProfile, number>;
 
@@ -97,7 +98,7 @@ export async function submitFriendFeedback(
   return request(`/sessions/${sessionId}/friend-feedback`, {
     method: 'POST',
     body: JSON.stringify({
-      friend_name: feedback.friendName,
+      friend_name: ANONYMOUS_FRIEND_NAME,
       relationship_type: feedback.relationshipType,
       relationship_label: feedback.relationshipLabel,
       social_vector: feedback.socialVector,

@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { ArrowLeft, ArrowRight, RotateCcw, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
   QuestionnaireCard,
@@ -28,10 +27,10 @@ type QuestionMotionState = 'idle' | 'exiting' | 'entering' | 'settling';
 const QUESTION_EXIT_MS = 180;
 const QUESTION_ENTER_MS = 220;
 const QUESTION_ENTER_START_MS = 20;
+const ANONYMOUS_FRIEND_NAME = 'anonymous';
 const relationshipOptions = Object.entries(relationshipLabels) as Array<[RelationshipType, string]>;
 
 export function FriendRapidFireDeck({ sessionId, displayName }: FriendRapidFireDeckProps) {
-  const [friendName, setFriendName] = useState('');
   const [relationshipType, setRelationshipType] = useState<RelationshipType | ''>('');
   const [hasStartedQuestions, setHasStartedQuestions] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -46,8 +45,7 @@ export function FriendRapidFireDeck({ sessionId, displayName }: FriendRapidFireD
   const userLabel = displayName || 'your friend';
   const current = friendRapidFireQuestions[activeIndex];
   const context = relationshipType ? relationshipContext[relationshipType] : 'from up close';
-  const trimmedFriendName = friendName.trim();
-  const canStartQuestions = trimmedFriendName.length > 0 && relationshipType !== '';
+  const canStartQuestions = relationshipType !== '';
   const selectedScore = current ? answers[current.key] : undefined;
   const progressPercent = ((activeIndex + 1) / friendRapidFireQuestions.length) * 100;
   const isLast = activeIndex === friendRapidFireQuestions.length - 1;
@@ -80,7 +78,7 @@ export function FriendRapidFireDeck({ sessionId, displayName }: FriendRapidFireD
   };
 
   const submitAnswers = async (nextAnswers: Partial<Record<DimensionKey, 1 | 10>>) => {
-    if (!relationshipType || !trimmedFriendName || isSubmitting) {
+    if (!relationshipType || isSubmitting) {
       return;
     }
 
@@ -88,7 +86,7 @@ export function FriendRapidFireDeck({ sessionId, displayName }: FriendRapidFireD
     setSubmitMessage(null);
 
     const feedback: FriendFeedbackSubmission = {
-      friendName: trimmedFriendName,
+      friendName: ANONYMOUS_FRIEND_NAME,
       relationshipType,
       relationshipLabel: relationshipLabels[relationshipType],
       socialVector: buildFriendProfile(nextAnswers),
@@ -156,7 +154,6 @@ export function FriendRapidFireDeck({ sessionId, displayName }: FriendRapidFireD
       return;
     }
 
-    setFriendName('');
     setRelationshipType('');
     setHasStartedQuestions(false);
     setActiveIndex(0);
@@ -237,16 +234,6 @@ export function FriendRapidFireDeck({ sessionId, displayName }: FriendRapidFireD
           className="mx-auto grid w-full max-w-[680px] gap-5 text-left"
           onSubmit={startQuestions}
         >
-          <Label className="gap-2 text-[0.95rem] text-muted-foreground">
-            Your name
-            <Input
-              autoComplete="name"
-              className="border-border bg-card text-[1rem] text-foreground focus:border-primary focus:outline-primary"
-              onChange={(event) => setFriendName(event.target.value)}
-              placeholder="Your name"
-              value={friendName}
-            />
-          </Label>
           <Label className="gap-2 text-[0.95rem] text-muted-foreground">
             How are you two related
             <select

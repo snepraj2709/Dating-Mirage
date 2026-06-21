@@ -404,7 +404,7 @@ export function FinalReport({ report, session, onBack, onBurnData }: FinalReport
               </Pill>
             </div>
             <div className="grid max-w-[840px] gap-4">
-              <h1 className="mb-0 text-[clamp(2.35rem,5vw,5rem)] leading-[0.98] tracking-normal text-primary">
+              <h1 className="mb-0 text-[clamp(2.35rem,5vw,5rem)] leading-[0.98] tracking-normal text-foreground">
                 {shareableCard.archetype_title}
               </h1>
               <p className="mb-0 text-[clamp(1.2rem,2.2vw,1.7rem)] font-medium leading-[1.24] text-foreground">
