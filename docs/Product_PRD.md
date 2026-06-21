@@ -25,7 +25,7 @@ All user and friend interactions feed into a centralized schema based on 8 psych
 | Intensity (`INT`) | Slow-Burn (1.0) | High-Speed Whirlwind (10.0) |
 | Autonomy (`AUT`) | Enmeshed/Codependent (1.0) | Fiercely Independent (10.0) |
 | Validation-Seeking (`VAL`) | Character-Driven (1.0) | Status/Trophy-Driven (10.0) |
-| Growth/Communication (`GOC`) | Avoidant/Silent (1.0) | Confronts/Processes (10.0) |
+| Communication (`GOC`) | Avoidant/Silent (1.0) | Confronts/Processes (10.0) |
 | Vulnerability (`VUL`) | Guarded/Mysterious (1.0) | Open/Raw (10.0) |
 | Reactivity (`REA`) | Emotionally Sovereign (1.0) | Absorbs Partner's Mood (10.0) |
 | Relational Worth (`RWO`) | Accommodates/Settles (1.0) | Firm Boundaries (10.0) |

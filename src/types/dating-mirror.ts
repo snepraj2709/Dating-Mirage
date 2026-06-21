@@ -18,17 +18,7 @@ export interface VectorProfile {
   RWO: number;
 }
 
-export type QuadrantKey = 'guilty-pleasure' | 'total-disconnect' | 'true-blindspot' | 'aligned';
-
 export type RelationshipType = 'best_friend' | 'roommate' | 'cousin' | 'work_friend' | 'others';
-
-export interface QuadrantDetail {
-  icon: string;
-  title: string;
-  badge: string;
-  description: string;
-  vibe: string;
-}
 
 export type IdealQuestionScore = 1 | 4 | 7 | 10;
 
@@ -65,22 +55,39 @@ export interface FriendRapidFireQuestion {
   optionB: { label: string; score: 1 | 10 };
 }
 
-export interface DimensionJohariResult {
-  key: DimensionKey;
-  consciousGap: number;
-  blindSpotGap: number;
-  rawSeverity: number;
-  severityPercentage: number;
-  quadrant: QuadrantKey;
+export interface ShareableCardReport {
+  archetype_title: string;
+  tagline: string;
+  core_conflict: string;
+  actionable_interventions: string[];
 }
 
-export interface JohariReport {
-  userId: string;
-  friendCount: number;
-  reportUnlocked: boolean;
-  dimensions: Record<DimensionKey, DimensionJohariResult>;
-  featuredDimensions: DimensionJohariResult[];
-  shareCardUrl?: string;
+export interface DiagnosticReportSection {
+  insight: string;
+  evidence_dimensions: DimensionKey[];
+}
+
+export interface DiagnosticMatrixReport {
+  facade: DiagnosticReportSection;
+  guilty_pleasure: DiagnosticReportSection;
+  blindspots: DiagnosticReportSection;
+  deep_void: DiagnosticReportSection;
+}
+
+export interface FrictionReportAxis {
+  score: number;
+  analysis: string;
+}
+
+export interface FrictionMapReport {
+  burnout_axis: FrictionReportAxis;
+  armor_axis: FrictionReportAxis;
+}
+
+export interface MirrorReport {
+  shareable_card: ShareableCardReport;
+  diagnostic_matrix: DiagnosticMatrixReport;
+  friction_map: FrictionMapReport;
 }
 
 export interface UserSession {

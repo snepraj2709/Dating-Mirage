@@ -5,8 +5,6 @@ import {
   baselineVector,
   buildActualProfile,
   buildFriendProfile,
-  calculateDimensionJohari,
-  calculateJohariReport,
 } from './scoring';
 
 describe('Dating Mirror scoring', () => {
@@ -81,42 +79,7 @@ describe('Dating Mirror scoring', () => {
     });
   });
 
-  it('classifies dimensions using the V1 Johari threshold', () => {
-    const ideal = baselineVector(9);
-    const actual = baselineVector(5.5);
-    const social = baselineVector(5.5);
-
-    expect(calculateDimensionJohari('CON', ideal, actual, social).quadrant).toBe('guilty-pleasure');
-
-    actual.CON = 9;
-    social.CON = 3;
-    expect(calculateDimensionJohari('CON', ideal, actual, social).quadrant).toBe('true-blindspot');
-
-    actual.CON = 4;
-    social.CON = 9;
-    expect(calculateDimensionJohari('CON', ideal, actual, social).quadrant).toBe('total-disconnect');
-
-    actual.CON = 8;
-    social.CON = 8;
-    expect(calculateDimensionJohari('CON', ideal, actual, social).quadrant).toBe('aligned');
-  });
-
-  it('returns only the top two featured report dimensions', () => {
-    const ideal = baselineVector(10);
-    const actual = baselineVector(10);
-    const social = baselineVector(10);
-
-    actual.CON = 1;
-    social.CON = 10;
-    actual.INT = 3;
-    social.INT = 9;
-    actual.AUT = 8;
-    social.AUT = 8;
-
-    const report = calculateJohariReport('user-1', ideal, actual, social, 2);
-
-    expect(report.reportUnlocked).toBe(true);
-    expect(report.featuredDimensions).toHaveLength(2);
-    expect(report.featuredDimensions.map((dimension) => dimension.key)).toEqual(['CON', 'INT']);
+  it('returns null when no friend profiles are available', () => {
+    expect(aggregateSocialProfile([])).toBeNull();
   });
 });

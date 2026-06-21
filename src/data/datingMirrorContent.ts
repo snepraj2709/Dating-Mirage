@@ -3,7 +3,6 @@ import type {
   DimensionKey,
   FriendRapidFireQuestion,
   IdealQuestion,
-  QuadrantDetail,
   RelationshipType,
   SwipeStatement,
 } from '../types/dating-mirror';
@@ -29,7 +28,7 @@ export const dimensions: Dimension[] = [
   { key: 'INT', name: 'Intensity', leftLabel: 'Slow-Burn', rightLabel: 'High-Speed Whirlwind' },
   { key: 'AUT', name: 'Autonomy', leftLabel: 'Enmeshed/Codependent', rightLabel: 'Fiercely Independent' },
   { key: 'VAL', name: 'Validation-Seeking', leftLabel: 'Character-Driven', rightLabel: 'Status/Trophy-Driven' },
-  { key: 'GOC', name: 'Growth/Communication', leftLabel: 'Avoidant/Silent', rightLabel: 'Confronts/Processes' },
+  { key: 'GOC', name: 'Communication', leftLabel: 'Avoidant/Silent', rightLabel: 'Confronts/Processes' },
   { key: 'VUL', name: 'Vulnerability', leftLabel: 'Guarded/Mysterious', rightLabel: 'Open/Raw' },
   { key: 'REA', name: 'Reactivity', leftLabel: 'Emotionally Sovereign', rightLabel: "Absorbs Partner's Mood" },
   { key: 'RWO', name: 'Relational Worth', leftLabel: 'Accommodates/Settles', rightLabel: 'Firm Boundaries' },
@@ -335,37 +334,6 @@ export const friendRapidFireQuestions: FriendRapidFireQuestion[] = [
     optionB: { score: 10, label: 'Hits the eject button cleanly and walks away without a second thought.' },
   },
 ];
-
-export const quadrantDetails: Record<string, QuadrantDetail> = {
-  'guilty-pleasure': {
-    icon: '🍿',
-    title: 'The Guilty Pleasure',
-    badge: 'Guilty Secret',
-    description: "You know the pattern is messy, your friends can see it too, and somehow it still has a reserved seat in your love life.",
-    vibe: "You are not confused. You're just negotiating with the part of you that likes the chaos.",
-  },
-  'total-disconnect': {
-    icon: '🪞',
-    title: 'The Total Disconnect',
-    badge: 'Mirror Shock',
-    description: "You know your choices are drifting from your standards, but the social mirror says the gap is louder than you think.",
-    vibe: 'This is the part where the group chat gently takes the wheel.',
-  },
-  'true-blindspot': {
-    icon: '🎭',
-    title: 'The True Blind Spot',
-    badge: 'Unconscious Pattern',
-    description: "You think your behavior matches your ideal, but people close to you are seeing a very different edit.",
-    vibe: 'The plot twist was visible to everyone sitting in the front row.',
-  },
-  aligned: {
-    icon: '💗',
-    title: 'The Aligned State',
-    badge: 'Vibe Alignment',
-    description: 'What you want, what you choose, and what your friends observe are finally speaking the same language.',
-    vibe: 'No major contradiction here. The mirror is mostly behaving.',
-  },
-};
 
 export const relationshipContext: Record<RelationshipType, string> = {
   best_friend: 'in the group chat',

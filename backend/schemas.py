@@ -1,10 +1,9 @@
-from typing import Dict, List, Literal, Optional
+from typing import List, Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
 
 DimensionKey = Literal["CON", "INT", "AUT", "VAL", "GOC", "VUL", "REA", "RWO"]
-QuadrantKey = Literal["guilty-pleasure", "total-disconnect", "true-blindspot", "aligned"]
 RelationshipType = Literal["best_friend", "roommate", "cousin", "work_friend", "others"]
 
 
@@ -38,15 +37,6 @@ class SubmitFriendRapidFireRequest(BaseModel):
     feedback_profile: VectorProfileSchema
 
 
-class DimensionJohariResultSchema(BaseModel):
-    key: DimensionKey
-    conscious_gap: float
-    blind_spot_gap: float
-    raw_severity: float
-    severity_percentage: float
-    quadrant: QuadrantKey
-
-
 class UserSessionResponse(BaseModel):
     id: str
     ideal_profile: Optional[VectorProfileSchema]
@@ -67,15 +57,6 @@ class FriendFeedbackResponse(BaseModel):
     session_id: str
     friend_count: int
     report_unlocked: bool
-
-
-class DeterministicJohariReportResponse(BaseModel):
-    user_id: str
-    friend_count: int
-    report_unlocked: bool
-    dimensions: Dict[DimensionKey, DimensionJohariResultSchema]
-    featured_dimensions: List[DimensionJohariResultSchema]
-    share_card_url: Optional[str] = None
 
 
 class ShareableCardSchema(StrictSchema):

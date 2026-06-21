@@ -6,12 +6,14 @@ import {
   getSession,
   saveResultEmail as saveSessionResultEmail,
   submitActualProfile,
+  submitFriendFeedback,
 } from './api/client';
 import { FriendRapidFireDeck } from './components/FriendRapidFireDeck';
 import { FriendSharePanel } from './components/FriendSharePanel';
 import { Hero } from './components/Hero';
-import { JohariReveal } from './components/JohariReveal';
+import { FinalReport } from './components/FinalReport';
 import { LandingJohariMatrix } from './components/LandingJohariMatrix';
+import { LandingReportPreview } from './components/LandingReportPreview';
 import { MapAnalysisSection } from './components/MapAnalysisSection';
 import { MirrorStepper } from './components/MirrorStepper';
 import { Navigation } from './components/Navigation';
@@ -33,8 +35,7 @@ import {
   loadStoredSession,
   saveStoredSession,
 } from './lib/localState';
-import { aggregateSocialProfile, calculateJohariReport } from './lib/scoring';
-import type { JohariReport, UserSession, VectorProfile } from './types/dating-mirror';
+import type { MirrorReport, UserSession, VectorProfile } from './types/dating-mirror';
 
 type AppStage = 'landing' | 'ideal' | 'actualIntro' | 'actual' | 'share' | 'reveal';
 
@@ -47,8 +48,9 @@ export default function App() {
   const [isSavingIdeal, setIsSavingIdeal] = useState(false);
   const [isSavingActual, setIsSavingActual] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
-  const [report, setReport] = useState<JohariReport | null>(null);
+  const [report, setReport] = useState<MirrorReport | null>(null);
   const [isLoadingReport, setIsLoadingReport] = useState(false);
+  const [isPreparingReport, setIsPreparingReport] = useState(false);
   const [reportError, setReportError] = useState<string | null>(null);
 
   const handleIdealComplete = async (idealProfile: VectorProfile) => {
@@ -97,20 +99,32 @@ export default function App() {
 
     setIsSavingActual(true);
     setSaveError(null);
+    setReport(null);
+    setReportError(null);
 
     try {
-      if (currentSession.id.startsWith('local-')) {
-        throw new Error('Local session has no backend id yet');
-      }
+      const nextSession = currentSession.id.startsWith('local-')
+        ? await createBackendSessionFromLocal({
+            ...currentSession,
+            actualProfile,
+          })
+        : await refreshBackendSessionAfterActual(currentSession.id, actualProfile);
 
-      const nextSession = await submitActualProfile(currentSession.id, actualProfile);
       setSession(nextSession);
       saveStoredSession(nextSession);
-      setStage('share');
+      setStage(nextSession.friendCount >= 2 ? 'reveal' : 'share');
     } catch {
+      const friendCount = loadLocalFriendProfiles(currentSession.id).length;
+      const now = new Date().toISOString();
       const localSession: UserSession = {
         ...currentSession,
         actualProfile,
+        friendCount,
+        reportUnlocked: friendCount >= 2,
+        resultEmailSentAt:
+          friendCount >= 2 && currentSession.resultEmail
+            ? currentSession.resultEmailSentAt ?? now
+            : currentSession.resultEmailSentAt ?? null,
       };
       setSession(localSession);
       saveStoredSession(localSession);
@@ -119,6 +133,31 @@ export default function App() {
     } finally {
       setIsSavingActual(false);
     }
+  };
+
+  const refreshBackendSessionAfterActual = async (
+    sessionId: string,
+    actualProfile: VectorProfile,
+  ): Promise<UserSession> => {
+    await submitActualProfile(sessionId, actualProfile);
+    return getSession(sessionId);
+  };
+
+  const createBackendSessionFromLocal = async (localSession: UserSession): Promise<UserSession> => {
+    if (!localSession.idealProfile || !localSession.actualProfile) {
+      throw new Error('Finish your ideal and actual profiles before opening the report.');
+    }
+
+    const localFriendProfiles = loadLocalFriendProfiles(localSession.id);
+    const createdSession = await createOrUpdateSession(localSession.idealProfile);
+    await submitActualProfile(createdSession.id, localSession.actualProfile);
+
+    for (const friendProfile of localFriendProfiles) {
+      await submitFriendFeedback(createdSession.id, 'others', friendProfile);
+    }
+
+    clearLocalFriendProfiles(localSession.id);
+    return getSession(createdSession.id);
   };
 
   const refreshFriendCount = async () => {
@@ -218,41 +257,14 @@ export default function App() {
           return;
         }
 
-        throw new Error('Local report fallback');
-      } catch {
-        const friendProfiles = loadLocalFriendProfiles(activeSession.id);
-        const socialProfile = aggregateSocialProfile(friendProfiles);
-
-        if (
-          !activeSession.idealProfile ||
-          !activeSession.actualProfile ||
-          !socialProfile ||
-          friendProfiles.length < 2
-        ) {
-          if (!cancelled) {
-            setReportError('The mirror needs two friend responses plus your ideal and actual vectors.');
-          }
-          return;
-        }
-
-        const localReport = calculateJohariReport(
-          activeSession.id,
-          activeSession.idealProfile,
-          activeSession.actualProfile,
-          socialProfile,
-          friendProfiles.length,
-        );
-        const nextSession = {
-          ...activeSession,
-          socialProfile,
-          friendCount: friendProfiles.length,
-          reportUnlocked: true,
-        };
-
+        throw new Error('The final LLM report requires a backend session and OpenAI API key.');
+      } catch (error) {
         if (!cancelled) {
-          setReport(localReport);
-          setSession(nextSession);
-          saveStoredSession(nextSession);
+          setReportError(
+            error instanceof Error
+              ? error.message
+              : 'We could not generate the final report yet. Try again after the backend is configured.',
+          );
         }
       } finally {
         if (!cancelled) {
@@ -299,6 +311,39 @@ export default function App() {
     setSaveError(null);
     window.history.replaceState(null, '', '/');
     setStage('reveal');
+  };
+
+  const handleViewReport = async () => {
+    if (!session) {
+      return;
+    }
+
+    setIsPreparingReport(true);
+    setSaveError(null);
+    setReport(null);
+    setReportError(null);
+
+    try {
+      const nextSession = session.id.startsWith('local-')
+        ? await createBackendSessionFromLocal(session)
+        : await getSession(session.id);
+
+      setSession(nextSession);
+      saveStoredSession(nextSession);
+
+      if (nextSession.friendCount < 2) {
+        setSaveError('The mirror needs two friend responses before the final report opens.');
+        setStage('share');
+        return;
+      }
+
+      setStage('reveal');
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : 'We could not open your mirror yet. Try again.');
+      setStage('share');
+    } finally {
+      setIsPreparingReport(false);
+    }
   };
 
   const startMirror = () => setStage('ideal');
@@ -365,6 +410,8 @@ export default function App() {
         session={session}
         statusMessage={saveError}
         onBack={() => setStage('actual')}
+        isPreparingReport={isPreparingReport}
+        onViewReport={handleViewReport}
         onRefresh={refreshFriendCount}
         onSaveResultEmail={handleResultEmailSave}
       />
@@ -383,7 +430,7 @@ export default function App() {
 
     if (report && session) {
       return (
-        <JohariReveal
+        <FinalReport
           report={report}
           session={session}
           onBack={() => setStage('share')}
@@ -410,10 +457,11 @@ export default function App() {
   }
 
   return (
-    <main className="min-h-screen bg-background">
+    <main className="min-h-screen bg-[#fffaf6]">
       <Navigation onStart={startMirror} />
       <Hero onStart={startMirror} />
       <MirrorStepper />
+      <LandingReportPreview onStart={startMirror} />
       <LandingJohariMatrix />
       <MapAnalysisSection onStart={startMirror} />
       <PrivacyStrip />

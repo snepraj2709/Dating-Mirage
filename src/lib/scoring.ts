@@ -1,16 +1,11 @@
 import { dimensionOrder } from '../data/datingMirrorContent';
 import type {
   ActualFrequencyValue,
-  DimensionJohariResult,
   DimensionKey,
-  JohariReport,
-  QuadrantKey,
   SwipeStatement,
   VectorProfile,
 } from '../types/dating-mirror';
 
-export const HIGH_GAP_THRESHOLD = 3.0;
-export const MAX_DISTANCE = Math.sqrt(9 ** 2 + 9 ** 2);
 export const actualFrequencyWeights: Record<ActualFrequencyValue, number> = {
   never: 0,
   sometimes: 1 / 3,
@@ -85,60 +80,4 @@ export function aggregateSocialProfile(friendProfiles: VectorProfile[]): VectorP
     profile[key] = clampScore(total / friendProfiles.length);
     return profile;
   }, {} as VectorProfile);
-}
-
-export function calculateDimensionJohari(
-  key: DimensionKey,
-  ideal: VectorProfile,
-  actual: VectorProfile,
-  social: VectorProfile,
-): DimensionJohariResult {
-  const consciousGap = Math.abs(ideal[key] - actual[key]);
-  const blindSpotGap = Math.abs(actual[key] - social[key]);
-  const rawSeverity = Math.sqrt(consciousGap ** 2 + blindSpotGap ** 2);
-  const severityPercentage = (rawSeverity / MAX_DISTANCE) * 100;
-
-  let quadrant: QuadrantKey = 'aligned';
-
-  if (consciousGap >= HIGH_GAP_THRESHOLD && blindSpotGap < HIGH_GAP_THRESHOLD) {
-    quadrant = 'guilty-pleasure';
-  } else if (consciousGap >= HIGH_GAP_THRESHOLD && blindSpotGap >= HIGH_GAP_THRESHOLD) {
-    quadrant = 'total-disconnect';
-  } else if (consciousGap < HIGH_GAP_THRESHOLD && blindSpotGap >= HIGH_GAP_THRESHOLD) {
-    quadrant = 'true-blindspot';
-  }
-
-  return {
-    key,
-    consciousGap: Number(consciousGap.toFixed(2)),
-    blindSpotGap: Number(blindSpotGap.toFixed(2)),
-    rawSeverity: Number(rawSeverity.toFixed(2)),
-    severityPercentage: Number(severityPercentage.toFixed(1)),
-    quadrant,
-  };
-}
-
-export function calculateJohariReport(
-  userId: string,
-  ideal: VectorProfile,
-  actual: VectorProfile,
-  social: VectorProfile,
-  friendCount: number,
-): JohariReport {
-  const dimensions = dimensionOrder.reduce((results, key) => {
-    results[key] = calculateDimensionJohari(key, ideal, actual, social);
-    return results;
-  }, {} as Record<DimensionKey, DimensionJohariResult>);
-
-  const featuredDimensions = Object.values(dimensions)
-    .sort((a, b) => b.rawSeverity - a.rawSeverity)
-    .slice(0, 2);
-
-  return {
-    userId,
-    friendCount,
-    reportUnlocked: friendCount >= 2,
-    dimensions,
-    featuredDimensions,
-  };
 }

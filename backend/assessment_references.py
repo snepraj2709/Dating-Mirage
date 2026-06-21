@@ -25,7 +25,7 @@ DIMENSION_REFERENCE = [
     },
     {
         "key": "GOC",
-        "name": "Growth/Communication",
+        "name": "Communication",
         "left_label": "Avoidant/Silent",
         "right_label": "Confronts/Processes",
     },

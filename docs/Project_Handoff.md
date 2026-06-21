@@ -83,7 +83,7 @@ All user and friend interactions feed into the same 8-dimensional profile. Score
 | `INT` | Intensity | Slow-Burn | High-Speed Whirlwind |
 | `AUT` | Autonomy | Enmeshed/Codependent | Fiercely Independent |
 | `VAL` | Validation-Seeking | Character-Driven | Status/Trophy-Driven |
-| `GOC` | Growth/Communication | Avoidant/Silent | Confronts/Processes |
+| `GOC` | Communication | Avoidant/Silent | Confronts/Processes |
 | `VUL` | Vulnerability | Guarded/Mysterious | Open/Raw |
 | `REA` | Reactivity | Emotionally Sovereign | Absorbs Partner's Mood |
 | `RWO` | Relational Worth | Accommodates/Settles | Firm Boundaries |
@@ -107,7 +107,7 @@ export interface VectorProfile {
   INT: number; // Intensity
   AUT: number; // Autonomy
   VAL: number; // Validation-Seeking
-  GOC: number; // Growth/Communication
+  GOC: number; // Communication
   VUL: number; // Vulnerability
   REA: number; // Emotional Reactivity
   RWO: number; // Relational Worth

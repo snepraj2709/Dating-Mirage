@@ -1,17 +1,20 @@
 import math
-from typing import Dict, Iterable, List, Optional
+from typing import Dict, Iterable, Optional, TypedDict
 
-from .schemas import (
-    DeterministicJohariReportResponse,
-    DimensionJohariResultSchema,
-    QuadrantKey,
-    VectorProfileSchema,
-)
+from .schemas import VectorProfileSchema
 
 
 DIMENSION_KEYS = ["CON", "INT", "AUT", "VAL", "GOC", "VUL", "REA", "RWO"]
 HIGH_GAP_THRESHOLD = 3.0
 MAX_DISTANCE = math.sqrt(9**2 + 9**2)
+
+
+class DimensionGapMetric(TypedDict):
+    key: str
+    conscious_gap: float
+    blind_spot_gap: float
+    raw_severity: float
+    severity_percentage: float
 
 
 def _vector_value(vector: VectorProfileSchema, key: str) -> float:
@@ -64,53 +67,42 @@ def calculate_social_conflict_metadata(friend_profiles: Iterable[VectorProfileSc
     return metadata
 
 
-def calculate_dimension_johari(
+def calculate_dimension_gap_metrics(
     key: str,
     ideal: VectorProfileSchema,
     actual: VectorProfileSchema,
     social: VectorProfileSchema,
-) -> DimensionJohariResultSchema:
+) -> DimensionGapMetric:
     conscious_gap = abs(_vector_value(ideal, key) - _vector_value(actual, key))
     blind_spot_gap = abs(_vector_value(actual, key) - _vector_value(social, key))
     raw_severity = math.sqrt(conscious_gap**2 + blind_spot_gap**2)
     severity_percentage = (raw_severity / MAX_DISTANCE) * 100
 
-    quadrant: QuadrantKey = "aligned"
-    if conscious_gap >= HIGH_GAP_THRESHOLD and blind_spot_gap < HIGH_GAP_THRESHOLD:
-        quadrant = "guilty-pleasure"
-    elif conscious_gap >= HIGH_GAP_THRESHOLD and blind_spot_gap >= HIGH_GAP_THRESHOLD:
-        quadrant = "total-disconnect"
-    elif conscious_gap < HIGH_GAP_THRESHOLD and blind_spot_gap >= HIGH_GAP_THRESHOLD:
-        quadrant = "true-blindspot"
-
-    return DimensionJohariResultSchema(
-        key=key,
-        conscious_gap=round(conscious_gap, 2),
-        blind_spot_gap=round(blind_spot_gap, 2),
-        raw_severity=round(raw_severity, 2),
-        severity_percentage=round(severity_percentage, 1),
-        quadrant=quadrant,
-    )
+    return {
+        "key": key,
+        "conscious_gap": round(conscious_gap, 2),
+        "blind_spot_gap": round(blind_spot_gap, 2),
+        "raw_severity": round(raw_severity, 2),
+        "severity_percentage": round(severity_percentage, 1),
+    }
 
 
-def calculate_johari_report(
-    user_id: str,
+def calculate_vector_gap_metrics(
     ideal: VectorProfileSchema,
     actual: VectorProfileSchema,
     social: VectorProfileSchema,
-    friend_count: int,
-) -> DeterministicJohariReportResponse:
-    dimensions: Dict[str, DimensionJohariResultSchema] = {
-        key: calculate_dimension_johari(key, ideal, actual, social) for key in DIMENSION_KEYS
+) -> dict[str, object]:
+    dimensions: Dict[str, DimensionGapMetric] = {
+        key: calculate_dimension_gap_metrics(key, ideal, actual, social) for key in DIMENSION_KEYS
     }
-    featured_dimensions: List[DimensionJohariResultSchema] = sorted(
-        dimensions.values(), key=lambda result: result.raw_severity, reverse=True
-    )[:2]
+    top_tension_dimensions = sorted(
+        dimensions.values(),
+        key=lambda result: result["raw_severity"],
+        reverse=True,
+    )[:3]
 
-    return DeterministicJohariReportResponse(
-        user_id=user_id,
-        friend_count=friend_count,
-        report_unlocked=friend_count >= 2,
-        dimensions=dimensions,
-        featured_dimensions=featured_dimensions,
-    )
+    return {
+        "high_gap_threshold": HIGH_GAP_THRESHOLD,
+        "dimensions": dimensions,
+        "top_tension_dimensions": top_tension_dimensions,
+    }

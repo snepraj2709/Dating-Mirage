@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   ArrowLeft,
+  ArrowRight,
   Check,
   Copy,
   ExternalLink,
@@ -22,7 +23,9 @@ import type { UserSession } from '../types/dating-mirror';
 interface FriendSharePanelProps {
   session: UserSession | null;
   statusMessage?: string | null;
+  isPreparingReport?: boolean;
   onBack: () => void;
+  onViewReport: () => void;
   onRefresh: () => void;
   onSaveResultEmail: (email: string) => Promise<UserSession>;
 }
@@ -47,7 +50,9 @@ function ResponseDots({ count, target = 2 }: { count: number; target?: number })
 export function FriendSharePanel({
   session,
   statusMessage,
+  isPreparingReport = false,
   onBack,
+  onViewReport,
   onRefresh,
   onSaveResultEmail,
 }: FriendSharePanelProps) {
@@ -194,9 +199,25 @@ export function FriendSharePanel({
                 Refresh
               </Button>
             </div>
+            {reportUnlocked && (
+              <Surface className="grid gap-4 p-[clamp(18px,2.5vw,26px)]" variant="muted">
+                <div className="grid gap-1">
+                  <h3 className="mb-0 text-[clamp(1.2rem,2vw,1.45rem)] leading-[1.18] text-foreground">
+                    Your mirror is ready.
+                  </h3>
+                  <p className="mb-0">
+                    Two friend responses are in. Open the final report for this session.
+                  </p>
+                </div>
+                <Button className="min-h-[54px] w-fit px-8 text-white max-[620px]:w-full" onClick={onViewReport} disabled={isPreparingReport}>
+                  {isPreparingReport ? 'Opening...' : 'Show my Mirror'}
+                  <ArrowRight size={18} />
+                </Button>
+              </Surface>
+            )}
           </div>
 
-          <Surface className="grid gap-4 p-[clamp(18px,2.5vw,26px)]" variant="muted">
+          {!reportUnlocked && <Surface className="grid gap-4 p-[clamp(18px,2.5vw,26px)]" variant="muted">
             <div>
               <h3 className="mb-1 text-[clamp(1.2rem,2vw,1.45rem)] leading-[1.18] text-foreground">
                 Where should we send your results?
@@ -220,7 +241,7 @@ export function FriendSharePanel({
               </Label>
               <Button className="min-h-[50px] px-6 max-[720px]:w-full" onClick={submitEmail} disabled={isSavingEmail}>
                 <Send size={18} />
-                {isSavingEmail ? 'Holding...' : 'Secure your Mirror Report'}
+                {isSavingEmail ? 'Holding...' : 'Secure your Dating Mirror'}
               </Button>
             </div>
             <p className="mb-0 inline-flex items-center gap-2 text-[0.94rem]">
@@ -228,7 +249,7 @@ export function FriendSharePanel({
               Never shared. Used only to deliver your mirror.
             </p>
             {emailError && <InlineError className="mb-0">{emailError}</InlineError>}
-          </Surface>
+          </Surface>}
         </div>
       )}
 
@@ -342,6 +363,10 @@ export function FriendSharePanel({
               The link opens a private unlock screen where you set a password and go straight to the full report.
             </p>
           </Surface>
+          <Button className="min-h-[54px] px-8 text-white" onClick={onViewReport} disabled={isPreparingReport}>
+            {isPreparingReport ? 'Opening...' : 'Show my Mirror'}
+            <ArrowRight size={18} />
+          </Button>
           {statusMessage && <InlineError className="mb-0">{statusMessage}</InlineError>}
         </div>
       )}

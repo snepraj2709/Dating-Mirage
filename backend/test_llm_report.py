@@ -2,6 +2,7 @@ import json
 import os
 import unittest
 from pathlib import Path
+from typing import Any
 from unittest.mock import patch
 
 from fastapi.testclient import TestClient
@@ -124,6 +125,28 @@ class LLMReportTests(unittest.TestCase):
         self.assertEqual(social_vector["conflict_metadata"]["CON"]["high_count"], 2)
         self.assertTrue(social_vector["conflict_metadata"]["CON"]["is_polarized"])
 
+    def test_llm_input_uses_gap_metrics_without_old_report_schema(self) -> None:
+        payload = build_llm_report_input(session(friend_count=2), [vector(1), vector(10)])
+        serialized_payload = json.dumps(payload)
+
+        self.assertIn("gap_metrics", payload)
+        self.assertNotIn("deterministic_johari", payload)
+        self.assertNotIn("featured_dimensions", serialized_payload)
+        self.assertNotIn("quadrant", serialized_payload)
+        self.assertNotIn("share_card_url", serialized_payload)
+
+        gap_metrics = payload["gap_metrics"]
+        self.assertIsInstance(gap_metrics, dict)
+        self.assertEqual(gap_metrics["high_gap_threshold"], 3.0)
+        self.assertEqual(len(gap_metrics["dimensions"]), 8)
+        self.assertEqual(len(gap_metrics["top_tension_dimensions"]), 3)
+
+        first_metric: dict[str, Any] = gap_metrics["top_tension_dimensions"][0]
+        self.assertEqual(
+            set(first_metric.keys()),
+            {"key", "conscious_gap", "blind_spot_gap", "raw_severity", "severity_percentage"},
+        )
+
     def test_generate_llm_report_uses_mocked_structured_output_call(self) -> None:
         fake_client = FakeOpenAIClient()
 
@@ -144,6 +167,8 @@ class LLMReportTests(unittest.TestCase):
         self.assertEqual(call["text"]["format"]["type"], "json_schema")
         self.assertTrue(call["text"]["format"]["strict"])
         self.assertIn("social_vector", call["input"])
+        self.assertIn("gap_metrics", call["input"])
+        self.assertNotIn("deterministic_johari", call["input"])
 
     def test_report_endpoint_returns_llm_schema_only(self) -> None:
         client = TestClient(app)

@@ -13,7 +13,7 @@ from .config import get_openai_settings
 from .schemas import JohariReportResponse, UserSessionResponse, VectorProfileSchema
 from .scoring import (
     DIMENSION_KEYS,
-    calculate_johari_report,
+    calculate_vector_gap_metrics,
     calculate_social_conflict_metadata,
 )
 
@@ -32,7 +32,7 @@ Safety and tone:
 - Use direct, insightful, non-clinical language suitable for a polished consumer report.
 - Be specific and behavior-focused.
 
-Framework and quadrant logic:
+Framework logic:
 - facade: The user is aware of a private pattern or compromise that friends do not strongly observe. Visible to the user, hidden or muted in the social mirror.
 - guilty_pleasure: The user knows the pattern is contradictory and the social mirror confirms it. Visible to both user and friends.
 - blindspots: The user believes choices match standards, but friends observe a different pattern. Hidden from user, visible to friends.
@@ -46,8 +46,13 @@ Social vector handling:
 
 Friction map:
 - burnout_axis should summarize friction around consistency, intensity, reactivity, and anxiety-as-chemistry patterns.
-- armor_axis should summarize friction around autonomy, vulnerability, growth/communication, and relational worth.
+- armor_axis should summarize friction around autonomy, vulnerability, Communication, and relational worth.
 - Scores must be integers from 1 to 10.
+
+Gap metrics:
+- Use gap_metrics.dimensions to ground your analysis in conscious_gap, blind_spot_gap, raw_severity, and severity_percentage.
+- Use gap_metrics.top_tension_dimensions to prioritize evidence, but do not mechanically copy the order if another cross-dimensional pattern is stronger.
+- gap_metrics.high_gap_threshold is interpretive context only; do not output this threshold or legacy matrix labels.
 
 Output:
 - Return exactly one JSON object matching the supplied JSON schema.
@@ -63,10 +68,6 @@ class MissingOpenAIAPIKeyError(RuntimeError):
 
 class LLMReportGenerationError(RuntimeError):
     pass
-
-
-def _vector_to_dict(vector: VectorProfileSchema) -> dict[str, float]:
-    return {key: float(getattr(vector, key)) for key in DIMENSION_KEYS}
 
 
 def _dimension_reference_by_key() -> dict[str, dict[str, Any]]:
@@ -101,12 +102,10 @@ def build_llm_report_input(
         raise ValueError("Session vectors are incomplete.")
 
     friends = list(friend_profiles)
-    deterministic_report = calculate_johari_report(
-        user_id=session.id,
+    gap_metrics = calculate_vector_gap_metrics(
         ideal=session.ideal_profile,
         actual=session.actual_profile,
         social=session.social_profile,
-        friend_count=session.friend_count,
     )
 
     return {
@@ -127,16 +126,7 @@ def build_llm_report_input(
                 "conflict_metadata": calculate_social_conflict_metadata(friends),
             },
         },
-        "deterministic_johari": {
-            "high_gap_threshold": 3.0,
-            "dimensions": {
-                key: result.model_dump(mode="json")
-                for key, result in deterministic_report.dimensions.items()
-            },
-            "featured_dimensions": [
-                result.model_dump(mode="json") for result in deterministic_report.featured_dimensions
-            ],
-        },
+        "gap_metrics": gap_metrics,
     }
 
 
