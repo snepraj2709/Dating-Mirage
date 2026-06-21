@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   ArrowLeft,
   ArrowRight,
@@ -8,13 +8,12 @@ import {
   Link as LinkIcon,
   Mail,
   RefreshCw,
-  Send,
   ShieldCheck,
 } from 'lucide-react';
+import { ResultEmailCapture } from '@/components/ResultEmailCapture';
 import { Button } from '@/components/ui/button';
 import { FlowCard } from '@/components/ui/flow-card';
 import { InlineError } from '@/components/ui/flow';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Pill } from '@/components/ui/pill';
 import { Surface } from '@/components/ui/surface';
@@ -26,12 +25,8 @@ interface FriendSharePanelProps {
   isPreparingReport?: boolean;
   onBack: () => void;
   onViewReport: () => void;
-  onRefresh: () => void;
+  onRefresh: () => void | Promise<void>;
   onSaveResultEmail: (email: string) => Promise<UserSession>;
-}
-
-function isValidEmail(email: string) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
 function ResponseDots({ count, target = 2 }: { count: number; target?: number }) {
@@ -58,15 +53,7 @@ export function FriendSharePanel({
 }: FriendSharePanelProps) {
   const [displayName, setDisplayName] = useState('your friend');
   const [copied, setCopied] = useState(false);
-  const [email, setEmail] = useState(session?.resultEmail ?? '');
-  const [emailError, setEmailError] = useState<string | null>(null);
-  const [isSavingEmail, setIsSavingEmail] = useState(false);
-
-  useEffect(() => {
-    if (session?.resultEmail) {
-      setEmail(session.resultEmail);
-    }
-  }, [session?.resultEmail]);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const friendCount = session?.friendCount ?? 0;
   const reportUnlocked = friendCount >= 2;
@@ -97,26 +84,12 @@ export function FriendSharePanel({
     window.setTimeout(() => setCopied(false), 1400);
   };
 
-  const submitEmail = async () => {
-    if (!session?.id) {
-      setEmailError('Finish Step 2 before holding your report.');
-      return;
-    }
-
-    const nextEmail = email.trim().toLowerCase();
-    if (!isValidEmail(nextEmail)) {
-      setEmailError('Enter a valid email address.');
-      return;
-    }
-
-    setIsSavingEmail(true);
-    setEmailError(null);
+  const refreshStatus = async () => {
+    setIsRefreshing(true);
     try {
-      await onSaveResultEmail(nextEmail);
-    } catch (error) {
-      setEmailError(error instanceof Error ? error.message : 'We could not hold that email. Try again.');
+      await onRefresh();
     } finally {
-      setIsSavingEmail(false);
+      setIsRefreshing(false);
     }
   };
 
@@ -131,6 +104,8 @@ export function FriendSharePanel({
       }
       progressValue={progressValue}
       progressLabel={`${friendCount} of 2 friend responses`}
+      progressVariant="accent"
+      progressClassName="h-1.5 w-14 bg-[#eceff3]"
       contentClassName="pt-[clamp(18px,3vh,34px)]"
       footerLeft={
         <Button variant="ghostPill" onClick={onBack} className="max-[620px]:w-full">
@@ -194,9 +169,9 @@ export function FriendSharePanel({
                 </span>
                 <span className="text-[0.98rem] font-medium text-foreground">{responseCountLabel}</span>
               </span>
-              <Button variant="ghostPill" size="compact" onClick={onRefresh} className="shrink-0 max-[620px]:w-full">
-                <RefreshCw size={17} />
-                Refresh
+              <Button variant="ghostPill" size="compact" onClick={refreshStatus} disabled={isRefreshing} className="shrink-0 max-[620px]:w-full">
+                <RefreshCw size={17} className={isRefreshing ? 'animate-spin' : undefined} />
+                {isRefreshing ? 'Refreshing...' : 'Refresh'}
               </Button>
             </div>
             {reportUnlocked && (
@@ -217,39 +192,17 @@ export function FriendSharePanel({
             )}
           </div>
 
-          {!reportUnlocked && <Surface className="grid gap-4 p-[clamp(18px,2.5vw,26px)]" variant="muted">
-            <div>
-              <h3 className="mb-1 text-[clamp(1.2rem,2vw,1.45rem)] leading-[1.18] text-foreground">
-                Where should we send your results?
-              </h3>
-              <p className="mb-0">
-                We'll email you the moment 2 friends respond. No password yet; just your email to
-                hold your spot.
-              </p>
-            </div>
-            <div className="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-3 max-[720px]:grid-cols-1">
-              <Label>
-                Email
-                <Input
-                  autoComplete="email"
-                  inputMode="email"
-                  type="email"
-                  value={email}
-                  onChange={(event) => setEmail(event.target.value)}
-                  placeholder="you@example.com"
-                />
-              </Label>
-              <Button className="min-h-[50px] px-6 max-[720px]:w-full" onClick={submitEmail} disabled={isSavingEmail}>
-                <Send size={18} />
-                {isSavingEmail ? 'Holding...' : 'Secure your Dating Mirror'}
-              </Button>
-            </div>
-            <p className="mb-0 inline-flex items-center gap-2 text-[0.94rem]">
-              <ShieldCheck size={16} />
-              Never shared. Used only to deliver your mirror.
-            </p>
-            {emailError && <InlineError className="mb-0">{emailError}</InlineError>}
-          </Surface>}
+          {!reportUnlocked && (
+            <ResultEmailCapture
+              title="Where should we send your results?"
+              description="We'll email you the moment 2 friends respond. No password yet; just your email to hold your spot."
+              buttonLabel="Secure your Dating Mirror"
+              savingLabel="Holding..."
+              trustText="Never shared. Used only to deliver your mirror."
+              initialEmail={session?.resultEmail}
+              onSubmit={onSaveResultEmail}
+            />
+          )}
         </div>
       )}
 
@@ -292,10 +245,16 @@ export function FriendSharePanel({
                 {friendCount >= 2 ? 'Done' : 'Waiting...'}
               </span>
             </div>
-            <Button variant="ghostPill" onClick={copyLink} disabled={!shareUrl}>
-              <Copy size={17} />
-              {copied ? 'Copied' : 'Copy reminder link'}
-            </Button>
+            <div className="flex flex-wrap justify-center gap-3 max-[520px]:grid max-[520px]:w-full">
+              <Button variant="ghostPill" onClick={refreshStatus} disabled={isRefreshing}>
+                <RefreshCw size={17} className={isRefreshing ? 'animate-spin' : undefined} />
+                {isRefreshing ? 'Refreshing...' : 'Refresh status'}
+              </Button>
+              <Button variant="ghostPill" onClick={copyLink} disabled={!shareUrl}>
+                <Copy size={17} />
+                {copied ? 'Copied' : 'Copy reminder link'}
+              </Button>
+            </div>
           </div>
 
           <div className="grid w-full gap-4 border-t border-border pt-[clamp(18px,3vh,26px)] text-left">

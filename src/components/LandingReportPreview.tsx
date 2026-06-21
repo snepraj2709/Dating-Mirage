@@ -24,7 +24,7 @@ function EvidencePills({ dimensionKeys }: { dimensionKeys: DimensionKey[] }) {
     <div className="flex min-w-0 flex-wrap justify-end gap-1">
       {dimensionKeys.map((dimensionKey) => (
         <Pill
-          className="max-w-full border-white/80 bg-white/78 px-2 py-0.5 text-center text-[0.64rem] leading-tight tracking-normal text-primary shadow-[inset_0_1px_1px_rgba(255,255,255,0.95),inset_0_-12px_18px_rgba(232,62,140,0.07),0_10px_22px_rgba(17,17,17,0.12),0_2px_8px_rgba(232,62,140,0.12)] backdrop-blur-xl"
+          className="max-w-full border-border/70 bg-muted/70 px-2 py-0.5 text-center text-[0.64rem] leading-tight tracking-normal text-muted-foreground shadow-[inset_0_1px_1px_rgba(255,255,255,0.95),0_10px_22px_rgba(17,17,17,0.08)] backdrop-blur-xl"
           key={dimensionKey}
         >
           {dimensionName(dimensionKey)}
@@ -94,12 +94,9 @@ export function LandingReportPreview({ onStart }: LandingReportPreviewProps) {
         <div className="grid min-h-0 content-start gap-[clamp(14px,2.2svh,22px)]">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <Eyebrow>Final report</Eyebrow>
-            <Pill className="border-white/80 bg-white px-4 text-[0.86rem] tracking-normal text-primary shadow-[inset_0_1px_1px_rgba(255,255,255,0.95),inset_0_-12px_18px_rgba(232,62,140,0.07),0_12px_30px_rgba(17,17,17,0.14),0_2px_8px_rgba(232,62,140,0.12)] backdrop-blur-xl">
-              2 friend responses
-            </Pill>
           </div>
           <div className="grid gap-3">
-            <h2 className="mb-0 text-[clamp(2.35rem,4.45vw,4.35rem)] leading-[0.96] tracking-normal text-primary max-[620px]:text-[clamp(2.1rem,12vw,3.6rem)]">
+            <h2 className="mb-0 text-[clamp(2.35rem,4.45vw,4.35rem)] leading-[0.96] tracking-normal text-foreground max-[620px]:text-[clamp(2.1rem,12vw,3.6rem)]">
               {shareableCard.archetype_title}
             </h2>
             <p className="mb-0 text-[clamp(1.08rem,1.75vw,1.35rem)] font-medium leading-[1.24] text-foreground">
@@ -153,7 +150,7 @@ export function LandingReportPreview({ onStart }: LandingReportPreviewProps) {
             </div>
           </section>
 
-          <div className="grid min-h-0 content-start gap-3">
+          <div className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)] gap-3">
             <section className="grid gap-2.5">
               <h2 className="mb-0 text-[clamp(1.28rem,1.85vw,1.62rem)] leading-[1.08] text-foreground">
                 Dating fatigue patterns
@@ -173,15 +170,17 @@ export function LandingReportPreview({ onStart }: LandingReportPreviewProps) {
                 />
               </div>
             </section>
+            <div className="grid min-h-0 place-items-center">
+              <Button
+                className="min-h-11 w-fit rounded-full px-6 text-[0.95rem] shadow-[0_16px_36px_rgba(232,62,140,0.26)]"
+                onClick={onStart}
+              >
+                Show Mine
+                <ArrowRight size={17} />
+              </Button>
+            </div>
           </div>
         </div>
-        <Button
-          className="absolute right-[clamp(14px,2.2vw,24px)] bottom-[clamp(14px,2.2vw,24px)] min-h-11 rounded-full px-6 text-[0.95rem] shadow-[0_16px_36px_rgba(232,62,140,0.26)]"
-          onClick={onStart}
-        >
-          Show Mine
-          <ArrowRight size={17} />
-        </Button>
       </article>
     </ContentBand>
   );

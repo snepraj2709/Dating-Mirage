@@ -10,7 +10,10 @@ import type {
 const IDEAL_DRAFT_KEY = 'dating-mirror:ideal-draft';
 const ACTUAL_SWIPES_KEY = 'dating-mirror:actual-swipes';
 const SESSION_KEY = 'dating-mirror:session';
+const CURRENT_STAGE_KEY = 'dating-mirror:current-stage';
 const LOCAL_FRIEND_PREFIX = 'dating-mirror:friend-feedback:';
+
+export type StoredAppStage = 'landing' | 'ideal' | 'actualIntro' | 'actual' | 'share' | 'reveal';
 
 export function loadIdealDraft(): Partial<VectorProfile> {
   try {
@@ -95,6 +98,32 @@ export function saveStoredSession(session: UserSession) {
 
 export function clearStoredSession() {
   window.localStorage.removeItem(SESSION_KEY);
+}
+
+function isStoredAppStage(value: unknown): value is StoredAppStage {
+  return value === 'landing' ||
+    value === 'ideal' ||
+    value === 'actualIntro' ||
+    value === 'actual' ||
+    value === 'share' ||
+    value === 'reveal';
+}
+
+export function loadStoredStage(): StoredAppStage | null {
+  try {
+    const stage = window.localStorage.getItem(CURRENT_STAGE_KEY);
+    return isStoredAppStage(stage) ? stage : null;
+  } catch {
+    return null;
+  }
+}
+
+export function saveStoredStage(stage: StoredAppStage) {
+  window.localStorage.setItem(CURRENT_STAGE_KEY, stage);
+}
+
+export function clearStoredStage() {
+  window.localStorage.removeItem(CURRENT_STAGE_KEY);
 }
 
 function isVectorProfile(value: unknown): value is VectorProfile {

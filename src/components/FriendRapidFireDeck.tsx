@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { ArrowLeft, ArrowRight, RotateCcw, Send } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -184,18 +185,27 @@ export function FriendRapidFireDeck({ sessionId, displayName }: FriendRapidFireD
         progressValue={100}
         progressLabel="Feedback sent"
         contentClassName="min-h-[620px] grid-rows-[auto_1fr] max-[620px]:min-h-[calc(100svh_-_60px)]"
-        prompt="You did the brave friend thing."
-        promptClassName="self-center"
-        helper={
+        prompt={`You just helped ${userLabel} see their dating patterns.`}
+        promptClassName="self-center gap-6"
+        helper="Want to see yours? Build your own Dating Mirror and invite friends to return the favor."
+        promptFooter={
           <>
-            <span>
-              Your individual answers stay private and only blend into {userLabel}'s aggregate Dating Mirror.
-            </span>
             {submitMessage && (
-              <span className="mt-12 block text-[clamp(1.05rem,1.55vw,1.2rem)] font-medium not-italic text-primary max-[620px]:mt-8 max-[620px]:text-[1rem]">
+              <p className="mb-0 text-[clamp(0.95rem,1.35vw,1.05rem)] font-medium text-primary">
                 {submitMessage}
-              </span>
+              </p>
             )}
+            <Button
+              asChild
+              className="mt-4 min-h-[52px] rounded-full border-primary bg-primary px-8 text-[1rem] font-semibold text-primary-foreground hover:border-primary-hover hover:bg-primary-hover max-[620px]:mt-2 max-[620px]:w-full max-[620px]:max-w-[280px]"
+              size="pill"
+              variant="primary"
+            >
+              <a href="/?start=ideal">
+                Start my Dating Mirror
+                <ArrowRight size={18} />
+              </a>
+            </Button>
           </>
         }
       />

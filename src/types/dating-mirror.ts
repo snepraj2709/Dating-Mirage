@@ -113,6 +113,7 @@ export interface UserSession {
   resultEmail?: string | null;
   resultEmailSavedAt?: string | null;
   resultEmailSentAt?: string | null;
+  resultEmailSyncPending?: boolean;
 }
 
 export interface StepProgress {

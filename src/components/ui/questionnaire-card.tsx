@@ -13,6 +13,7 @@ interface QuestionnaireCardProps {
   progressLabel: string;
   prompt: React.ReactNode;
   helper?: React.ReactNode;
+  promptFooter?: React.ReactNode;
   children?: React.ReactNode;
   footerLeft?: React.ReactNode;
   footerCenter?: React.ReactNode;
@@ -38,6 +39,7 @@ function QuestionnaireCard({
   progressLabel,
   prompt,
   helper,
+  promptFooter,
   children,
   footerLeft,
   footerCenter,
@@ -97,6 +99,7 @@ function QuestionnaireCard({
                 {helper}
               </p>
             )}
+            {promptFooter}
           </div>
 
           {children}

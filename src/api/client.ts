@@ -27,6 +27,7 @@ function toUserSession(session: ApiSession): UserSession {
     resultEmail: session.result_email ?? null,
     resultEmailSavedAt: session.result_email_saved_at ?? null,
     resultEmailSentAt: session.result_email_sent_at ?? null,
+    resultEmailSyncPending: false,
   };
 }
 

@@ -1,26 +1,30 @@
 import {
   Activity,
   ArrowRight,
+  Brain,
   CalendarCheck,
   Compass,
-  FlagTriangleRight,
+  Flame,
   Heart,
-  Lightbulb,
   MessageCircle,
   ShieldCheck,
+  Target,
   Trophy,
   Zap,
   type LucideIcon,
 } from 'lucide-react';
 import { useEffect, useMemo, useState, type CSSProperties, type KeyboardEvent } from 'react';
 import { dimensions } from '@/data/datingMirrorContent';
+import dummyReportJson from '@/data/dummy-llm-report.json';
 import { cn } from '@/lib/utils';
-import type { DimensionKey, VectorProfile } from '@/types/dating-mirror';
+import type { DiagnosticReportSection, DimensionKey, MirrorReport, VectorProfile } from '@/types/dating-mirror';
 import { Button } from '@/components/ui/button';
+import { Pill } from '@/components/ui/pill';
 import { ContentBand } from '@/components/ui/section';
 import { Surface } from '@/components/ui/surface';
 
-type PatternLensKey = 'all' | 'guilty' | 'blindSpot' | 'facade';
+type PatternLensKey = 'all' | 'guilty' | 'blindSpot' | 'facade' | 'deepVoid';
+type DiagnosticLensKey = Exclude<PatternLensKey, 'all'>;
 type VectorKey = 'ideal' | 'actual' | 'social';
 
 interface MapAnalysisSectionProps {
@@ -39,6 +43,19 @@ interface GapHighlight {
   delay: number;
 }
 
+interface DiagnosticReadItem {
+  key: keyof MirrorReport['diagnostic_matrix'];
+  label: string;
+  icon: LucideIcon;
+  section: DiagnosticReportSection;
+}
+
+interface DiagnosticLensContent extends DiagnosticReadItem {
+  lens: DiagnosticLensKey;
+  tab: string;
+  description: string;
+}
+
 const chartWidth = 720;
 const chartHeight = 590;
 const centerX = chartWidth / 2;
@@ -49,7 +66,58 @@ const orbitLabelOffset = 34;
 const autoplayDelayMs = 4500;
 
 const vectorKeys: VectorKey[] = ['ideal', 'actual', 'social'];
-const lensStoryOrder: PatternLensKey[] = ['all', 'facade', 'blindSpot', 'guilty'];
+const lensStoryOrder: PatternLensKey[] = ['all', 'facade', 'blindSpot', 'guilty', 'deepVoid'];
+const diagnosticReadOrder: DiagnosticLensKey[] = ['facade', 'guilty', 'blindSpot', 'deepVoid'];
+const dummyReport = dummyReportJson as MirrorReport;
+const { shareable_card: demoShareableCard, diagnostic_matrix: demoDiagnosticMatrix } = dummyReport;
+
+const allLensContent = {
+  tab: 'All',
+  title: 'The four strongest reads',
+  cta: 'Show me my biggest gap',
+};
+
+const diagnosticLensContent: Record<DiagnosticLensKey, DiagnosticLensContent> = {
+  facade: {
+    lens: 'facade',
+    key: 'facade',
+    tab: 'Facade',
+    label: 'Facade',
+    icon: ShieldCheck,
+    description: 'You know where you are settling or over-accommodating, but pretend otherwise to your friends.',
+    section: demoDiagnosticMatrix.facade,
+  },
+  guilty: {
+    lens: 'guilty',
+    key: 'guilty_pleasure',
+    tab: 'Guilty pleasure',
+    label: 'Guilty Pleasure',
+    icon: Flame,
+    description: 'You know you hate it but you still do it, and your friends also know you do this.',
+    section: demoDiagnosticMatrix.guilty_pleasure,
+  },
+  blindSpot: {
+    lens: 'blindSpot',
+    key: 'blindspots',
+    tab: 'Blind spot',
+    label: 'Blind Spot',
+    icon: Target,
+    description: 'You believe your choices align with your standards, but your friends see a different pattern.',
+    section: demoDiagnosticMatrix.blindspots,
+  },
+  deepVoid: {
+    lens: 'deepVoid',
+    key: 'deep_void',
+    tab: 'Deep Void',
+    label: 'Deep Void',
+    icon: Brain,
+    description:
+      'A deeper psychological layer that neither you nor your friends can reliably observe through surface behavior.',
+    section: demoDiagnosticMatrix.deep_void,
+  },
+};
+
+const strongestReadItems: DiagnosticReadItem[] = diagnosticReadOrder.map((lens) => diagnosticLensContent[lens]);
 
 const dimensionIconMap: Record<DimensionKey, LucideIcon> = {
   CON: CalendarCheck,
@@ -143,65 +211,6 @@ const radarLegend: Array<{
     dashed: true,
   },
 ];
-
-const lensContent: Record<
-  PatternLensKey,
-  {
-    tab: string;
-    title: string;
-    body: string[];
-    action?: string;
-    cta?: string;
-    cueLabels?: string[];
-  }
-> = {
-  all: {
-    tab: 'All',
-    title: 'Where the lines separate',
-    body: [
-      'The emotional truth is not inside one line.',
-      'It lives in the distance between the lines.',
-    ],
-    cta: 'Show me my biggest gap',
-  },
-  guilty: {
-    tab: 'Guilty pleasure',
-    title: 'The choice you know is not aligned',
-    body: [
-      'You say you want calm, consistency, and emotional safety.',
-      'But your dating pattern shows that intensity pulls your attention more than calm.'
-    ],
-    action:
-      'Before the next date, write down 3 signals of emotional safety and look for them before chemistry.',
-    cueLabels: [
-      'Strong pull toward intense behaviors',
-      "Don't stay for consistency",
-      'Hard time establishing autonomy within the relationship',
-    ],
-  },
-  blindSpot: {
-    tab: 'Blind spot',
-    title: 'The pattern others see before you do',
-    body: [
-      'You believe your choices match your standards.',
-      'But your social circle notice a different emotional pattern.',
-      'The Attraction might feel intense to you, but the patterns is obvious to a person outside the whirlwind of your emotional rollercoaster.',
-    ],
-    action:
-      'Ask a close friend: "When I like someone, what do I start tolerating that I normally wouldn\'t?"',
-  },
-  facade: {
-    tab: 'Facade',
-    title: 'The version you live vs. the version people see',
-    body: [
-      'Your dating choices show one pattern.',
-      'But your friends see a different pattern.',
-      'You may look composed from the outside, while privately you are over-accommodating, waiting, explaining, or self-doubting.',
-    ],
-    action:
-      'Before you hide a dating problem from your friends, pause. The urge to hide itself is a signal.',
-  },
-};
 
 const activeLensButtonClassName = 'bg-[#fff1fb] text-[#95179b] shadow-[0_10px_28px_rgba(149,23,155,0.1)]';
 
@@ -362,6 +371,93 @@ function getHighlightForDimension(
     to: pointsBySeries[pair[1]][dimensionIndex],
     delay,
   };
+}
+
+function dimensionName(key: DimensionKey) {
+  return dimensions.find((dimension) => dimension.key === key)?.name ?? key;
+}
+
+function EvidencePills({ dimensionKeys }: { dimensionKeys: DimensionKey[] }) {
+  return (
+    <div className="flex min-w-0 flex-wrap gap-1">
+      {dimensionKeys.map((dimensionKey) => (
+        <Pill
+          className="max-w-full border-border/70 bg-muted/70 px-2 py-0.5 text-center text-[0.64rem] leading-tight tracking-normal text-muted-foreground shadow-[inset_0_1px_1px_rgba(255,255,255,0.95),0_8px_18px_rgba(17,17,17,0.08)] backdrop-blur-xl"
+          key={dimensionKey}
+        >
+          {dimensionName(dimensionKey)}
+        </Pill>
+      ))}
+    </div>
+  );
+}
+
+function StrongestReadsPanel({ cta, onStart }: { cta?: string; onStart: () => void }) {
+  return (
+    <div className="grid gap-2.5 max-[620px]:grid-cols-none" aria-label="Map analysis details" tabIndex={0}>
+      <section className="mobile-snap-item grid gap-1.5 rounded-md bg-[#fff7fb] p-3 shadow-none max-[620px]:min-h-[116px]">
+        <span className="text-[0.74rem] font-medium uppercase tracking-normal text-primary">Core conflict</span>
+        <p className="mb-0 text-[0.9rem] font-medium leading-[1.35] text-foreground">
+          {demoShareableCard.core_conflict}
+        </p>
+      </section>
+
+      <div className="mobile-snap-item grid gap-2 rounded-md bg-card p-3 shadow-none max-[620px]:min-h-[116px]">
+        {strongestReadItems.map(({ key, label, icon: Icon, section }, index) => (
+          <article className="grid gap-2" key={key}>
+            {index > 0 && <div className="h-px bg-border" aria-hidden="true" />}
+            <div className="grid grid-cols-[auto_1fr] gap-2.5">
+              <span className="grid size-7 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground">
+                <Icon size={14} aria-hidden="true" />
+              </span>
+              <div className="grid min-w-0 gap-1.5">
+                <div>
+                  <h4 className="mb-0 text-[0.88rem] leading-[1.14] text-foreground">{label}</h4>
+                </div>
+                <p className="mb-0 text-[0.78rem] leading-[1.28] text-muted-foreground">{section.insight}</p>
+              </div>
+            </div>
+          </article>
+        ))}
+      </div>
+
+      {cta && (
+        <div className="mobile-snap-item grid content-center max-[620px]:min-h-[116px]">
+          <Button className="w-fit max-[620px]:w-full" onClick={onStart}>
+            {cta}
+            <ArrowRight size={18} />
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DiagnosticLensPanel({ item }: { item: DiagnosticLensContent }) {
+  const Icon = item.icon;
+
+  return (
+    <div className="grid gap-2.5 max-[620px]:grid-cols-none" aria-label="Map analysis details" tabIndex={0}>
+      <section className="mobile-snap-item grid gap-2 rounded-md bg-card p-3 shadow-none max-[620px]:min-h-[116px]">
+        <div className="grid grid-cols-[auto_1fr] gap-2.5">
+          <span className="grid size-8 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground">
+            <Icon size={16} aria-hidden="true" />
+          </span>
+          <div className="grid gap-1.5">
+            <p className="mb-0 text-[0.9rem] font-medium leading-[1.35] text-foreground">{item.description}</p>
+          </div>
+        </div>
+      </section>
+
+      <section className="mobile-snap-item grid gap-2 rounded-md bg-[#fff7fb] p-3 shadow-none max-[620px]:min-h-[116px]">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <span className="text-[0.74rem] font-medium uppercase tracking-normal text-primary">Report read</span>
+          <EvidencePills dimensionKeys={item.section.evidence_dimensions} />
+        </div>
+        <p className="mb-0 text-[0.92rem] leading-[1.4] text-foreground">{item.section.insight}</p>
+      </section>
+    </div>
+  );
 }
 
 interface RadarLensSceneProps {
@@ -655,7 +751,7 @@ export function MapAnalysisSection({ onStart }: MapAnalysisSectionProps) {
   const [activeLens, setActiveLens] = useState<PatternLensKey>('all');
   const [isAutoplaying, setIsAutoplaying] = useState(true);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
-  const activeContent = lensContent[activeLens];
+  const activeTitle = activeLens === 'all' ? allLensContent.title : diagnosticLensContent[activeLens].label;
 
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -697,7 +793,7 @@ export function MapAnalysisSection({ onStart }: MapAnalysisSectionProps) {
   };
 
   return (
-    <ContentBand className="grid content-center gap-4 py-[clamp(34px,6svh,56px)] max-[620px]:content-start max-[620px]:gap-3 max-[620px]:py-5" id="map-analysis">
+    <ContentBand className="grid content-center gap-4 py-[clamp(34px,6svh,56px)] max-[980px]:min-h-0 max-[980px]:max-h-none max-[980px]:overflow-visible max-[620px]:content-start max-[620px]:gap-3 max-[620px]:py-5" id="map-analysis">
       <div className="grid gap-4 max-[620px]:gap-3">
         <div className="flex items-end justify-between gap-4 max-[620px]:grid max-[620px]:gap-2">
           <h2 className="mb-0 text-[clamp(1.65rem,3.6vw,2.65rem)] leading-[1.05] tracking-normal text-foreground max-[620px]:text-[1.45rem]">
@@ -724,7 +820,9 @@ export function MapAnalysisSection({ onStart }: MapAnalysisSectionProps) {
                   role="tab"
                   type="button"
                 >
-                  <span className="leading-[1.1]">{lensContent[lens].tab}</span>
+                  <span className="leading-[1.1]">
+                    {lens === 'all' ? allLensContent.tab : diagnosticLensContent[lens].tab}
+                  </span>
                   {isActive && isAutoplaying && !prefersReducedMotion && (
                     <span
                       className={cn(
@@ -756,56 +854,14 @@ export function MapAnalysisSection({ onStart }: MapAnalysisSectionProps) {
             <aside>
               <div className="map-insight-enter grid content-start gap-4 max-[620px]:gap-3" key={activeLens}>
                 <h3 className="mb-0 text-[clamp(1.35rem,2.4vw,1.9rem)] leading-[1.08] text-foreground max-[620px]:text-[1.15rem]">
-                  {activeContent.title}
+                  {activeTitle}
                 </h3>
 
-                <div
-                  className="grid gap-2.5 max-[620px]:grid-cols-none"
-                  aria-label="Map analysis details"
-                  tabIndex={0}
-                >
-                  <ul className="mobile-snap-item m-0 grid list-none gap-1.5 rounded-md bg-card p-3 text-[0.9rem] leading-[1.38] text-muted-foreground shadow-none max-[620px]:min-h-[116px]">
-                    {activeContent.body.map((paragraph) => (
-                      <li className="grid grid-cols-[auto_1fr] gap-2" key={paragraph}>
-                        <span aria-hidden="true">-</span>
-                        <span>{paragraph}</span>
-                      </li>
-                    ))}
-                  </ul>
-
-                  {activeContent.cueLabels && (
-                    <div className="mobile-snap-item grid gap-2.5 rounded-md bg-red-50 px-3 py-3 text-red-950 shadow-none max-[620px]:min-h-[116px]">
-                      <FlagTriangleRight className="text-red-500" size={20} aria-hidden="true" />
-                      <ul className="m-0 grid list-none gap-1.5 p-0 text-[0.88rem] font-medium leading-[1.32]">
-                        {activeContent.cueLabels.map((label) => (
-                          <li className="grid grid-cols-[auto_1fr] gap-2" key={label}>
-                            <span aria-hidden="true">-</span>
-                            <span>{label}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-
-                  {activeContent.action && (
-                    <div className="mobile-snap-item grid gap-2 rounded-md bg-amber-50 px-3 py-3 text-[#6f4a00] shadow-none max-[620px]:min-h-[116px]">
-                      <span className="inline-flex items-center gap-2 text-[0.8rem] font-medium uppercase">
-                        <Lightbulb className="shrink-0 text-amber-500" size={17} aria-hidden="true" />
-                        Tip
-                      </span>
-                      <p className="mb-0 text-[0.9rem] font-medium leading-[1.4] text-[#6f4a00]">{activeContent.action}</p>
-                    </div>
-                  )}
-
-                  {activeContent.cta && (
-                    <div className="mobile-snap-item grid content-center max-[620px]:min-h-[116px]">
-                      <Button className="w-fit max-[620px]:w-full" onClick={onStart}>
-                        {activeContent.cta}
-                        <ArrowRight size={18} />
-                      </Button>
-                    </div>
-                  )}
-                </div>
+                {activeLens === 'all' ? (
+                  <StrongestReadsPanel cta={allLensContent.cta} onStart={onStart} />
+                ) : (
+                  <DiagnosticLensPanel item={diagnosticLensContent[activeLens]} />
+                )}
               </div>
             </aside>
           </Surface>

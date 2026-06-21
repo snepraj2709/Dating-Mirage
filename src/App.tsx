@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { ArrowLeft } from 'lucide-react';
 import {
   burnSession,
   createOrUpdateSession,
@@ -10,6 +11,7 @@ import {
 } from './api/client';
 import { FriendRapidFireDeck } from './components/FriendRapidFireDeck';
 import { FriendSharePanel } from './components/FriendSharePanel';
+import { ResultEmailCapture } from './components/ResultEmailCapture';
 import { Hero } from './components/Hero';
 import { FinalReport } from './components/FinalReport';
 import { LandingJohariMatrix } from './components/LandingJohariMatrix';
@@ -30,22 +32,99 @@ import {
   clearActualSwipes,
   clearIdealDraft,
   clearLocalFriendProfiles,
+  clearStoredStage,
   clearStoredSession,
+  loadActualAnswers,
+  loadIdealDraft,
   loadLocalFriendFeedback,
   loadLocalFriendProfiles,
+  loadStoredStage,
   loadStoredSession,
+  saveStoredStage,
   saveStoredSession,
+  type StoredAppStage,
 } from './lib/localState';
 import type { MirrorReport, UserSession, VectorProfile } from './types/dating-mirror';
 
-type AppStage = 'landing' | 'ideal' | 'actualIntro' | 'actual' | 'share' | 'reveal';
+type AppStage = StoredAppStage;
+
+function canResumeStage(stage: AppStage, session: UserSession | null) {
+  if (stage === 'landing') {
+    return true;
+  }
+
+  if (stage === 'ideal') {
+    return true;
+  }
+
+  if (!session?.idealProfile) {
+    return false;
+  }
+
+  if (stage === 'actualIntro' || stage === 'actual') {
+    return true;
+  }
+
+  if (!session.actualProfile) {
+    return false;
+  }
+
+  if (stage === 'reveal') {
+    return session.friendCount >= 2 || session.reportUnlocked;
+  }
+
+  return stage === 'share';
+}
+
+function inferStageFromSession(session: UserSession | null): AppStage {
+  if (session?.idealProfile && session.actualProfile) {
+    return 'share';
+  }
+
+  if (session?.idealProfile) {
+    return Object.keys(loadActualAnswers()).length > 0 ? 'actual' : 'actualIntro';
+  }
+
+  if (Object.keys(loadIdealDraft()).length > 0) {
+    return 'ideal';
+  }
+
+  return 'landing';
+}
+
+function resolveInitialStage(session: UserSession | null): AppStage {
+  const storedStage = loadStoredStage();
+
+  if (storedStage && storedStage !== 'landing' && canResumeStage(storedStage, session)) {
+    return storedStage;
+  }
+
+  return inferStageFromSession(session);
+}
+
+function preservePendingResultEmail(serverSession: UserSession, pendingSession: UserSession): UserSession {
+  if (!pendingSession.resultEmailSyncPending || !pendingSession.resultEmail) {
+    return {
+      ...serverSession,
+      resultEmailSyncPending: false,
+    };
+  }
+
+  return {
+    ...serverSession,
+    resultEmail: pendingSession.resultEmail,
+    resultEmailSavedAt: pendingSession.resultEmailSavedAt ?? serverSession.resultEmailSavedAt ?? null,
+    resultEmailSentAt: pendingSession.resultEmailSentAt ?? serverSession.resultEmailSentAt ?? null,
+    resultEmailSyncPending: true,
+  };
+}
 
 export default function App() {
   const friendMatch = window.location.pathname.match(/^\/friend\/([^/]+)/);
   const unlockMatch = window.location.pathname === '/unlock';
   const unlockSessionId = new URLSearchParams(window.location.search).get('session_id');
-  const [stage, setStage] = useState<AppStage>('landing');
   const [session, setSession] = useState<UserSession | null>(() => loadStoredSession());
+  const [stage, setStage] = useState<AppStage>(() => resolveInitialStage(loadStoredSession()));
   const [isSavingIdeal, setIsSavingIdeal] = useState(false);
   const [isSavingActual, setIsSavingActual] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -53,6 +132,71 @@ export default function App() {
   const [isLoadingReport, setIsLoadingReport] = useState(false);
   const [isPreparingReport, setIsPreparingReport] = useState(false);
   const [reportError, setReportError] = useState<string | null>(null);
+  const [reportRetryKey, setReportRetryKey] = useState(0);
+
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    if (!friendMatch && !unlockMatch && searchParams.get('start') === 'ideal') {
+      window.history.replaceState(null, '', '/');
+      setStage('ideal');
+    }
+  }, [friendMatch, unlockMatch]);
+
+  useEffect(() => {
+    if (friendMatch || unlockMatch) {
+      return;
+    }
+
+    if (stage === 'landing') {
+      if (!session) {
+        clearStoredStage();
+      }
+      return;
+    }
+
+    saveStoredStage(stage);
+  }, [friendMatch, session, stage, unlockMatch]);
+
+  const saveSessionState = useCallback((nextSession: UserSession) => {
+    setSession(nextSession);
+    saveStoredSession(nextSession);
+  }, []);
+
+  const syncPendingResultEmail = useCallback(async (candidateSession: UserSession): Promise<UserSession> => {
+    if (
+      !candidateSession.resultEmailSyncPending ||
+      !candidateSession.resultEmail ||
+      candidateSession.id.startsWith('local-')
+    ) {
+      return candidateSession;
+    }
+
+    try {
+      const nextSession = {
+        ...(await saveSessionResultEmail(candidateSession.id, candidateSession.resultEmail)),
+        resultEmailSyncPending: false,
+      };
+      saveSessionState(nextSession);
+      return nextSession;
+    } catch {
+      return candidateSession;
+    }
+  }, [saveSessionState]);
+
+  useEffect(() => {
+    if (friendMatch || unlockMatch || !session?.resultEmailSyncPending) {
+      return;
+    }
+
+    void syncPendingResultEmail(session);
+  }, [
+    friendMatch,
+    session?.id,
+    session?.resultEmail,
+    session?.resultEmailSyncPending,
+    syncPendingResultEmail,
+    unlockMatch,
+  ]);
 
   const handleIdealComplete = async (idealProfile: VectorProfile) => {
     setIsSavingIdeal(true);
@@ -75,6 +219,7 @@ export default function App() {
         resultEmail: session?.resultEmail ?? null,
         resultEmailSavedAt: session?.resultEmailSavedAt ?? null,
         resultEmailSentAt: session?.resultEmailSentAt ?? null,
+        resultEmailSyncPending: session?.resultEmailSyncPending ?? false,
       };
       setSession(localSession);
       saveStoredSession(localSession);
@@ -109,7 +254,12 @@ export default function App() {
             ...currentSession,
             actualProfile,
           })
-        : await refreshBackendSessionAfterActual(currentSession.id, actualProfile);
+        : await syncPendingResultEmail(
+            preservePendingResultEmail(
+              await refreshBackendSessionAfterActual(currentSession.id, actualProfile),
+              currentSession,
+            ),
+          );
 
       setSession(nextSession);
       saveStoredSession(nextSession);
@@ -123,7 +273,7 @@ export default function App() {
         friendCount,
         reportUnlocked: friendCount >= 2,
         resultEmailSentAt:
-          friendCount >= 2 && currentSession.resultEmail
+          friendCount >= 2 && currentSession.resultEmail && !currentSession.resultEmailSyncPending
             ? currentSession.resultEmailSentAt ?? now
             : currentSession.resultEmailSentAt ?? null,
       };
@@ -157,8 +307,39 @@ export default function App() {
       await submitFriendFeedback(createdSession.id, friendFeedback);
     }
 
+    let nextSession = await getSession(createdSession.id);
+    if (localSession.resultEmail) {
+      try {
+        nextSession = {
+          ...(await saveSessionResultEmail(createdSession.id, localSession.resultEmail)),
+          resultEmailSyncPending: false,
+        };
+      } catch {
+        nextSession = {
+          ...nextSession,
+          resultEmail: localSession.resultEmail,
+          resultEmailSavedAt: localSession.resultEmailSavedAt ?? new Date().toISOString(),
+          resultEmailSentAt: localSession.resultEmailSentAt ?? null,
+          resultEmailSyncPending: true,
+        };
+      }
+    }
+
     clearLocalFriendProfiles(localSession.id);
-    return getSession(createdSession.id);
+    return nextSession;
+  };
+
+  const syncLocalFriendFeedback = async (sessionId: string) => {
+    const localFriendFeedback = loadLocalFriendFeedback(sessionId);
+    if (localFriendFeedback.length === 0) {
+      return;
+    }
+
+    for (const friendFeedback of localFriendFeedback) {
+      await submitFriendFeedback(sessionId, friendFeedback);
+    }
+
+    clearLocalFriendProfiles(sessionId);
   };
 
   const refreshFriendCount = async () => {
@@ -172,7 +353,7 @@ export default function App() {
         throw new Error('Local session');
       }
 
-      const nextSession = await getSession(session.id);
+      const nextSession = await syncPendingResultEmail(preservePendingResultEmail(await getSession(session.id), session));
       setSession(nextSession);
       saveStoredSession(nextSession);
     } catch {
@@ -183,7 +364,7 @@ export default function App() {
         friendCount,
         reportUnlocked: friendCount >= 2,
         resultEmailSentAt:
-          friendCount >= 2 && session.resultEmail
+          friendCount >= 2 && session.resultEmail && !session.resultEmailSyncPending
             ? session.resultEmailSentAt ?? now
             : session.resultEmailSentAt ?? null,
       };
@@ -205,7 +386,10 @@ export default function App() {
         throw new Error('Local session');
       }
 
-      const nextSession = await saveSessionResultEmail(session.id, normalizedEmail);
+      const nextSession = {
+        ...(await saveSessionResultEmail(session.id, normalizedEmail)),
+        resultEmailSyncPending: false,
+      };
       setSession(nextSession);
       saveStoredSession(nextSession);
       return nextSession;
@@ -216,14 +400,8 @@ export default function App() {
         ...session,
         resultEmail: normalizedEmail,
         resultEmailSavedAt: emailChanged ? now : session.resultEmailSavedAt ?? now,
-        resultEmailSentAt:
-          session.friendCount >= 2
-            ? emailChanged
-              ? now
-              : session.resultEmailSentAt ?? now
-            : emailChanged
-            ? null
-            : session.resultEmailSentAt ?? null,
+        resultEmailSentAt: emailChanged ? null : session.resultEmailSentAt ?? null,
+        resultEmailSyncPending: true,
       };
       setSession(nextSession);
       saveStoredSession(nextSession);
@@ -246,14 +424,16 @@ export default function App() {
 
       try {
         if (!activeSession.id.startsWith('local-')) {
+          const sessionForReport = await syncPendingResultEmail(activeSession);
           const [nextReport, nextSession] = await Promise.all([
-            getReport(activeSession.id),
-            getSession(activeSession.id),
+            getReport(sessionForReport.id),
+            getSession(sessionForReport.id),
           ]);
           if (!cancelled) {
+            const sessionToStore = preservePendingResultEmail(nextSession, sessionForReport);
             setReport(nextReport);
-            setSession(nextSession);
-            saveStoredSession(nextSession);
+            setSession(sessionToStore);
+            saveStoredSession(sessionToStore);
           }
           return;
         }
@@ -261,10 +441,11 @@ export default function App() {
         throw new Error('The final LLM report requires a backend session and OpenAI API key.');
       } catch (error) {
         if (!cancelled) {
+          setReport(null);
           setReportError(
             error instanceof Error
               ? error.message
-              : 'We could not generate the final report yet. Try again after the backend is configured.',
+              : 'Could not load your actual result.',
           );
         }
       } finally {
@@ -279,7 +460,7 @@ export default function App() {
     return () => {
       cancelled = true;
     };
-  }, [stage, session?.id]);
+  }, [reportRetryKey, stage, session?.id, syncPendingResultEmail]);
 
   const handleBurnData = async () => {
     const sessionId = session?.id;
@@ -295,6 +476,7 @@ export default function App() {
       clearLocalFriendProfiles(sessionId);
     }
     clearStoredSession();
+    clearStoredStage();
     clearIdealDraft();
     clearActualSwipes();
     setSession(null);
@@ -305,13 +487,26 @@ export default function App() {
   };
 
   const handleUnlockComplete = (nextSession: UserSession) => {
-    setSession(nextSession);
-    saveStoredSession(nextSession);
+    const unlockedSession = {
+      ...nextSession,
+      resultEmailSyncPending: false,
+    };
+    setSession(unlockedSession);
+    saveStoredSession(unlockedSession);
     setReport(null);
     setReportError(null);
     setSaveError(null);
     window.history.replaceState(null, '', '/');
     setStage('reveal');
+  };
+
+  const handleRetryReport = () => {
+    setReport(null);
+    setReportError(null);
+    if (session) {
+      void syncPendingResultEmail(session);
+    }
+    setReportRetryKey((value) => value + 1);
   };
 
   const handleViewReport = async () => {
@@ -324,27 +519,49 @@ export default function App() {
     setReport(null);
     setReportError(null);
 
+    if (session.friendCount < 2) {
+      setSaveError('The mirror needs two friend responses before the final report opens.');
+      setIsPreparingReport(false);
+      return;
+    }
+
+    let nextSession = session;
     try {
-      const nextSession = session.id.startsWith('local-')
-        ? await createBackendSessionFromLocal(session)
-        : await getSession(session.id);
-
-      setSession(nextSession);
-      saveStoredSession(nextSession);
-
-      if (nextSession.friendCount < 2) {
-        setSaveError('The mirror needs two friend responses before the final report opens.');
-        setStage('share');
-        return;
+      if (session.id.startsWith('local-')) {
+        nextSession = await createBackendSessionFromLocal(session);
+      } else {
+        await syncLocalFriendFeedback(session.id);
+        nextSession = await syncPendingResultEmail(preservePendingResultEmail(await getSession(session.id), session));
       }
-
-      setStage('reveal');
-    } catch (error) {
-      setSaveError(error instanceof Error ? error.message : 'We could not open your mirror yet. Try again.');
-      setStage('share');
+    } catch {
+      const localFriendCount = Math.max(session.friendCount, loadLocalFriendProfiles(session.id).length);
+      nextSession = {
+        ...session,
+        friendCount: localFriendCount,
+        reportUnlocked: localFriendCount >= 2,
+      };
     } finally {
       setIsPreparingReport(false);
     }
+
+    const effectiveFriendCount = Math.max(nextSession.friendCount, session.friendCount);
+    if (effectiveFriendCount !== nextSession.friendCount) {
+      nextSession = {
+        ...nextSession,
+        friendCount: effectiveFriendCount,
+        reportUnlocked: effectiveFriendCount >= 2,
+      };
+    }
+
+    setSession(nextSession);
+    saveStoredSession(nextSession);
+
+    if (nextSession.friendCount < 2) {
+      setSaveError('The mirror needs two friend responses before the final report opens.');
+      return;
+    }
+
+    setStage('reveal');
   };
 
   const startMirror = () => setStage('ideal');
@@ -441,16 +658,40 @@ export default function App() {
     }
 
     return (
-      <main className="mx-auto grid min-h-screen w-[min(720px,calc(100%_-_32px))] content-center gap-[22px] py-12 max-[620px]:w-[min(100%_-_24px,520px)]">
+      <main className="mx-auto grid min-h-screen w-[min(820px,calc(100%_-_32px))] content-center gap-[22px] py-12 max-[620px]:w-[min(100%_-_24px,520px)]">
         <Button className="w-fit" variant="ghostPill" onClick={() => setStage('share')}>
-          Back to sharing
+          <ArrowLeft size={18} />
+          Back
         </Button>
-        <Surface asChild>
+        <Surface
+          asChild
+          className="grid gap-[clamp(22px,4vw,34px)] rounded-[24px] border-white/80 bg-white/80 p-[clamp(30px,5vw,54px)] shadow-[inset_0_1px_1px_rgba(255,255,255,0.95),0_22px_70px_rgba(17,17,17,0.09),0_6px_22px_rgba(232,62,140,0.08)] backdrop-blur-xl max-[620px]:rounded-[20px] max-[620px]:p-5"
+        >
           <section>
-          <Eyebrow>Step 4</Eyebrow>
-          <h2 className="text-[clamp(1.75rem,4vw,3rem)] leading-[1.05] text-foreground">The Mirror Analysis</h2>
-          {reportError && <InlineError>{reportError}</InlineError>}
-          <p>Refresh your friend responses, then come back to reveal the report.</p>
+            <div className="grid gap-4">
+              <Eyebrow>Step 4</Eyebrow>
+              <div className="grid gap-2">
+                <h2 className="mb-0 text-[clamp(1.75rem,4vw,3rem)] leading-[1.05] text-foreground">
+                  Could not load your actual result.
+                </h2>
+                {reportError && <InlineError className="mb-0">{reportError}</InlineError>}
+              </div>
+              <Button className="min-h-[50px] w-fit px-7 text-white shadow-[0_16px_36px_rgba(232,62,140,0.26)] max-[620px]:w-full" onClick={handleRetryReport}>
+                Retry
+              </Button>
+            </div>
+            <div className="my-[clamp(20px,4vw,32px)] h-px bg-border" />
+            <ResultEmailCapture
+              surface={false}
+              title="Want us to email you when this is ready?"
+              description="Enter your email and we'll send your Dating Mirror as soon as report generation is back up."
+              buttonLabel="Notify me"
+              savingLabel="Saving..."
+              trustText="Used only to deliver this report update."
+              initialEmail={session?.resultEmail}
+              successMessage="Email saved. We'll keep trying while this browser has your session."
+              onSubmit={handleResultEmailSave}
+            />
           </section>
         </Surface>
       </main>

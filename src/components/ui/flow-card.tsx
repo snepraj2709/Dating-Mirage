@@ -10,6 +10,8 @@ interface FlowCardProps {
   progressValue: number;
   progressLabel?: string;
   progressVariant?: React.ComponentProps<typeof ProgressRail>['variant'];
+  progressClassName?: string;
+  progressBarClassName?: string;
   children: React.ReactNode;
   footerLeft: React.ReactNode;
   footerRight?: React.ReactNode;
@@ -27,6 +29,8 @@ function FlowCard({
   progressValue,
   progressLabel,
   progressVariant,
+  progressClassName,
+  progressBarClassName,
   children,
   footerLeft,
   footerRight,
@@ -64,7 +68,13 @@ function FlowCard({
                 <span>{headerLabel}</span>
                 <span>{headerMeta}</span>
               </div>
-              <ProgressRail value={progressValue} variant={progressVariant} aria-label={progressLabel} />
+              <ProgressRail
+                value={progressValue}
+                variant={progressVariant}
+                className={progressClassName}
+                barClassName={progressBarClassName}
+                aria-label={progressLabel}
+              />
             </header>
           )}
 
