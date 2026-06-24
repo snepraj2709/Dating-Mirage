@@ -1,3 +1,5 @@
+import os
+
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -32,9 +34,21 @@ from .supabase_auth import send_result_magic_link
 
 app = FastAPI(title="Dating Mirror API", version="0.1.0")
 
+
+def get_cors_origins() -> list[str]:
+    local_origins = ["http://localhost:5173", "http://127.0.0.1:5173"]
+    configured_origins = [
+        origin.strip().rstrip("/")
+        for origin in os.getenv("CORS_ORIGINS", "").split(",")
+        if origin.strip()
+    ]
+    app_origin = os.getenv("APP_ORIGIN", "").strip().rstrip("/")
+    origins = [*local_origins, app_origin, *configured_origins] if app_origin else [*local_origins, *configured_origins]
+    return list(dict.fromkeys(origins))
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_origins=get_cors_origins(),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
