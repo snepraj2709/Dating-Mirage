@@ -37,13 +37,18 @@ app = FastAPI(title="Dating Mirror API", version="0.1.0")
 
 def get_cors_origins() -> list[str]:
     local_origins = ["http://localhost:5173", "http://127.0.0.1:5173"]
+    production_origins = ["https://dating-mirror.vercel.app", "https://dating-mirage.vercel.app"]
     configured_origins = [
         origin.strip().rstrip("/")
         for origin in os.getenv("CORS_ORIGINS", "").split(",")
         if origin.strip()
     ]
     app_origin = os.getenv("APP_ORIGIN", "").strip().rstrip("/")
-    origins = [*local_origins, app_origin, *configured_origins] if app_origin else [*local_origins, *configured_origins]
+    origins = (
+        [*local_origins, *production_origins, app_origin, *configured_origins]
+        if app_origin
+        else [*local_origins, *production_origins, *configured_origins]
+    )
     return list(dict.fromkeys(origins))
 
 app.add_middleware(
