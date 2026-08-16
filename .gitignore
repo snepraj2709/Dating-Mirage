@@ -15,3 +15,6 @@ backend/*.db
 .env
 .env.*
 !.env.example
+.vercel
+.env*.local
+.playwright-mcp/
